@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -61,24 +61,26 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonGenerator.Feature;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.KeyDeserializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
+import com.fasterxml.jackson.databind.ser.std.StdSerializer;
+import com.google.common.base.Preconditions;
 
 public class Metadata {
   static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(Metadata.class);
@@ -168,7 +170,7 @@ public class Metadata {
   createMetaFilesRecursively(final String path) throws IOException {
     Stopwatch timer = Stopwatch.createStarted();
     List<ParquetFileMetadata_v3> metaDataList = Lists.newArrayList();
-    List<String> directoryList = Lists.newArrayList();
+    List<ParquetPath> directoryList = Lists.newArrayList();
     ConcurrentHashMap<ColumnTypeMetadata_v3.Key, ColumnTypeMetadata_v3> columnTypeInfoSet =
         new ConcurrentHashMap<>();
     Path p = new Path(path);
@@ -182,7 +184,7 @@ public class Metadata {
         ParquetTableMetadata_v3 subTableMetadata = (createMetaFilesRecursively(file.getPath().toString())).getLeft();
         metaDataList.addAll(subTableMetadata.files);
         directoryList.addAll(subTableMetadata.directories);
-        directoryList.add(file.getPath().toString());
+        directoryList.add(new ParquetPath(file.getPath()));
         // Merge the schema from the child level into the current level
         //TODO: We need a merge method that merges two colums with the same name but different types
         columnTypeInfoSet.putAll(subTableMetadata.columnTypeInfo);
@@ -219,7 +221,7 @@ public class Metadata {
       timer.stop();
       return Pair.of(parquetTableMetadata, parquetTableMetadataDirs);
     }
-    List<String> emptyDirList = Lists.newArrayList();
+    List<ParquetPath> emptyDirList = Lists.newArrayList();
     logger.info("Creating metadata files recursively took {} ms", timer.elapsed(TimeUnit.MILLISECONDS));
     timer.stop();
     return Pair.of(parquetTableMetadata, new ParquetTableMetadataDirs(emptyDirList));
@@ -257,7 +259,7 @@ public class Metadata {
     ParquetTableMetadata_v3 tableMetadata = new ParquetTableMetadata_v3();
     List<ParquetFileMetadata_v3> fileMetadataList = getParquetFileMetadata_v3(tableMetadata, fileStatuses);
     tableMetadata.files = fileMetadataList;
-    tableMetadata.directories = new ArrayList<String>();
+    tableMetadata.directories = new ArrayList<ParquetPath>();
     return tableMetadata;
   }
 
@@ -455,7 +457,7 @@ public class Metadata {
 
       rowGroupMetadataList.add(rowGroupMeta);
     }
-    String path = Path.getPathWithoutSchemeAndAuthority(file.getPath()).toString();
+    ParquetPath path = new ParquetPath(file.getPath());
 
     return new ParquetFileMetadata_v3(path, file.getLen(), rowGroupMetadataList);
   }
@@ -505,6 +507,8 @@ public class Metadata {
     ObjectMapper mapper = new ObjectMapper(jsonFactory);
     SimpleModule module = new SimpleModule();
     module.addSerializer(ColumnMetadata_v3.class, new ColumnMetadata_v3.Serializer());
+    module.addSerializer(ParquetPath.class,
+        new ParquetPathSerializer(Path.getPathWithoutSchemeAndAuthority(p.getParent()).toString()));
     mapper.registerModule(module);
     FSDataOutputStream os = fs.create(p);
     mapper.writerWithDefaultPrettyPrinter().writeValue(os, parquetTableMetadata);
@@ -518,11 +522,55 @@ public class Metadata {
     jsonFactory.configure(JsonParser.Feature.AUTO_CLOSE_SOURCE, false);
     ObjectMapper mapper = new ObjectMapper(jsonFactory);
     SimpleModule module = new SimpleModule();
+    module.addSerializer(ParquetPath.class,
+        new ParquetPathSerializer(Path.getPathWithoutSchemeAndAuthority(p.getParent()).toString()));
     mapper.registerModule(module);
     FSDataOutputStream os = fs.create(p);
     mapper.writerWithDefaultPrettyPrinter().writeValue(os, parquetTableMetadataDirs);
     os.flush();
     os.close();
+  }
+
+  /**
+   * Serialier for ParquetPath. Writes the path relative to the root path
+   */
+  private static class ParquetPathSerializer extends StdSerializer<ParquetPath> {
+    private String rootPath;
+
+    ParquetPathSerializer(String rootPath) {
+      super(ParquetPath.class);
+      this.rootPath = rootPath;
+    }
+
+    @Override
+    public void serialize(ParquetPath parquetPath, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException, JsonGenerationException {
+      Preconditions.checkState(parquetPath.fullPath.startsWith(rootPath), String.format("Path %s is not a subpath of %s", parquetPath.fullPath, rootPath));
+      String relativePath = parquetPath.fullPath.replaceFirst(rootPath, "");
+      while (relativePath.charAt(0) == '/') {
+        relativePath = relativePath.substring(1);
+      }
+      jsonGenerator.writeString(relativePath);
+    }
+  }
+
+  /**
+   * Deserializer for ParquetPath. The full path is constructed from the relative path and resolving relative to the
+   * root path.
+   */
+  private static class ParquetPathDeserializer extends StdDeserializer<ParquetPath> {
+    private String rootPath;
+
+    ParquetPathDeserializer(String rootPath) {
+      super(ParquetPath.class);
+      this.rootPath = rootPath;
+    }
+
+    @Override
+    public ParquetPath deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
+      String relativePath = jsonParser.getText();
+      String fullPath = Path.getPathWithoutSchemeAndAuthority(new Path(rootPath, relativePath)).toString();
+      return new ParquetPath(fullPath);
+    }
   }
 
   /**
@@ -544,6 +592,7 @@ public class Metadata {
     serialModule.addDeserializer(SchemaPath.class, new SchemaPath.De());
     serialModule.addKeyDeserializer(ColumnTypeMetadata_v2.Key.class, new ColumnTypeMetadata_v2.Key.DeSerializer());
     serialModule.addKeyDeserializer(ColumnTypeMetadata_v3.Key.class, new ColumnTypeMetadata_v3.Key.DeSerializer());
+    serialModule.addDeserializer(ParquetPath.class, new ParquetPathDeserializer(Path.getPathWithoutSchemeAndAuthority(p.getParent()).toString()));
 
     AfterburnerModule module = new AfterburnerModule();
     module.setUseOptimizedBeanDeserializer(true);
@@ -609,9 +658,9 @@ public class Metadata {
    * @return
    * @throws IOException
    */
-  private boolean tableModified(List<String> directories, Path metaFilePath,
-      Path parentDir,
-      MetadataContext metaContext)
+  private boolean tableModified(List<ParquetPath> directories, Path metaFilePath,
+                                Path parentDir,
+                                MetadataContext metaContext)
       throws IOException {
 
     Stopwatch timer = Stopwatch.createStarted();
@@ -629,12 +678,12 @@ public class Metadata {
       timer.stop();
       return true;
     }
-    for (String directory : directories) {
+    for (ParquetPath directory : directories) {
       numDirs++;
       if (metaContext != null) {
-        metaContext.setStatus(directory);
+        metaContext.setStatus(directory.fullPath);
       }
-      directoryStatus = fs.getFileStatus(new Path(directory));
+      directoryStatus = fs.getFileStatus(new Path(directory.fullPath));
       if (directoryStatus.getModificationTime() > metaFileModifyTime) {
         logger.info("Directory {} was modified. Took {} ms to check modification time of {} directories", directoryStatus.getPath().toString(),
             timer.elapsed(TimeUnit.MILLISECONDS),
@@ -656,7 +705,7 @@ public class Metadata {
       })
   public static abstract class ParquetTableMetadataBase {
 
-    @JsonIgnore public abstract List<String> getDirectories();
+    @JsonIgnore public abstract List<ParquetPath> getDirectories();
 
     @JsonIgnore public abstract List<? extends ParquetFileMetadata> getFiles();
 
@@ -680,7 +729,7 @@ public class Metadata {
   }
 
   public static abstract class ParquetFileMetadata {
-    @JsonIgnore public abstract String getPath();
+    @JsonIgnore public abstract ParquetPath getPath();
 
     @JsonIgnore public abstract Long getLength();
 
@@ -734,17 +783,17 @@ public class Metadata {
   }
 
   public static class ParquetTableMetadataDirs {
-    @JsonProperty List<String> directories;
+    @JsonProperty List<ParquetPath> directories;
 
     public ParquetTableMetadataDirs() {
       // default constructor needed for deserialization
     }
 
-    public ParquetTableMetadataDirs(List<String> directories) {
+    public ParquetTableMetadataDirs(List<ParquetPath> directories) {
       this.directories = directories;
     }
 
-    @JsonIgnore public List<String> getDirectories() {
+    @JsonIgnore public List<ParquetPath> getDirectories() {
       return directories;
     }
 
@@ -753,18 +802,18 @@ public class Metadata {
   @JsonTypeName("v1")
   public static class ParquetTableMetadata_v1 extends ParquetTableMetadataBase {
     @JsonProperty List<ParquetFileMetadata_v1> files;
-    @JsonProperty List<String> directories;
+    @JsonProperty List<ParquetPath> directories;
 
     public ParquetTableMetadata_v1() {
       super();
     }
 
-    public ParquetTableMetadata_v1(List<ParquetFileMetadata_v1> files, List<String> directories) {
+    public ParquetTableMetadata_v1(List<ParquetFileMetadata_v1> files, List<ParquetPath> directories) {
       this.files = files;
       this.directories = directories;
     }
 
-    @JsonIgnore @Override public List<String> getDirectories() {
+    @JsonIgnore @Override public List<ParquetPath> getDirectories() {
       return directories;
     }
 
@@ -819,7 +868,10 @@ public class Metadata {
    */
   public static class ParquetFileMetadata_v1 extends ParquetFileMetadata {
     @JsonProperty
-    public String path;
+    /**
+     * The path of the file relative to the directory which contains the metadata file
+     */
+    public ParquetPath path;
     @JsonProperty
     public Long length;
     @JsonProperty
@@ -830,7 +882,7 @@ public class Metadata {
     }
 
     public ParquetFileMetadata_v1(String path, Long length, List<RowGroupMetadata_v1> rowGroups) {
-      this.path = path;
+      this.path = new ParquetPath(path);
       this.length = length;
       this.rowGroups = rowGroups;
     }
@@ -840,7 +892,7 @@ public class Metadata {
       return String.format("path: %s rowGroups: %s", path, rowGroups);
     }
 
-    @JsonIgnore @Override public String getPath() {
+    @JsonIgnore @Override public ParquetPath getPath() {
       return path;
     }
 
@@ -853,6 +905,21 @@ public class Metadata {
     }
   }
 
+
+  /**
+   * A holder for the string that represents a file's path
+   */
+  public static class ParquetPath {
+    public String fullPath;
+
+    public ParquetPath(String fullPath) {
+      this.fullPath = fullPath;
+    }
+
+    public ParquetPath(Path fullPath) {
+      this.fullPath = Path.getPathWithoutSchemeAndAuthority(fullPath).toString();
+    }
+  }
 
   /**
    * A struct that contains the metadata for a parquet row group
@@ -1017,7 +1084,7 @@ public class Metadata {
      */
     @JsonProperty public ConcurrentHashMap<ColumnTypeMetadata_v2.Key, ColumnTypeMetadata_v2> columnTypeInfo;
     @JsonProperty List<ParquetFileMetadata_v2> files;
-    @JsonProperty List<String> directories;
+    @JsonProperty List<ParquetPath> directories;
     @JsonProperty String drillVersion;
 
     public ParquetTableMetadata_v2() {
@@ -1029,14 +1096,14 @@ public class Metadata {
     }
 
     public ParquetTableMetadata_v2(ParquetTableMetadataBase parquetTable,
-        List<ParquetFileMetadata_v2> files, List<String> directories, String drillVersion) {
+                                   List<ParquetFileMetadata_v2> files, List<ParquetPath> directories, String drillVersion) {
       this.files = files;
       this.directories = directories;
       this.columnTypeInfo = ((ParquetTableMetadata_v2) parquetTable).columnTypeInfo;
       this.drillVersion = drillVersion;
     }
 
-    public ParquetTableMetadata_v2(List<ParquetFileMetadata_v2> files, List<String> directories,
+    public ParquetTableMetadata_v2(List<ParquetFileMetadata_v2> files, List<ParquetPath> directories,
         ConcurrentHashMap<ColumnTypeMetadata_v2.Key, ColumnTypeMetadata_v2> columnTypeInfo, String drillVersion) {
       this.files = files;
       this.directories = directories;
@@ -1048,7 +1115,7 @@ public class Metadata {
       return columnTypeInfo.get(new ColumnTypeMetadata_v2.Key(name));
     }
 
-    @JsonIgnore @Override public List<String> getDirectories() {
+    @JsonIgnore @Override public List<ParquetPath> getDirectories() {
       return directories;
     }
 
@@ -1103,7 +1170,7 @@ public class Metadata {
    * Struct which contains the metadata for a single parquet file
    */
   public static class ParquetFileMetadata_v2 extends ParquetFileMetadata {
-    @JsonProperty public String path;
+    @JsonProperty public ParquetPath path;
     @JsonProperty public Long length;
     @JsonProperty public List<RowGroupMetadata_v2> rowGroups;
 
@@ -1111,7 +1178,7 @@ public class Metadata {
       super();
     }
 
-    public ParquetFileMetadata_v2(String path, Long length, List<RowGroupMetadata_v2> rowGroups) {
+    public ParquetFileMetadata_v2(ParquetPath path, Long length, List<RowGroupMetadata_v2> rowGroups) {
       this.path = path;
       this.length = length;
       this.rowGroups = rowGroups;
@@ -1121,7 +1188,7 @@ public class Metadata {
       return String.format("path: %s rowGroups: %s", path, rowGroups);
     }
 
-    @JsonIgnore @Override public String getPath() {
+    @JsonIgnore @Override public ParquetPath getPath() {
       return path;
     }
 
@@ -1369,7 +1436,7 @@ public class Metadata {
      */
     @JsonProperty public ConcurrentHashMap<ColumnTypeMetadata_v3.Key, ColumnTypeMetadata_v3> columnTypeInfo;
     @JsonProperty List<ParquetFileMetadata_v3> files;
-    @JsonProperty List<String> directories;
+    @JsonProperty List<ParquetPath> directories;
     @JsonProperty String drillVersion;
 
     /**
@@ -1389,14 +1456,14 @@ public class Metadata {
     }
 
     public ParquetTableMetadata_v3(ParquetTableMetadataBase parquetTable,
-        List<ParquetFileMetadata_v3> files, List<String> directories, String drillVersion) {
+                                   List<ParquetFileMetadata_v3> files, List<ParquetPath> directories, String drillVersion) {
       this.files = files;
       this.directories = directories;
       this.columnTypeInfo = ((ParquetTableMetadata_v3) parquetTable).columnTypeInfo;
       this.drillVersion = drillVersion;
     }
 
-    public ParquetTableMetadata_v3(List<ParquetFileMetadata_v3> files, List<String> directories,
+    public ParquetTableMetadata_v3(List<ParquetFileMetadata_v3> files, List<ParquetPath> directories,
         ConcurrentHashMap<ColumnTypeMetadata_v3.Key, ColumnTypeMetadata_v3> columnTypeInfo,
         String drillVersion) {
       this.files = files;
@@ -1409,7 +1476,7 @@ public class Metadata {
       return columnTypeInfo.get(new ColumnTypeMetadata_v3.Key(name));
     }
 
-    @JsonIgnore @Override public List<String> getDirectories() {
+    @JsonIgnore @Override public List<ParquetPath> getDirectories() {
       return directories;
     }
 
@@ -1464,7 +1531,7 @@ public class Metadata {
    * Struct which contains the metadata for a single parquet file
    */
   public static class ParquetFileMetadata_v3 extends ParquetFileMetadata {
-    @JsonProperty public String path;
+    @JsonProperty public ParquetPath path;
     @JsonProperty public Long length;
     @JsonProperty public List<RowGroupMetadata_v3> rowGroups;
 
@@ -1472,7 +1539,7 @@ public class Metadata {
       super();
     }
 
-    public ParquetFileMetadata_v3(String path, Long length, List<RowGroupMetadata_v3> rowGroups) {
+    public ParquetFileMetadata_v3(ParquetPath path, Long length, List<RowGroupMetadata_v3> rowGroups) {
       this.path = path;
       this.length = length;
       this.rowGroups = rowGroups;
@@ -1482,7 +1549,7 @@ public class Metadata {
       return String.format("path: %s rowGroups: %s", path, rowGroups);
     }
 
-    @JsonIgnore @Override public String getPath() {
+    @JsonIgnore @Override public ParquetPath getPath() {
       return path;
     }
 

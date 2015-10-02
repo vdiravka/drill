@@ -20,7 +20,6 @@ package org.apache.drill.exec.store.dfs;
 import java.io.IOException;
 import java.net.URI;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import javax.annotation.Nullable;
@@ -31,9 +30,9 @@ import com.google.common.base.Stopwatch;
 import com.google.common.base.Strings;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 
 import org.apache.drill.common.exceptions.DrillRuntimeException;
+import org.apache.drill.exec.store.parquet.Metadata.ParquetPath;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.Path;
 
@@ -336,8 +335,8 @@ public class FileSelection {
     return FileSelection.create(statuses, files, root, null, false);
   }
 
-  public static FileSelection createFromDirectories(final List<String> dirPaths, final FileSelection selection,
-      final String cacheFileRoot) {
+  public static FileSelection createFromDirectories(final List<ParquetPath> dirPaths, final FileSelection selection,
+                                                    final String cacheFileRoot) {
     Stopwatch timer = Stopwatch.createStarted();
     final String root = selection.getSelectionRoot();
     if (Strings.isNullOrEmpty(root)) {
@@ -354,8 +353,8 @@ public class FileSelection {
         dirs.add(status.getPath().toString());
       }
     } else {
-      for (String s : dirPaths) {
-        dirs.add(s);
+      for (ParquetPath dirPath : dirPaths) {
+        dirs.add(dirPath.fullPath);
       }
     }
 

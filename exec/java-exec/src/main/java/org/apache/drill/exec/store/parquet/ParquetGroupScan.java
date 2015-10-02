@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.avro.generic.GenericData;
 import org.apache.drill.common.exceptions.ExecutionSetupException;
 import org.apache.drill.common.exceptions.UserException;
 import org.apache.drill.common.expression.ErrorCollector;
@@ -44,12 +43,10 @@ import org.apache.drill.exec.compile.sig.ConstantExpressionIdentifier;
 import org.apache.drill.exec.expr.ExpressionTreeMaterializer;
 import org.apache.drill.exec.expr.fn.FunctionImplementationRegistry;
 import org.apache.drill.exec.expr.stat.ParquetFilterPredicate;
-import org.apache.drill.exec.ops.OptimizerRulesContext;
 import org.apache.drill.exec.ops.UdfUtilities;
 import org.apache.drill.exec.physical.EndpointAffinity;
 import org.apache.drill.exec.physical.PhysicalOperatorSetupException;
 import org.apache.drill.exec.physical.base.AbstractFileGroupScan;
-import org.apache.drill.exec.physical.base.FileGroupScan;
 import org.apache.drill.exec.physical.base.GroupScan;
 import org.apache.drill.exec.physical.base.PhysicalOperator;
 import org.apache.drill.exec.physical.base.ScanStats;
@@ -58,7 +55,6 @@ import org.apache.drill.exec.planner.physical.PlannerSettings;
 import org.apache.drill.exec.proto.CoordinationProtos.DrillbitEndpoint;
 import org.apache.drill.exec.server.options.OptionManager;
 import org.apache.drill.exec.store.ImplicitColumnExplorer;
-import org.apache.drill.exec.store.ParquetOutputRecordWriter;
 import org.apache.drill.exec.store.StoragePluginRegistry;
 import org.apache.drill.exec.store.dfs.DrillFileSystem;
 import org.apache.drill.exec.store.dfs.DrillPathFilter;
@@ -657,21 +653,21 @@ public class ParquetGroupScan extends AbstractFileGroupScan {
     if (fileStatuses.size() == 1 && selection.getSelectionRoot().equals(first.toString())) {
       // we are selecting all files from selection root. Expand the file list from the cache
       for (Metadata.ParquetFileMetadata file : parquetTableMetadata.getFiles()) {
-        fileSet.add(file.getPath());
+        fileSet.add(file.getPath().fullPath);
       }
 
     } else if (selection.isExpandedPartial() && !selection.hadWildcard() &&
         cacheFileRoot != null) {
       if (selection.wasAllPartitionsPruned()) {
         // if all partitions were previously pruned, we only need to read 1 file (for the schema)
-        fileSet.add(this.parquetTableMetadata.getFiles().get(0).getPath());
+        fileSet.add(this.parquetTableMetadata.getFiles().get(0).getPath().fullPath);
       } else {
         // we are here if the selection is in the expanded_partial state (i.e it has directories).  We get the
         // list of files from the metadata cache file that is present in the cacheFileRoot directory and populate
         // the fileSet. However, this is *not* the final list of files that will be scanned in execution since the
         // second phase of partition pruning will apply on the files and modify the file selection appropriately.
         for (Metadata.ParquetFileMetadata file : this.parquetTableMetadata.getFiles()) {
-          fileSet.add(file.getPath());
+          fileSet.add(file.getPath().fullPath);
         }
       }
     } else {
@@ -682,7 +678,7 @@ public class ParquetGroupScan extends AbstractFileGroupScan {
           final Path metaPath = new Path(status.getPath(), Metadata.METADATA_FILENAME);
           final Metadata.ParquetTableMetadataBase metadata = Metadata.readBlockMeta(fs, metaPath.toString(), selection.getMetaContext(), formatConfig);
           for (Metadata.ParquetFileMetadata file : metadata.getFiles()) {
-            fileSet.add(file.getPath());
+            fileSet.add(file.getPath().fullPath);
           }
         } else {
           final Path path = Path.getPathWithoutSchemeAndAuthority(status.getPath());
@@ -755,7 +751,7 @@ public class ParquetGroupScan extends AbstractFileGroupScan {
     if (fileSet == null) {
       fileSet = Sets.newHashSet();
       for (ParquetFileMetadata file : parquetTableMetadata.getFiles()) {
-        fileSet.add(file.getPath());
+        fileSet.add(file.getPath().fullPath);
       }
     }
 
@@ -770,7 +766,7 @@ public class ParquetGroupScan extends AbstractFileGroupScan {
       int rgIndex = 0;
       for (RowGroupMetadata rg : file.getRowGroups()) {
         RowGroupInfo rowGroupInfo =
-            new RowGroupInfo(file.getPath(), rg.getStart(), rg.getLength(), rgIndex, rg.getRowCount());
+            new RowGroupInfo(file.getPath().fullPath, rg.getStart(), rg.getLength(), rgIndex, rg.getRowCount());
         EndpointByteMap endpointByteMap = new EndpointByteMapImpl();
         for (String host : rg.getHostAffinity().keySet()) {
           if (hostEndpointMap.containsKey(host)) {
@@ -812,10 +808,10 @@ public class ParquetGroupScan extends AbstractFileGroupScan {
           }
           boolean partitionColumn = checkForPartitionColumn(column, first);
           if (partitionColumn) {
-            Map<SchemaPath, Object> map = partitionValueMap.get(file.getPath());
+            Map<SchemaPath,Object> map = partitionValueMap.get(file.getPath().fullPath);
             if (map == null) {
               map = Maps.newHashMap();
-              partitionValueMap.put(file.getPath(), map);
+              partitionValueMap.put(file.getPath().fullPath, map);
             }
             Object value = map.get(schemaPath);
             Object currentValue = column.getMaxValue();
@@ -839,7 +835,7 @@ public class ParquetGroupScan extends AbstractFileGroupScan {
   private ParquetTableMetadataBase removeUnneededRowGroups(ParquetTableMetadataBase parquetTableMetadata) {
     List<ParquetFileMetadata> newFileMetadataList = Lists.newArrayList();
     for (ParquetFileMetadata file : parquetTableMetadata.getFiles()) {
-      if (fileSet.contains(file.getPath())) {
+      if (fileSet.contains(file.getPath().fullPath)) {
         newFileMetadataList.add(file);
       }
     }
@@ -1079,7 +1075,7 @@ public class ParquetGroupScan extends AbstractFileGroupScan {
 
     for (ParquetFileMetadata file : parquetTableMetadata.getFiles()) {
       final ImplicitColumnExplorer columnExplorer = new ImplicitColumnExplorer(optionManager, this.columns);
-      Map<String, String> implicitColValues = columnExplorer.populateImplicitColumns(file.getPath(), selectionRoot);
+      Map<String, String> implicitColValues = columnExplorer.populateImplicitColumns(file.getPath().fullPath, selectionRoot);
 
       for (RowGroupMetadata rowGroup : file.getRowGroups()) {
         ParquetMetaStatCollector statCollector = new ParquetMetaStatCollector(
@@ -1115,7 +1111,7 @@ public class ParquetGroupScan extends AbstractFileGroupScan {
         }
 
         qualifiedRGs.add(rowGroup);
-        qualifiedFileNames.add(file.getPath());  // TODO : optimize when 1 file contains m row groups.
+        qualifiedFileNames.add(file.getPath().fullPath);  // TODO : optimize when 1 file contains m row groups.
       }
     }
 
