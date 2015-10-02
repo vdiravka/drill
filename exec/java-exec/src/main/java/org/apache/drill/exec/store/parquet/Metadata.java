@@ -61,6 +61,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonGenerator.Feature;
 import com.fasterxml.jackson.core.JsonParser;
@@ -75,7 +76,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
+import com.google.common.base.Preconditions;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -526,6 +529,48 @@ public class Metadata {
   }
 
   /**
+   * Serialier for ParquetFilePath. Writes the path relative to the root path
+   */
+  private static class ParquetFilePathSerializer extends StdSerializer<ParquetFilePath> {
+    private String rootPath;
+
+    ParquetFilePathSerializer(String rootPath) {
+      super(ParquetFilePath.class);
+      this.rootPath = rootPath;
+    }
+
+    @Override
+    public void serialize(ParquetFilePath parquetFilePath, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException, JsonGenerationException {
+      Preconditions.checkState(parquetFilePath.fullPath.startsWith(rootPath), String.format("Path %s is not a subpath of %s", parquetFilePath.fullPath, rootPath));
+      String relativePath = parquetFilePath.fullPath.replaceFirst(rootPath, "");
+      while (relativePath.charAt(0) == '/') {
+        relativePath = relativePath.substring(1);
+      }
+      jsonGenerator.writeString(relativePath);
+    }
+  }
+
+  /**
+   * Deserializer for ParquetFilePath. The full path is constructed from the relative path and resolving relative to the
+   * root path.
+   */
+  private static class ParquetFilePathDeserializer extends StdDeserializer<ParquetFilePath> {
+    private String rootPath;
+
+    ParquetFilePathDeserializer(String rootPath) {
+      super(ParquetFilePath.class);
+      this.rootPath = rootPath;
+    }
+
+    @Override
+    public ParquetFilePath deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
+      String relativePath = jsonParser.getText();
+      String fullPath = Path.getPathWithoutSchemeAndAuthority(new Path(rootPath, relativePath)).toString();
+      return new ParquetFilePath(fullPath);
+    }
+  }
+
+  /**
    * Read the parquet metadata from a file
    *
    * @param path
@@ -853,6 +898,21 @@ public class Metadata {
     }
   }
 
+
+  /**
+   * A holder for the string that represents a file's path
+   */
+  public static class ParquetFilePath {
+    public String fullPath;
+
+    public ParquetFilePath(String fullPath) {
+      this.fullPath = fullPath;
+    }
+
+    public ParquetFilePath(Path fullPath) {
+      this.fullPath = Path.getPathWithoutSchemeAndAuthority(fullPath).toString();
+    }
+  }
 
   /**
    * A struct that contains the metadata for a parquet row group
