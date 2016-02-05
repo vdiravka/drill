@@ -258,7 +258,7 @@ public class UnionFunctions {
     }
   }
 
-  @FunctionTemplate(names = {"isnotnull", "is not null"}, scope = FunctionTemplate.FunctionScope.SIMPLE, nulls = FunctionTemplate.NullHandling.INTERNAL)
+  @FunctionTemplate(names = {"isnotnull", "is_not_null"}, scope = FunctionTemplate.FunctionScope.SIMPLE, nulls = FunctionTemplate.NullHandling.INTERNAL)
   public static class IsNotNull implements DrillSimpleFunc {
 
     @Param UnionHolder input;
@@ -271,7 +271,7 @@ public class UnionFunctions {
     }
   }
 
-  @FunctionTemplate(names = {"isnull", "is null"}, scope = FunctionTemplate.FunctionScope.SIMPLE, nulls = FunctionTemplate.NullHandling.INTERNAL)
+  @FunctionTemplate(names = {"isnull", "is_null"}, scope = FunctionTemplate.FunctionScope.SIMPLE, nulls = FunctionTemplate.NullHandling.INTERNAL)
   public static class IsNull implements DrillSimpleFunc {
 
     @Param UnionHolder input;

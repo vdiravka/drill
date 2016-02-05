@@ -872,7 +872,7 @@ public class ${type.name}Functions {
 
     <#-- Comparison function for comparison expression operator (=, &lt;, etc.),
          not for sorting and grouping relational operators.) -->
-    @FunctionTemplate(name = "less than",
+    @FunctionTemplate(name = "less_than",
                       scope = FunctionTemplate.FunctionScope.DECIMAL_MAX_SCALE,
                       nulls = NullHandling.NULL_IF_NULL)
     public static class ${type.name}LessThan implements DrillSimpleFunc {
@@ -894,7 +894,7 @@ public class ${type.name}Functions {
     // elsewhere there are underlines.  Are things being looked up correctly?
     <#-- Comparison function for comparison expression operator (=, &lt;, etc.),
          not for sorting and grouping relational operators.) -->
-    @FunctionTemplate(name = "less than or equal to",
+    @FunctionTemplate(name = "less_than_or_equal_to",
                       scope = FunctionTemplate.FunctionScope.DECIMAL_MAX_SCALE,
                       nulls = NullHandling.NULL_IF_NULL)
     public static class ${type.name}LessThanEq implements DrillSimpleFunc {
@@ -914,7 +914,7 @@ public class ${type.name}Functions {
 
     <#-- Comparison function for comparison expression operator (=, &lt;, etc.),
          not for sorting and grouping relational operators.) -->
-    @FunctionTemplate(name = "greater than",
+    @FunctionTemplate(name = "greater_than",
                       scope = FunctionTemplate.FunctionScope.DECIMAL_MAX_SCALE,
                       nulls = NullHandling.NULL_IF_NULL)
     public static class ${type.name}GreaterThan implements DrillSimpleFunc {
@@ -934,7 +934,7 @@ public class ${type.name}Functions {
 
     <#-- Comparison function for comparison expression operator (=, &lt;, etc.),
          not for sorting and grouping relational operators.) -->
-    @FunctionTemplate(name = "greater than or equal to",
+    @FunctionTemplate(name = "greater_than_or_equal_to",
                       scope = FunctionTemplate.FunctionScope.DECIMAL_MAX_SCALE,
                       nulls = NullHandling.NULL_IF_NULL)
     public static class ${type.name}GreaterThanEq implements DrillSimpleFunc {
@@ -974,7 +974,7 @@ public class ${type.name}Functions {
 
     <#-- Comparison function for comparison expression operator (=, &lt;, etc.),
          not for sorting and grouping relational operators.) -->
-    @FunctionTemplate(name = "not equal",
+    @FunctionTemplate(name = "not_equal",
                       scope = FunctionTemplate.FunctionScope.DECIMAL_MAX_SCALE,
                       nulls = NullHandling.NULL_IF_NULL)
     public static class ${type.name}NotEqual implements DrillSimpleFunc {
@@ -1075,7 +1075,7 @@ public class ${type.name}Functions {
 
     <#-- Comparison function for comparison expression operator (=, &lt;, etc.),
          not for sorting and grouping relational operators.) -->
-    @FunctionTemplate(name = "less than",
+    @FunctionTemplate(name = "less_than",
                       scope = FunctionTemplate.FunctionScope.DECIMAL_MAX_SCALE,
                       nulls = NullHandling.NULL_IF_NULL)
     public static class ${type.name}LessThan implements DrillSimpleFunc {
@@ -1093,7 +1093,7 @@ public class ${type.name}Functions {
 
     <#-- Comparison function for comparison expression operator (=, &lt;, etc.),
          not for sorting and grouping relational operators.) -->
-    @FunctionTemplate(name = "less than or equal to",
+    @FunctionTemplate(name = "less_than_or_equal_to",
                       scope = FunctionTemplate.FunctionScope.DECIMAL_MAX_SCALE,
                       nulls = NullHandling.NULL_IF_NULL)
     public static class ${type.name}LessThanEq implements DrillSimpleFunc {
@@ -1111,7 +1111,7 @@ public class ${type.name}Functions {
 
     <#-- Comparison function for comparison expression operator (=, &lt;, etc.),
          not for sorting and grouping relational operators.) -->
-    @FunctionTemplate(name = "greater than",
+    @FunctionTemplate(name = "greater_than",
                       scope = FunctionTemplate.FunctionScope.DECIMAL_MAX_SCALE,
                       nulls = NullHandling.NULL_IF_NULL)
     public static class ${type.name}GreaterThan implements DrillSimpleFunc {
@@ -1129,7 +1129,7 @@ public class ${type.name}Functions {
 
     <#-- Comparison function for comparison expression operator (=, &lt;, etc.),
          not for sorting and grouping relational operators.) -->
-    @FunctionTemplate(name = "greater than or equal to",
+    @FunctionTemplate(name = "greater_than_or_equal_to",
                       scope = FunctionTemplate.FunctionScope.DECIMAL_MAX_SCALE,
                       nulls = NullHandling.NULL_IF_NULL)
     public static class ${type.name}GreaterThanEq implements DrillSimpleFunc {
@@ -1166,7 +1166,7 @@ public class ${type.name}Functions {
 
     <#-- Comparison function for comparison expression operator (=, &lt;, etc.),
          not for sorting and grouping relational operators.) -->
-    @FunctionTemplate(name = "not equal",
+    @FunctionTemplate(name = "not_equal",
                       scope = FunctionTemplate.FunctionScope.DECIMAL_MAX_SCALE,
                       nulls = NullHandling.NULL_IF_NULL)
     public static class ${type.name}NotEqual implements DrillSimpleFunc {
@@ -1619,7 +1619,7 @@ public class ${type.name}Functions {
 
     <#-- Comparison function for comparison expression operator (=, &lt;, etc.),
          not for sorting and grouping relational operators.) -->
-    @FunctionTemplate(name = "less than",
+    @FunctionTemplate(name = "less_than",
                       scope = FunctionTemplate.FunctionScope.DECIMAL_MAX_SCALE,
                       nulls = NullHandling.NULL_IF_NULL)
     public static class ${type.name}LessThan implements DrillSimpleFunc {
@@ -1637,7 +1637,7 @@ public class ${type.name}Functions {
 
      <#-- Comparison function for comparison expression operator (=, &lt;, etc.),
           not for sorting and grouping relational operators.) -->
-    @FunctionTemplate(name = "less than or equal to",
+    @FunctionTemplate(name = "less_than_or_equal_to",
                       scope = FunctionTemplate.FunctionScope.DECIMAL_MAX_SCALE,
                       nulls = NullHandling.NULL_IF_NULL)
     public static class ${type.name}LessThanEq implements DrillSimpleFunc {
@@ -1655,7 +1655,7 @@ public class ${type.name}Functions {
 
      <#-- Comparison function for comparison expression operator (=, &lt;, etc.),
           not for sorting and grouping relational operators.) -->
-    @FunctionTemplate(name = "greater than",
+    @FunctionTemplate(name = "greater_than",
                       scope = FunctionTemplate.FunctionScope.DECIMAL_MAX_SCALE,
                       nulls = NullHandling.NULL_IF_NULL)
     public static class ${type.name}GreaterThan implements DrillSimpleFunc {
@@ -1673,7 +1673,7 @@ public class ${type.name}Functions {
 
      <#-- Comparison function for comparison expression operator (=, &lt;, etc.),
           not for sorting and grouping relational operators.) -->
-    @FunctionTemplate(name = "greater than or equal to",
+    @FunctionTemplate(name = "greater_than_or_equal_to",
                       scope = FunctionTemplate.FunctionScope.DECIMAL_MAX_SCALE,
                       nulls = NullHandling.NULL_IF_NULL)
     public static class ${type.name}GreaterThanEq implements DrillSimpleFunc {
@@ -1710,7 +1710,7 @@ public class ${type.name}Functions {
 
      <#-- Comparison function for comparison expression operator (=, &lt;, etc.),
           not for sorting and grouping relational operators.) -->
-    @FunctionTemplate(name = "not equal",
+    @FunctionTemplate(name = "not_equal",
                       scope = FunctionTemplate.FunctionScope.DECIMAL_MAX_SCALE,
                       nulls = NullHandling.NULL_IF_NULL)
     public static class ${type.name}NotEqual implements DrillSimpleFunc {

@@ -27,7 +27,7 @@ import org.apache.drill.exec.expr.holders.NullableBitHolder;
 
 public class IsNotTrue {
 
-  @FunctionTemplate(names = {"isnottrue", "is not true"}, scope = FunctionTemplate.FunctionScope.SIMPLE, nulls = FunctionTemplate.NullHandling.INTERNAL)
+  @FunctionTemplate(names = {"isnottrue", "is_not_true"}, scope = FunctionTemplate.FunctionScope.SIMPLE, nulls = FunctionTemplate.NullHandling.INTERNAL)
   public static class Optional implements DrillSimpleFunc {
 
     @Param NullableBitHolder in;
@@ -44,7 +44,7 @@ public class IsNotTrue {
     }
   }
 
-  @FunctionTemplate(names = {"isnottrue", "is not true"}, scope = FunctionTemplate.FunctionScope.SIMPLE, nulls = FunctionTemplate.NullHandling.INTERNAL)
+  @FunctionTemplate(names = {"isnottrue", "is_not_true"}, scope = FunctionTemplate.FunctionScope.SIMPLE, nulls = FunctionTemplate.NullHandling.INTERNAL)
   public static class Required implements DrillSimpleFunc {
 
     @Param BitHolder in;

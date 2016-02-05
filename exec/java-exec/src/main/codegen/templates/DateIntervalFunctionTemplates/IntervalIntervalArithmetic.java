@@ -92,7 +92,7 @@ public class ${intervaltype}Functions {
         }
     }
     @SuppressWarnings("unused")
-    @FunctionTemplate(names = {"negative", "u-", "-"}, scope = FunctionTemplate.FunctionScope.SIMPLE, nulls=NullHandling.NULL_IF_NULL)
+    @FunctionTemplate(name = "negative", scope = FunctionTemplate.FunctionScope.SIMPLE, nulls=NullHandling.NULL_IF_NULL)
     public static class ${intervaltype}NegateFunction implements DrillSimpleFunc {
     @Param ${intervaltype}Holder left;
     @Output ${intervaltype}Holder out;

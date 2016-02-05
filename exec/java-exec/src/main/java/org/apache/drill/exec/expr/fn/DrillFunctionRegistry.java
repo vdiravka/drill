@@ -24,6 +24,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import org.apache.calcite.sql.SqlOperator;
 import org.apache.drill.common.scanner.persistence.AnnotatedClassDescriptor;
@@ -38,6 +39,15 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Sets;
 
 public class DrillFunctionRegistry {
+
+  /*
+   * As a convention drill function names shouldn't have space or special
+   * characters in them. '$' is used for some internal functions by Optiq
+   * and we use '_' instead of space for multi word functions
+   */
+  private static final String patterString = "^[\\$a-z0-9_]*$";
+  private static final Pattern pattern = Pattern.compile(patterString);
+
   static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(DrillFunctionRegistry.class);
 
   private ArrayListMultimap<String, DrillFuncHolder> methods = ArrayListMultimap.create();
@@ -64,6 +74,13 @@ public class DrillFunctionRegistry {
         }
         for (String name : names) {
           String functionName = name.toLowerCase();
+          // Dont allow function names with special characters
+          if (!pattern.matcher(functionName).matches()) {
+            throw new AssertionError(String.format("Drill does not allow function with spaces. Func name: %s, " +
+                "Class name: %s ", functionName
+                , func.getClassName()
+            ));
+          }
           methods.put(functionName, holder);
           String functionSignature = functionName + functionInput;
           String existingImplementation;

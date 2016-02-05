@@ -35,7 +35,7 @@ public class MathFunctions{
 
   private MathFunctions(){}
 
-  @FunctionTemplate(names = {"negative", "u-", "-"}, scope = FunctionScope.SIMPLE, nulls = NullHandling.NULL_IF_NULL)
+  @FunctionTemplate(name = "negative", scope = FunctionScope.SIMPLE, nulls = NullHandling.NULL_IF_NULL)
   public static class Negative implements DrillSimpleFunc{
 
     @Param BigIntHolder input;

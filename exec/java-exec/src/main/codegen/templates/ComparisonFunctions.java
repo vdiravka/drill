@@ -222,7 +222,7 @@ public class GCompare${leftTypeBase}Vs${rightTypeBase} {
 
   <#-- Comparison function for comparison expression operator (=, &lt;, etc.),
        not for sorting and grouping relational operators. -->
-  @FunctionTemplate(names = {"less_than", "<"},
+  @FunctionTemplate(name = "less_than",
                     scope = FunctionTemplate.FunctionScope.SIMPLE,
                     nulls = NullHandling.NULL_IF_NULL)
   public static class LessThan${leftTypeBase}Vs${rightTypeBase} implements DrillSimpleFunc {
@@ -253,7 +253,7 @@ public class GCompare${leftTypeBase}Vs${rightTypeBase} {
 
   <#-- Comparison function for comparison expression operator (=, &lt;, etc.),
        not for sorting and grouping relational operators. -->
-  @FunctionTemplate(names = {"less_than_or_equal_to", "<="},
+  @FunctionTemplate(name = "less_than_or_equal_to",
                     scope = FunctionTemplate.FunctionScope.SIMPLE,
                     nulls = NullHandling.NULL_IF_NULL)
   public static class LessThanEq${leftTypeBase}Vs${rightTypeBase} implements DrillSimpleFunc {
@@ -284,7 +284,7 @@ public class GCompare${leftTypeBase}Vs${rightTypeBase} {
 
   <#-- Comparison function for comparison expression operator (=, &lt;, etc.),
        not for sorting and grouping relational operators. -->
-  @FunctionTemplate(names = {"greater_than", ">"},
+  @FunctionTemplate(name = "greater_than",
                     scope = FunctionTemplate.FunctionScope.SIMPLE,
                     nulls = NullHandling.NULL_IF_NULL)
   public static class GreaterThan${leftTypeBase}Vs${rightTypeBase} implements DrillSimpleFunc {
@@ -315,7 +315,7 @@ public class GCompare${leftTypeBase}Vs${rightTypeBase} {
 
   <#-- Comparison function for comparison expression operator (=, &lt;, etc.),
        not for sorting and grouping relational operators. -->
-  @FunctionTemplate(names = {"greater_than_or_equal_to", ">="},
+  @FunctionTemplate(name = "greater_than_or_equal_to",
                     scope = FunctionTemplate.FunctionScope.SIMPLE,
                     nulls = NullHandling.NULL_IF_NULL)
   public static class GreaterThanEq${leftTypeBase}Vs${rightTypeBase} implements DrillSimpleFunc {
@@ -346,7 +346,7 @@ public class GCompare${leftTypeBase}Vs${rightTypeBase} {
 
   <#-- Comparison function for comparison expression operator (=, &lt;, etc.),
        not for sorting and grouping relational operators. -->
-  @FunctionTemplate(names = {"equal", "==", "="},
+  @FunctionTemplate(name = "equal",
                     scope = FunctionTemplate.FunctionScope.SIMPLE,
                     nulls = NullHandling.NULL_IF_NULL)
   public static class Equals${leftTypeBase}Vs${rightTypeBase} implements DrillSimpleFunc {
@@ -379,7 +379,7 @@ public class GCompare${leftTypeBase}Vs${rightTypeBase} {
 
   <#-- Comparison function for comparison expression operator (=, &lt;, etc.),
        not for sorting and grouping relational operators. -->
-  @FunctionTemplate(names = {"not_equal", "<>", "!="},
+  @FunctionTemplate(name = "not_equal",
                     scope = FunctionTemplate.FunctionScope.SIMPLE,
                     nulls = NullHandling.NULL_IF_NULL)
   public static class NotEquals${leftTypeBase}Vs${rightTypeBase} implements DrillSimpleFunc {
