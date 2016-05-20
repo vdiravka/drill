@@ -105,6 +105,8 @@ public class PlannerSettings implements Context{
   public static final PositiveLongValidator PARQUET_ROWGROUP_FILTER_PUSHDOWN_PLANNING_THRESHOLD = new PositiveLongValidator(PARQUET_ROWGROUP_FILTER_PUSHDOWN_PLANNING_THRESHOLD_KEY,
       Long.MAX_VALUE, 10000);
 
+  public static final String ANSI_QUOTES_KEY = "planner.parser.ansi_quotes";
+  public static final BooleanValidator ANSI_QUOTES = new BooleanValidator(ANSI_QUOTES_KEY, false);
 
   public OptionManager options = null;
   public FunctionImplementationRegistry functionImplementationRegistry = null;
@@ -260,6 +262,10 @@ public class PlannerSettings implements Context{
 
   public long getParquetRowGroupFilterPushDownThreshold() {
     return options.getOption(PARQUET_ROWGROUP_FILTER_PUSHDOWN_PLANNING_THRESHOLD);
+  }
+
+  public boolean isAnsiQuotesEnabled() {
+    return options.getOption(ANSI_QUOTES);
   }
 
   @Override

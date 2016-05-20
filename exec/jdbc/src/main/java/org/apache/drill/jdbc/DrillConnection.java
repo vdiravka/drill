@@ -213,4 +213,5 @@ public interface DrillConnection extends Connection {
 
   DrillClient getClient();
 
+  boolean useAnsiQuotedIdentifiers() throws SQLException;
 }

@@ -17,6 +17,7 @@
  */
 package org.apache.drill.jdbc;
 
+import org.apache.calcite.avatica.util.Quoting;
 import org.apache.drill.jdbc.Driver;
 
 import static org.hamcrest.CoreMatchers.*;
@@ -29,6 +30,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -330,6 +332,13 @@ public class ConnectionTest extends JdbcTestBase {
                                          containsString( "Executor" ) ) );
       throw e;
     }
+  }
+
+  @Test
+  public void testSettingAnsiQuotesViaJdbcString() throws SQLException {
+    Connection connection = DriverManager.getConnection( "jdbc:drill:zk=local;ansi_quotes=true" );
+    DatabaseMetaData dbmd = connection.getMetaData();
+    assertThat(dbmd.getIdentifierQuoteString(), equalTo(Quoting.DOUBLE_QUOTE.string));
   }
 
 }

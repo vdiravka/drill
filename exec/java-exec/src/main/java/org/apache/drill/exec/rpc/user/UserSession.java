@@ -36,12 +36,14 @@ import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.schema.Table;
 import org.apache.calcite.tools.ValidationException;
 import org.apache.drill.common.config.DrillConfig;
+import org.apache.drill.exec.planner.physical.PlannerSettings;
 import org.apache.drill.exec.planner.sql.SchemaUtilites;
 import org.apache.drill.exec.planner.sql.handlers.SqlHandlerUtil;
 import org.apache.drill.exec.proto.UserBitShared.UserCredentials;
 import org.apache.drill.exec.proto.UserProtos.Property;
 import org.apache.drill.exec.proto.UserProtos.UserProperties;
 import org.apache.drill.exec.server.options.OptionManager;
+import org.apache.drill.exec.server.options.OptionValue;
 import org.apache.drill.exec.server.options.SessionOptionManager;
 
 import com.google.common.collect.Maps;
@@ -59,9 +61,11 @@ public class UserSession implements Closeable {
   public static final String USER = "user";
   public static final String PASSWORD = "password";
   public static final String IMPERSONATION_TARGET = "impersonation_target";
+  public static final String ANSI_QUOTES = "ansi_quotes";
 
   // known property names in lower case
-  private static final Set<String> knownProperties = ImmutableSet.of(SCHEMA, USER, PASSWORD, IMPERSONATION_TARGET);
+  private static final Set<String> knownProperties =
+      ImmutableSet.of(SCHEMA, USER, PASSWORD, IMPERSONATION_TARGET, ANSI_QUOTES);
 
   private boolean supportComplexTypes = false;
   private UserCredentials credentials;
@@ -141,9 +145,19 @@ public class UserSession implements Closeable {
     }
 
     public UserSession build() {
+      setAnsiQuotesIfNeeded();
       UserSession session = userSession;
       userSession = null;
       return session;
+    }
+
+    private void setAnsiQuotesIfNeeded() {
+      if (userSession.sessionOptions != null && userSession.properties != null
+          && userSession.properties.get(ANSI_QUOTES) != null) {
+        OptionValue optionValue = OptionValue.createOption(OptionValue.Kind.BOOLEAN,
+            OptionValue.OptionType.SESSION, PlannerSettings.ANSI_QUOTES_KEY, userSession.properties.get(ANSI_QUOTES));
+        userSession.sessionOptions.setOption(optionValue);
+      }
     }
 
     Builder() {

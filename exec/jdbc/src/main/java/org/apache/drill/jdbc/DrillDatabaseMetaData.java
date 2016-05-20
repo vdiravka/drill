@@ -81,12 +81,13 @@ public interface DrillDatabaseMetaData extends DatabaseMetaData {
   //  storesMixedCaseQuotedIdentifiers()
 
 
-  // TODO(DRILL-3510):  Update when Drill accepts standard SQL's double quote.
   /**
    * <strong>Drill</strong>:
-   * Reports that the SQL identifier quoting character is the back-quote
+   * Reports that the SQL identifier quoting character by default is the back-quote
    * character ("{@code `}"; Unicode U+0060; "GRAVE ACCENT").
-   * @return "{@code `}"
+   * If system or session option "{@code parser.ansi_quotes}" is enabled then the SQL identifier
+   * quoting character is the double-quote character ("{@code "}"; Unicode U+0022; 'QUOTATION MARK').
+   * @return "{@code `}" or "{@code "}"
    */
   @Override
   String getIdentifierQuoteString() throws SQLException;

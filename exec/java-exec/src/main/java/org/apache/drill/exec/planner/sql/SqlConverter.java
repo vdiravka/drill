@@ -27,6 +27,7 @@ import org.apache.calcite.adapter.java.JavaTypeFactory;
 import org.apache.calcite.avatica.util.Casing;
 import org.apache.calcite.avatica.util.Quoting;
 import org.apache.calcite.jdbc.CalciteSchema;
+import org.apache.calcite.config.Lex;
 import org.apache.calcite.jdbc.CalciteSchemaImpl;
 import org.apache.calcite.jdbc.JavaTypeFactoryImpl;
 import org.apache.calcite.plan.ConventionTraitDef;
@@ -86,8 +87,8 @@ public class SqlConverter {
   private static DrillTypeSystem DRILL_TYPE_SYSTEM = new DrillTypeSystem();
 
   private final JavaTypeFactory typeFactory;
-  private final SqlParser.Config parserConfig;
   // Allow the default config to be modified using immutable configs
+  private SqlParser.Config parserConfig;
   private SqlToRelConverter.Config sqlToRelConverterConfig;
   private final DrillCalciteCatalogReader catalog;
   private final PlannerSettings settings;
@@ -105,13 +106,19 @@ public class SqlConverter {
 
   private String sql;
   private VolcanoPlanner planner;
+  private Lex lex;
 
 
   public SqlConverter(QueryContext context) {
     this.settings = context.getPlannerSettings();
     this.util = (UdfUtilities) context;
     this.functions = context.getFunctionRegistry();
-    this.parserConfig = new ParserConfig();
+    this.lex = settings.isAnsiQuotesEnabled() ? Lex.MYSQL_ANSI : Lex.MYSQL;
+    this.parserConfig = SqlParser.configBuilder()
+        .setIdentifierMaxLength((int) this.settings.getIdentifierMaxLength())
+        .setLex(lex)
+        .setParserFactory(DrillParserWithCompoundIdConverter.FACTORY)
+        .build();
     this.sqlToRelConverterConfig = new SqlToRelConverterConfig();
     this.isInnerQuery = false;
     this.typeFactory = new JavaTypeFactoryImpl(DRILL_TYPE_SYSTEM);
@@ -161,6 +168,19 @@ public class SqlConverter {
       SqlParser parser = SqlParser.create(sql, parserConfig);
       return parser.parseStmt();
     } catch (SqlParseException e) {
+
+      // Attempt to use default back_tick quote character for identifiers when
+      // ANSI_QUOTES option is enabled and parsing with double quotes throws an exception
+      if (settings.isAnsiQuotesEnabled()) {
+        parserConfig = new DrillParserConfig();
+        try {
+          SqlParser parser = SqlParser.create(sql, parserConfig);
+          return parser.parseStmt();
+        } catch (SqlParseException e1) {
+          // Since back_tick also doesn't work proceed with original "e" exception
+        }
+      }
+
       UserException.Builder builder = UserException
           .parseError(e)
           .addContext("SQL Query", formatSQLParsingError(sql, e.getPos()));
@@ -341,7 +361,7 @@ public class SqlConverter {
 
   }
 
-  private class ParserConfig implements SqlParser.Config {
+  private class DrillParserConfig implements SqlParser.Config {
 
     final long identifierMaxLength = settings.getIdentifierMaxLength();
 
