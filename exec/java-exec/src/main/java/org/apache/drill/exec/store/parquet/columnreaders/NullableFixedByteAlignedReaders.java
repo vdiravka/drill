@@ -44,6 +44,7 @@ import org.apache.parquet.column.ColumnDescriptor;
 import org.apache.parquet.format.SchemaElement;
 import org.apache.parquet.hadoop.metadata.ColumnChunkMetaData;
 import org.apache.parquet.io.api.Binary;
+import org.joda.time.DateTimeConstants;
 import org.joda.time.DateTimeUtils;
 
 import io.netty.buffer.DrillBuf;
@@ -328,7 +329,11 @@ public class NullableFixedByteAlignedReaders {
         intValue = readIntLittleEndian(bytebuf, start);
       }
 
-      valueVec.getMutator().set(index, DateTimeUtils.fromJulianDay(intValue - ParquetOutputRecordWriter.JULIAN_DAY_EPOC - 0.5));
+      if (intValue < ParquetOutputRecordWriter.CORUPTED_DATE_SHIFT) {
+        valueVec.getMutator().set(index, intValue * (long) DateTimeConstants.MILLIS_PER_DAY);
+      } else {
+        valueVec.getMutator().set(index, DateTimeUtils.fromJulianDay(intValue - ParquetOutputRecordWriter.JULIAN_DAY_EPOC - 0.5));
+      }
     }
 
   }

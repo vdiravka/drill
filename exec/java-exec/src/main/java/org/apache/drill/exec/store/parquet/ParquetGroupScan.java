@@ -82,6 +82,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.parquet.io.api.Binary;
 import org.apache.parquet.schema.OriginalType;
 import org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName;
+import org.joda.time.DateTimeConstants;
 import org.joda.time.DateTimeUtils;
 
 import com.fasterxml.jackson.annotation.JacksonInject;
@@ -467,7 +468,11 @@ public class ParquetGroupScan extends AbstractFileGroupScan {
       case DATE: {
         NullableDateVector dateVector = (NullableDateVector) v;
         Integer value = (Integer) partitionValueMap.get(f).get(column);
-        dateVector.getMutator().setSafe(index, DateTimeUtils.fromJulianDay(value - ParquetOutputRecordWriter.JULIAN_DAY_EPOC - 0.5));
+        if (value < ParquetOutputRecordWriter.CORUPTED_DATE_SHIFT) {
+          dateVector.getMutator().setSafe(index, value * (long) DateTimeConstants.MILLIS_PER_DAY);
+        } else {
+          dateVector.getMutator().setSafe(index, DateTimeUtils.fromJulianDay(value - ParquetOutputRecordWriter.JULIAN_DAY_EPOC - 0.5));
+        }
         return;
       }
       case TIME: {
