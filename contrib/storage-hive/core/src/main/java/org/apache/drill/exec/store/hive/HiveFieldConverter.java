@@ -23,6 +23,7 @@ import org.apache.drill.exec.expr.holders.Decimal18Holder;
 import org.apache.drill.exec.expr.holders.Decimal28SparseHolder;
 import org.apache.drill.exec.expr.holders.Decimal38SparseHolder;
 import org.apache.drill.exec.expr.holders.Decimal9Holder;
+import org.apache.drill.exec.expr.holders.NullableUInt4Holder;
 import org.apache.drill.exec.ops.FragmentContext;
 import org.apache.drill.exec.util.DecimalUtility;
 import org.apache.drill.exec.vector.NullableBigIntVector;
@@ -39,7 +40,10 @@ import org.apache.drill.exec.vector.NullableTimeStampVector;
 import org.apache.drill.exec.vector.NullableVarBinaryVector;
 import org.apache.drill.exec.vector.NullableVarCharVector;
 import org.apache.drill.exec.vector.ValueVector;
+import org.apache.drill.exec.vector.complex.ListVector;
+import org.apache.drill.exec.vector.complex.RepeatedListVector;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
+import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector.Category;
 import org.apache.hadoop.hive.serde2.objectinspector.PrimitiveObjectInspector.PrimitiveCategory;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.BinaryObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.BooleanObjectInspector;
@@ -55,6 +59,10 @@ import org.apache.hadoop.hive.serde2.objectinspector.primitive.LongObjectInspect
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.ShortObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.StringObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.TimestampObjectInspector;
+import org.apache.hadoop.hive.serde2.objectinspector.ListObjectInspector;
+import org.apache.hadoop.hive.serde2.objectinspector.MapObjectInspector;
+import org.apache.hadoop.hive.serde2.objectinspector.StructObjectInspector;
+import org.apache.hadoop.hive.serde2.objectinspector.UnionObjectInspector;
 import org.apache.hadoop.hive.serde2.typeinfo.DecimalTypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.PrimitiveTypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
@@ -71,6 +79,7 @@ public abstract class HiveFieldConverter {
   public abstract void setSafeValue(ObjectInspector oi, Object hiveFieldValue, ValueVector outputVV, int outputIndex);
 
   private static Map<PrimitiveCategory, Class< ? extends HiveFieldConverter>> primMap = Maps.newHashMap();
+  private static Map<Category, Class< ? extends HiveFieldConverter>> complexMap = Maps.newHashMap();
 
   // TODO (DRILL-2470)
   // Byte and short (tinyint and smallint in SQL types) are currently read as integers
@@ -92,6 +101,8 @@ public abstract class HiveFieldConverter {
     primMap.put(PrimitiveCategory.TIMESTAMP, Timestamp.class);
     primMap.put(PrimitiveCategory.DATE, Date.class);
     primMap.put(PrimitiveCategory.CHAR, Char.class);
+    complexMap.put(Category.LIST, List.class);
+
   }
 
 
@@ -125,6 +136,11 @@ public abstract class HiveFieldConverter {
         break;
 
       case LIST:
+
+        Class<? extends HiveFieldConverter> clazz = complexMap.get(Category.LIST);
+        if (clazz != null) {
+          return clazz.newInstance();
+        }
       case MAP:
       case STRUCT:
       case UNION:
@@ -244,6 +260,7 @@ public abstract class HiveFieldConverter {
     public void setSafeValue(ObjectInspector oi, Object hiveFieldValue, ValueVector outputVV, int outputIndex) {
       final int value = (int) ((IntObjectInspector)oi).getPrimitiveJavaObject(hiveFieldValue);
       ((NullableIntVector) outputVV).getMutator().setSafe(outputIndex, value);
+      System.out.println("Done int");
     }
   }
 
@@ -319,6 +336,22 @@ public abstract class HiveFieldConverter {
       final byte[] valueBytes = value.getBytes();
       final int valueLen = value.getLength();
       ((NullableVarCharVector) outputVV).getMutator().setSafe(outputIndex, valueBytes, 0, valueLen);
+    }
+  }
+
+  public static class List extends HiveFieldConverter {
+    @Override
+    public void setSafeValue(ObjectInspector oi, Object hiveFieldValue, ValueVector outputVV, int outputIndex) {
+      final java.util.List<?> list = ((ListObjectInspector)oi).getList(hiveFieldValue);
+      int length = ((ListObjectInspector)oi).getListLength(hiveFieldValue);
+      Object listElement = ((ListObjectInspector)oi).getListElement(hiveFieldValue,outputIndex);
+//      final int valueLen = value.getLength();
+//      ((ListVector) outputVV).getDataVector().getMutator().
+//      ((ListVector) outputVV).getOffsetVector().getMutator().setSafe(outputIndex, new NullableUInt4Holder());
+      ((RepeatedListVector) outputVV).getMutator().startNewValue(outputIndex);
+      ((RepeatedListVector) outputVV).getMutator().setValueCount(length);
+//      ((RepeatedListVector) outputVV).iterator().
+      System.out.println("Done list");
     }
   }
 

@@ -570,4 +570,13 @@ public class TestAggregateFunctions extends BaseTestQuery {
     }
   }
 
+  @Test // DRILL-3290
+  public void testHiveComplexDataTypes() throws Exception {
+    String query = "select odd from cp.`complex/json/complex.json` t";
+//    test("alter session set `exec.enable_union_type`=true");
+    setColumnWidths(new int[] {35});
+    List<QueryDataBatch> sqlWithResults2 = testSqlWithResults(query);
+    printResult(sqlWithResults2);
+  }
+
 }

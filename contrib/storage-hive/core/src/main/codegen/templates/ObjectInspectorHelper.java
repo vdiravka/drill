@@ -32,6 +32,7 @@ import org.apache.drill.exec.expr.ClassGenerator;
 import org.apache.drill.exec.expr.DirectExpression;
 import org.apache.drill.exec.expr.TypeHelper;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
+import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector.Category;
 import org.apache.hadoop.hive.serde2.objectinspector.PrimitiveObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.PrimitiveObjectInspector.PrimitiveCategory;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.*;
@@ -93,6 +94,7 @@ public class ObjectInspectorHelper {
         PrimitiveObjectInspector poi = (PrimitiveObjectInspector)oi;
         switch(poi.getPrimitiveCategory()) {
 <#list drillOI.map as entry>
+<#if entry.category == "PRIMITIVE">
           case ${entry.hiveType}:{
             JType holderClass = TypeHelper.getHolderType(m, returnType, TypeProtos.DataMode.OPTIONAL);
             block.assign(returnValueHolder, JExpr._new(holderClass));
@@ -111,6 +113,7 @@ public class ObjectInspectorHelper {
           </#if>
             return block;
           }
+</#if>
 </#list>
           default:
             throw new UnsupportedOperationException(String.format("Received unknown/unsupported type '%s'", poi.getPrimitiveCategory().toString()));
@@ -120,15 +123,24 @@ public class ObjectInspectorHelper {
       case MAP:
       case LIST:
       case STRUCT:
+      case UNION:
+//        JType holderClass = TypeHelper.getHolderType(m, returnType, TypeProtos.DataMode.OPTIONAL);
+//        block.assign(returnValueHolder, JExpr._new(holderClass));
+//        return block;
       default:
         throw new UnsupportedOperationException(String.format("Received unknown/unsupported type '%s'", oi.getCategory().toString()));
     }
   }
 
-  private static Map<PrimitiveCategory, MinorType> TYPE_HIVE2DRILL = new HashMap<>();
+  private static Map<PrimitiveCategory, MinorType> PRIMITIVE_TYPE_HIVE2DRILL = new HashMap<>();
+  private static Map<Category, MinorType> COMPLEX_TYPE_HIVE2DRILL = new HashMap<>();
   static {
 <#list drillOI.map as entry>
-    TYPE_HIVE2DRILL.put(PrimitiveCategory.${entry.hiveType}, MinorType.${entry.drillType?upper_case});
+    <#if entry.category == "PRIMITIVE">
+    PRIMITIVE_TYPE_HIVE2DRILL.put(PrimitiveCategory.${entry.hiveType}, MinorType.${entry.drillType?upper_case});
+    <#else>
+    COMPLEX_TYPE_HIVE2DRILL.put(Category.${entry.hiveType}, MinorType.${entry.drillType?upper_case});
+    </#if>
 </#list>
   }
 
@@ -136,8 +148,8 @@ public class ObjectInspectorHelper {
     switch(oi.getCategory()) {
       case PRIMITIVE: {
         PrimitiveObjectInspector poi = (PrimitiveObjectInspector)oi;
-        if (TYPE_HIVE2DRILL.containsKey(poi.getPrimitiveCategory())) {
-          return TYPE_HIVE2DRILL.get(poi.getPrimitiveCategory());
+        if (PRIMITIVE_TYPE_HIVE2DRILL.containsKey(poi.getPrimitiveCategory())) {
+          return PRIMITIVE_TYPE_HIVE2DRILL.get(poi.getPrimitiveCategory());
         }
         throw new UnsupportedOperationException();
       }
@@ -145,6 +157,7 @@ public class ObjectInspectorHelper {
       case MAP:
       case LIST:
       case STRUCT:
+      case UNION:
       default:
         throw new UnsupportedOperationException();
     }
@@ -158,6 +171,7 @@ public class ObjectInspectorHelper {
         PrimitiveObjectInspector poi = (PrimitiveObjectInspector)oi;
         switch(poi.getPrimitiveCategory()) {
 <#list drillOI.map as entry>
+<#if entry.category == "PRIMITIVE">
           case ${entry.hiveType}:{
             JConditional jc = block._if(returnValue.eq(JExpr._null()));
             jc._then().assign(returnValueHolder.ref("isSet"), JExpr.lit(0));
@@ -215,7 +229,7 @@ public class ObjectInspectorHelper {
           </#if>
             return block;
           }
-
+</#if>
 </#list>
           default:
             throw new UnsupportedOperationException(String.format("Received unknown/unsupported type '%s'", poi.getPrimitiveCategory().toString()));

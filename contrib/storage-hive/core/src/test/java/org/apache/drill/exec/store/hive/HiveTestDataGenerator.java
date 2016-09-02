@@ -514,11 +514,37 @@ public class HiveTestDataGenerator {
     executeQuery(hiveDriver, createTableWithHeaderFooterProperties("skipper.kv_sequencefile_large", "sequencefile", "1", "1"));
     executeQuery(hiveDriver, "insert into table skipper.kv_sequencefile_large select * from skipper.kv_text_large");
 
-      // Create a table based on json file
-      executeQuery(hiveDriver, "create table default.simple_json(json string)");
-      final String loadData = String.format("load data local inpath '" +
-          Resources.getResource("simple.json") + "' into table default.simple_json");
-      executeQuery(hiveDriver, loadData);
+    // Create a table based on json file
+    executeQuery(hiveDriver, "create table default.simple_json(json string)");
+    final String loadData = String.format("load data local inpath '" +
+        Resources.getResource("simple.json") + "' into table default.simple_json");
+    executeQuery(hiveDriver, loadData);
+
+    // Create table with complex hive data types
+    executeQuery(hiveDriver, "CREATE TABLE `complex`(\n" +
+        "   `col1` ARRAY<STRING>, \n" +
+        "   `col2` MAP<INT,STRING>, \n" +
+        "   `col3` STRUCT<c1:SMALLINT,c2:VARCHAR(30)>,\n" +
+        "   `col4` UNIONTYPE<INT, BOOLEAN, STRING>,\n" +
+        "   `col5` INT)\n" +
+        "ROW FORMAT DELIMITED \n" +
+        "  FIELDS TERMINATED BY ',' \n" +
+        "  COLLECTION ITEMS TERMINATED BY '&' \n" +
+        "  MAP KEYS TERMINATED BY '#'\n" +
+        "  LINES TERMINATED BY '\\n' STORED AS TEXTFILE");
+    String testDataFile2 = "/media/vitalii/CE1EAAA91EAA8A53/TASKS/hive_complex_types/complex_data.csv";
+    executeQuery(hiveDriver, "LOAD DATA LOCAL INPATH '" + testDataFile2 + "' OVERWRITE INTO TABLE complex");
+//    executeQuery(hiveDriver,
+//        String.format("LOAD DATA LOCAL INPATH '%s' INTO TABLE complex PARTITION (" +
+//            // There is a regression in Hive 1.2.1 in binary type partition columns. Disable for now.
+//            // "  binary_part='binary', " +
+//            "  col1='arr1&arr2', " +
+//            "  col2='101#map1&102#map2', " +
+//            "  col3='11&varchar_1', " +
+//            "  col4='0&3.141459'"+
+//            ")", testDataFile));
+
+
     ss.close();
   }
 

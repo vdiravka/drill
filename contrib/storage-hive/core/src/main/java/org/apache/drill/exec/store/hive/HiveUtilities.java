@@ -302,11 +302,15 @@ public class HiveUtilities {
 
         return typeBuilder.build();
       }
-
       case LIST:
+        MinorType minorType = MinorType.LIST;
+        MajorType.Builder typeBuilder = MajorType.newBuilder().setMinorType(minorType)
+            .setMode(DataMode.REPEATED);
+        return typeBuilder.build();
       case MAP:
       case STRUCT:
       case UNION:
+
       default:
         throwUnsupportedHiveDataTypeError(typeInfo.getCategory().toString());
     }
@@ -450,7 +454,7 @@ public class HiveUtilities {
 
   public static void throwUnsupportedHiveDataTypeError(String unsupportedType) {
     StringBuilder errMsg = new StringBuilder();
-    errMsg.append(String.format("Unsupported Hive data type %s. ", unsupportedType));
+    errMsg.append(String.format("Unsupported Hive data type %s. HHHHHERE", unsupportedType));
     errMsg.append(System.getProperty("line.separator"));
     errMsg.append("Following Hive data types are supported in Drill for querying: ");
     errMsg.append(

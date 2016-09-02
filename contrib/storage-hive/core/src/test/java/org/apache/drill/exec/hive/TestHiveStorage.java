@@ -21,6 +21,7 @@ import com.google.common.collect.ImmutableMap;
 import org.apache.drill.common.exceptions.UserRemoteException;
 import org.apache.drill.exec.ExecConstants;
 import org.apache.drill.exec.planner.physical.PlannerSettings;
+import org.apache.drill.exec.rpc.user.QueryDataBatch;
 import org.apache.hadoop.fs.FileSystem;
 import org.joda.time.DateTime;
 import org.junit.AfterClass;
@@ -30,6 +31,7 @@ import org.junit.Test;
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.Timestamp;
+import java.util.List;
 import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.containsString;
@@ -509,6 +511,16 @@ public class TestHiveStorage extends HiveTestBase {
         .baselineValues(5000L)
         .go();
   }
+
+  @Test // DRILL-3290
+  public void testHiveComplexDataTypes() throws Exception {
+    String query = "select `col1`, `col5` from hive.complex";
+    test("alter session set `exec.enable_union_type`=true");
+    setColumnWidths(new int[] {35, 35, 35});
+    List<QueryDataBatch> sqlWithResults2 = testSqlWithResults(query);
+    printResult(sqlWithResults2);
+  }
+
 
   @AfterClass
   public static void shutdownOptions() throws Exception {
