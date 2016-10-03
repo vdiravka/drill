@@ -23,7 +23,6 @@ import org.apache.drill.common.expression.SchemaPath;
 import org.apache.drill.exec.planner.physical.PlannerSettings;
 import org.apache.drill.exec.server.options.OptionManager;
 import org.apache.drill.exec.store.AbstractRecordReader;
-import org.apache.drill.exec.store.ParquetOutputRecordWriter;
 import org.apache.drill.exec.work.ExecErrorConstants;
 import org.apache.parquet.SemanticVersion;
 import org.apache.parquet.VersionParser;
@@ -40,21 +39,24 @@ import org.apache.parquet.hadoop.metadata.ParquetMetadata;
 import org.apache.parquet.schema.OriginalType;
 import org.joda.time.Chronology;
 import org.joda.time.DateTimeConstants;
+import org.joda.time.DateTimeUtils;
 
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/*
+/**
  * Utility class where we can capture common logic between the two parquet readers
  */
 public class ParquetReaderUtility {
   private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(ParquetReaderUtility.class);
 
-  // Note the negation symbol in the beginning
-  public static final double CORRECT_CORRUPT_DATE_SHIFT = -ParquetOutputRecordWriter.JULIAN_DAY_EPOC - 0.5;
-  // The year 5000 is the threshold for auto-detecting date corruption.
+  // All old parquet files (which haven't "is.date.correct=true" property in metadata) have
+  // a corrupt date shift: 4881176 days or 2 * ( 2440587.5 + 0.5 ), where 2440587.5 is
+  // a number of days between Julian day epoch (January 1, 4713 BC) and Unix day epoch (January 1, 1970) @link #toJulianDay(long)
+    public static final long CORRECT_CORRUPT_DATE_SHIFT = 2 * DateTimeUtils.toJulianDayNumber(0);
+  // The year 5000 (or 1106685 day from Unix epoch) is chosen as the threshold for auto-detecting date corruption.
   // This balances two possible cases of bad auto-correction. External tools writing dates in the future will not
   // be shifted unless they are past this threshold (and we cannot identify them as external files based on the metadata).
   // On the other hand, historical dates written with Drill wouldn't risk being incorrectly shifted unless they were
@@ -69,9 +71,24 @@ public class ParquetReaderUtility {
    * in the data pages themselves to see if they are likely corrupt.
    */
   public enum DateCorruptionStatus {
-    META_SHOWS_CORRUPTION, // metadata can determine if the values are definitely CORRUPT
-    META_SHOWS_NO_CORRUPTION, // metadata can determine if the values are definitely CORRECT
-    META_UNCLEAR_TEST_VALUES // not enough info in metadata, parquet reader must test individual values
+    META_SHOWS_CORRUPTION{
+      @Override
+      public String toString(){
+        return "It is determined from metadata that the date values are definitely CORRUPT";
+      }
+    },
+    META_SHOWS_NO_CORRUPTION {
+      @Override
+      public String toString(){
+        return "It is determined from metadata that the date values are definitely CORRECT";
+      }
+    },
+    META_UNCLEAR_TEST_VALUES {
+      @Override
+      public String toString(){
+        return "Not enough info in metadata, parquet reader will test individual date values";
+      }
+    }
   }
 
   public static void checkDecimalTypeEnabled(OptionManager options) {
@@ -102,7 +119,7 @@ public class ParquetReaderUtility {
   }
 
   public static int autoCorrectCorruptedDate(int corruptedDate) {
-    return (int) (corruptedDate - 2 * ParquetOutputRecordWriter.JULIAN_DAY_EPOC);
+    return (int) (corruptedDate - CORRECT_CORRUPT_DATE_SHIFT);
   }
 
   public static void correctDatesInMetadataCache(Metadata.ParquetTableMetadataBase parquetTableMetadata) {

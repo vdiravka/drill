@@ -161,7 +161,7 @@ class FixedByteAlignedReader<V extends ValueVector> extends ColumnReader<V> {
         intValue = readIntLittleEndian(bytebuf, start);
       }
 
-      mutator.set(index, DateTimeUtils.fromJulianDay(intValue + ParquetReaderUtility.CORRECT_CORRUPT_DATE_SHIFT));
+      mutator.set(index, (intValue - ParquetReaderUtility.CORRECT_CORRUPT_DATE_SHIFT) * DateTimeConstants.MILLIS_PER_DAY);
     }
 
   }
@@ -192,7 +192,7 @@ class FixedByteAlignedReader<V extends ValueVector> extends ColumnReader<V> {
       }
 
       if (intValue > ParquetReaderUtility.DATE_CORRUPTION_THRESHOLD) {
-        mutator.set(index, DateTimeUtils.fromJulianDay(intValue + ParquetReaderUtility.CORRECT_CORRUPT_DATE_SHIFT));
+        mutator.set(index, (intValue - ParquetReaderUtility.CORRECT_CORRUPT_DATE_SHIFT) * DateTimeConstants.MILLIS_PER_DAY);
       } else {
         mutator.set(index, intValue * (long) DateTimeConstants.MILLIS_PER_DAY);
       }

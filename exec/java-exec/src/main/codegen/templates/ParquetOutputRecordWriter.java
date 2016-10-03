@@ -72,7 +72,6 @@ public abstract class ParquetOutputRecordWriter extends AbstractRecordWriter imp
 
   private RecordConsumer consumer;
   private MessageType schema;
-  public static final long JULIAN_DAY_EPOC = DateTimeUtils.toJulianDayNumber(0);
 
   public void setUp(MessageType schema, RecordConsumer consumer) {
     this.schema = schema;

@@ -352,7 +352,7 @@ public class NullableFixedByteAlignedReaders {
         intValue = readIntLittleEndian(bytebuf, start);
       }
 
-      valueVec.getMutator().set(index, DateTimeUtils.fromJulianDay(intValue + ParquetReaderUtility.CORRECT_CORRUPT_DATE_SHIFT));
+      valueVec.getMutator().set(index, (intValue - ParquetReaderUtility.CORRECT_CORRUPT_DATE_SHIFT) * DateTimeConstants.MILLIS_PER_DAY);
     }
 
   }
@@ -385,7 +385,7 @@ public class NullableFixedByteAlignedReaders {
       }
 
       if (intValue > ParquetReaderUtility.DATE_CORRUPTION_THRESHOLD) {
-        dateVector.getMutator().set(index, DateTimeUtils.fromJulianDay(intValue + ParquetReaderUtility.CORRECT_CORRUPT_DATE_SHIFT));
+        dateVector.getMutator().set(index, (intValue - ParquetReaderUtility.CORRECT_CORRUPT_DATE_SHIFT) * DateTimeConstants.MILLIS_PER_DAY);
       } else {
         dateVector.getMutator().set(index, intValue * (long) DateTimeConstants.MILLIS_PER_DAY);
       }
