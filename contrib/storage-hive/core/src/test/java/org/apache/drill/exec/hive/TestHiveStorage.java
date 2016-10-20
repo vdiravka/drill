@@ -64,7 +64,7 @@ public class TestHiveStorage extends HiveTestBase {
     try {
       test(String.format("alter session set `%s` = true", ExecConstants.HIVE_OPTIMIZE_SCAN_WITH_NATIVE_READERS));
 
-      String query = "SELECT count(*) as col FROM hive.readtest_parquet";
+      String query = "SELECT count(*) as col FROM hive.countStar_Parquet";
       testPhysicalPlan(query, "hive-drill-native-parquet-scan");
 
       testBuilder()
@@ -245,6 +245,7 @@ public class TestHiveStorage extends HiveTestBase {
             "string_field",
             "varchar_field",
             "timestamp_field",
+            "date_field",
             "char_field",
             // There is a regression in Hive 1.2.1 in binary and boolean partition columns. Disable for now.
             //"binary_part",
@@ -282,6 +283,7 @@ public class TestHiveStorage extends HiveTestBase {
             "stringfield",
             "varcharfield",
             new DateTime(Timestamp.valueOf("2013-07-05 17:01:00").getTime()),
+            new DateTime(Date.valueOf("2013-07-05").getTime()),
             "charfield",
             // There is a regression in Hive 1.2.1 in binary and boolean partition columns. Disable for now.
             //"binary",
@@ -303,7 +305,7 @@ public class TestHiveStorage extends HiveTestBase {
             new DateTime(Date.valueOf("2013-07-05").getTime()),
             "char")
         .baselineValues( // All fields are null, but partition fields have non-null values
-            null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
+            null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
             // There is a regression in Hive 1.2.1 in binary and boolean partition columns. Disable for now.
             //"binary",
             true,

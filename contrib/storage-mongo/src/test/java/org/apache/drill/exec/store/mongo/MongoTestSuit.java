@@ -29,6 +29,7 @@ import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
@@ -62,6 +63,7 @@ import de.flapdoodle.embed.process.runtime.Network;
 @RunWith(Suite.class)
 @SuiteClasses({ TestMongoFilterPushDown.class, TestMongoProjectPushDown.class,
     TestMongoQueries.class, TestMongoChunkAssignment.class })
+@Ignore
 public class MongoTestSuit implements MongoTestConstants {
 
   private static final Logger logger = LoggerFactory
