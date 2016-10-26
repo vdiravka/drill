@@ -184,7 +184,7 @@ public class Metadata {
         childFiles.add(file);
       }
     }
-    ParquetTableMetadata_v2 parquetTableMetadata = new ParquetTableMetadata_v2(true);
+    ParquetTableMetadata_v2 parquetTableMetadata = new ParquetTableMetadata_v2();
     if (childFiles.size() > 0) {
       List<ParquetFileMetadata_v2> childFilesMetadata =
           getParquetFileMetadata_v2(parquetTableMetadata, childFiles);
@@ -930,12 +930,8 @@ public class Metadata {
     @JsonProperty boolean isDateCorrect;
 
     public ParquetTableMetadata_v2() {
-      super();
-    }
-
-    public ParquetTableMetadata_v2(boolean isDateCorrect) {
       this.drillVersion = DrillVersionInfo.getVersion();
-      this.isDateCorrect = isDateCorrect;
+      this.isDateCorrect = true;
     }
 
     public ParquetTableMetadata_v2(ParquetTableMetadataBase parquetTable,
@@ -952,6 +948,8 @@ public class Metadata {
       this.files = files;
       this.directories = directories;
       this.columnTypeInfo = columnTypeInfo;
+      this.drillVersion = DrillVersionInfo.getVersion();
+      this.isDateCorrect = true;
     }
 
     public ColumnTypeMetadata_v2 getColumnTypeInfo(String[] name) {
