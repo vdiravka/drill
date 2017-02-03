@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -18,7 +18,6 @@
 package org.apache.drill.jdbc;
 
 import org.apache.calcite.avatica.util.Quoting;
-import org.apache.drill.jdbc.Driver;
 
 import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.assertThat;
@@ -335,10 +334,30 @@ public class ConnectionTest extends JdbcTestBase {
   }
 
   @Test
-  public void testSettingAnsiQuotesViaJdbcString() throws SQLException {
-    Connection connection = DriverManager.getConnection( "jdbc:drill:zk=local;ansi_quotes=true" );
-    DatabaseMetaData dbmd = connection.getMetaData();
-    assertThat(dbmd.getIdentifierQuoteString(), equalTo(Quoting.DOUBLE_QUOTE.string));
+  public void testDoubleQuotesForQuotingOptionViaJDBCString() throws SQLException {
+    connection = DriverManager.getConnection("jdbc:drill:zk=local;quoting_identifiers_character='\"'");
+    DatabaseMetaData metaData = connection.getMetaData();
+    assertThat(metaData.getIdentifierQuoteString(), equalTo(Quoting.DOUBLE_QUOTE.string));
+  }
+
+  @Test
+  public void testBracketsForQuotingOptionViaJDBCString() throws SQLException {
+    connection = DriverManager.getConnection("jdbc:drill:zk=local;quoting_identifiers_character=[");
+    DatabaseMetaData metaData = connection.getMetaData();
+    assertThat(metaData.getIdentifierQuoteString(), equalTo(Quoting.BRACKET.string));
+  }
+
+  @Test(expected = SQLException.class)
+  public void testIncorrectCharacterForQuotingOptionViaJDBCString() throws SQLException {
+    try {
+      DriverManager.getConnection("jdbc:drill:zk=local;quoting_identifiers_character=&");
+    }
+    catch (SQLException e) {
+      // Check exception text message
+      assertThat(e.getMessage(), containsString("Option planner.parser.quoting_identifiers_character " +
+          "must be one of: [`, \", []"));
+      throw e;
+    }
   }
 
 }

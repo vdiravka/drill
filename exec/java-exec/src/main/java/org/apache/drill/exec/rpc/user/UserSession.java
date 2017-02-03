@@ -47,6 +47,7 @@ import org.apache.drill.exec.server.options.OptionValue;
 import org.apache.drill.exec.server.options.SessionOptionManager;
 
 import com.google.common.collect.Maps;
+import org.apache.drill.exec.server.options.SystemOptionManager;
 import org.apache.drill.exec.store.AbstractSchema;
 import org.apache.drill.exec.store.StorageStrategy;
 import org.apache.drill.exec.store.dfs.DrillFileSystem;
@@ -61,11 +62,11 @@ public class UserSession implements Closeable {
   public static final String USER = "user";
   public static final String PASSWORD = "password";
   public static final String IMPERSONATION_TARGET = "impersonation_target";
-  public static final String ANSI_QUOTES = "ansi_quotes";
+  public static final String QUOTING_IDENTIFIERS_CHARACTER = "quoting_identifiers_character";
 
   // known property names in lower case
   private static final Set<String> knownProperties =
-      ImmutableSet.of(SCHEMA, USER, PASSWORD, IMPERSONATION_TARGET, ANSI_QUOTES);
+      ImmutableSet.of(SCHEMA, USER, PASSWORD, IMPERSONATION_TARGET, QUOTING_IDENTIFIERS_CHARACTER);
 
   private boolean supportComplexTypes = false;
   private UserCredentials credentials;
@@ -145,19 +146,18 @@ public class UserSession implements Closeable {
     }
 
     public UserSession build() {
-      setAnsiQuotesIfNeeded();
+      if (userSession.properties != null && userSession.properties.containsKey(QUOTING_IDENTIFIERS_CHARACTER)) {
+        if (userSession.sessionOptions != null) {
+          userSession.setSessionOption(PlannerSettings.QUOTING_IDENTIFIERS_CHARACTER_KEY,
+              userSession.properties.get(QUOTING_IDENTIFIERS_CHARACTER));
+        } else {
+          logger.warn("User property {} can't be installed as server option without session manager",
+              QUOTING_IDENTIFIERS_CHARACTER);
+        }
+      }
       UserSession session = userSession;
       userSession = null;
       return session;
-    }
-
-    private void setAnsiQuotesIfNeeded() {
-      if (userSession.sessionOptions != null && userSession.properties != null
-          && userSession.properties.get(ANSI_QUOTES) != null) {
-        OptionValue optionValue = OptionValue.createOption(OptionValue.Kind.BOOLEAN,
-            OptionValue.OptionType.SESSION, PlannerSettings.ANSI_QUOTES_KEY, userSession.properties.get(ANSI_QUOTES));
-        userSession.sessionOptions.setOption(optionValue);
-      }
     }
 
     Builder() {
@@ -262,8 +262,17 @@ public class UserSession implements Closeable {
     return SchemaUtilites.findSchema(rootSchema, defaultSchemaPath);
   }
 
-  public boolean setSessionOption(String name, String value) {
-    return true;
+  /**
+   * Set the option of a session level.
+   * Note: Option kind is automatically detected if such option exists.
+   *
+   * @param name option name
+   * @param value option value
+   */
+  public void setSessionOption(String name, String value) {
+    OptionValue.Kind optionKind = SystemOptionManager.getValidator(name).getKind();
+    OptionValue optionValue = OptionValue.createOption(optionKind, OptionValue.OptionType.SESSION, name, value);
+    sessionOptions.setOption(optionValue);
   }
 
   /**

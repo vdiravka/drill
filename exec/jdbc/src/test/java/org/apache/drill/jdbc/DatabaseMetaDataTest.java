@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,23 +19,18 @@ package org.apache.drill.jdbc;
 
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.fail;
 import static org.junit.Assert.assertThat;
 import static org.hamcrest.CoreMatchers.*;
 
 import org.apache.calcite.avatica.util.Quoting;
 import org.apache.drill.exec.planner.physical.PlannerSettings;
-import org.apache.drill.jdbc.Driver;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import static java.sql.Connection.*;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
-import java.sql.SQLFeatureNotSupportedException;
-import java.sql.Savepoint;
 import java.sql.SQLException;
 import java.sql.Statement;
 
@@ -108,41 +103,32 @@ public class DatabaseMetaDataTest {
 
   @Test
   public void testGetIdentifierQuoteString() throws SQLException {
-    final String resetSysOption = String.format("ALTER SYSTEM RESET `%s`", PlannerSettings.ANSI_QUOTES_KEY);
-    final String resetSessionOption = String.format("ALTER SESSION RESET `%s`", PlannerSettings.ANSI_QUOTES_KEY);
-    final String setSysOptionAsTrue = String.format("ALTER SYSTEM SET `%s` = true", PlannerSettings.ANSI_QUOTES_KEY);
-    final String setSessionOptionAsTrue = String.format("ALTER SESSION SET `%s` = true", PlannerSettings.ANSI_QUOTES_KEY);
-    final String setSessionOptionAsFalse = String.format("ALTER SESSION SET `%s` = false", PlannerSettings.ANSI_QUOTES_KEY);
-
     Statement statement = connection.createStatement();
     try {
-      // System ANSI_QUOTES option is disabled and session ANSI_QUOTES option is absent
-      statement.execute(resetSysOption);
-      statement.execute(resetSessionOption);
+      // System QUOTING_IDENTIFIERS_CHARACTER option has default backtick value
+      // and session QUOTING_IDENTIFIERS_CHARACTER option is absent
+      executeSQL(statement, "ALTER SYSTEM RESET `%s`", PlannerSettings.QUOTING_IDENTIFIERS_CHARACTER_KEY);
+      executeSQL(statement, "ALTER SESSION RESET `%s`", PlannerSettings.QUOTING_IDENTIFIERS_CHARACTER_KEY);
       assertThat(dbmd.getIdentifierQuoteString(), equalTo(Quoting.BACK_TICK.string));
 
-      // System ANSI_QUOTES option is enabled and session ANSI_QUOTES option is absent
-      statement.execute(setSysOptionAsTrue);
+      // System QUOTING_IDENTIFIERS_CHARACTER option has double quote value
+      executeSQL(statement, "ALTER SYSTEM SET `%s` = '%s'",
+          PlannerSettings.QUOTING_IDENTIFIERS_CHARACTER_KEY, Quoting.DOUBLE_QUOTE.string);
       assertThat(dbmd.getIdentifierQuoteString(), equalTo(Quoting.DOUBLE_QUOTE.string));
 
-      // System ANSI_QUOTES option is enabled and session ANSI_QUOTES option is disabled
-      statement.execute(setSessionOptionAsFalse);
-      assertThat(dbmd.getIdentifierQuoteString(), equalTo(Quoting.BACK_TICK.string));
+      // System QUOTING_IDENTIFIERS_CHARACTER option has bracket value
+      executeSQL(statement, "ALTER SYSTEM SET `%s` = '%s'",
+          PlannerSettings.QUOTING_IDENTIFIERS_CHARACTER_KEY, Quoting.BRACKET.string);
+      assertThat(dbmd.getIdentifierQuoteString(), equalTo(Quoting.BRACKET.string));
 
-      // System ANSI_QUOTES option is disabled and session ANSI_QUOTES option is disabled
-      statement.execute(resetSysOption);
-      assertThat(dbmd.getIdentifierQuoteString(), equalTo(Quoting.BACK_TICK.string));
-
-      // System ANSI_QUOTES option is disabled and session ANSI_QUOTES option is enabled
-      statement.execute(setSessionOptionAsTrue);
-      assertThat(dbmd.getIdentifierQuoteString(), equalTo(Quoting.DOUBLE_QUOTE.string));
-
-      // System ANSI_QUOTES option is enabled and session ANSI_QUOTES option is enabled
-      statement.execute(setSysOptionAsTrue);
+      // Overriding system QUOTING_IDENTIFIERS_CHARACTER option with session option with double_quote value
+      executeSQL(statement, "ALTER SESSION SET `%s` = '%s'",
+          PlannerSettings.QUOTING_IDENTIFIERS_CHARACTER_KEY, Quoting.DOUBLE_QUOTE.string);
       assertThat(dbmd.getIdentifierQuoteString(), equalTo(Quoting.DOUBLE_QUOTE.string));
     } finally {
-      statement.execute(resetSysOption);
-      statement.execute(resetSessionOption);
+      executeSQL(statement, "ALTER SYSTEM RESET `%s`", PlannerSettings.QUOTING_IDENTIFIERS_CHARACTER_KEY);
+      executeSQL(statement, "ALTER SESSION RESET `%s`", PlannerSettings.QUOTING_IDENTIFIERS_CHARACTER_KEY);
+      statement.close();
     }
   }
 
@@ -468,5 +454,7 @@ public class DatabaseMetaDataTest {
   //
   //   generatedKeyAlwaysReturned()
 
-
+  private void executeSQL(Statement statement, String sql, Object... args) throws SQLException {
+    statement.execute(String.format(sql, args));
+  }
 }

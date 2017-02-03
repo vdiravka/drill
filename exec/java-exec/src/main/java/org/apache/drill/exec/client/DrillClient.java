@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -63,6 +63,8 @@ import org.apache.drill.exec.proto.UserProtos.GetSchemasReq;
 import org.apache.drill.exec.proto.UserProtos.GetSchemasResp;
 import org.apache.drill.exec.proto.UserProtos.GetTablesReq;
 import org.apache.drill.exec.proto.UserProtos.GetTablesResp;
+import org.apache.drill.exec.proto.UserProtos.GetOptionsReq;
+import org.apache.drill.exec.proto.UserProtos.GetOptionsResp;
 import org.apache.drill.exec.proto.UserProtos.LikeFilter;
 import org.apache.drill.exec.proto.UserProtos.PreparedStatementHandle;
 import org.apache.drill.exec.proto.UserProtos.Property;
@@ -70,6 +72,7 @@ import org.apache.drill.exec.proto.UserProtos.QueryPlanFragments;
 import org.apache.drill.exec.proto.UserProtos.RpcEndpointInfos;
 import org.apache.drill.exec.proto.UserProtos.RpcType;
 import org.apache.drill.exec.proto.UserProtos.RunQuery;
+import org.apache.drill.exec.proto.UserProtos.ServerProperties;
 import org.apache.drill.exec.proto.UserProtos.UserProperties;
 import org.apache.drill.exec.proto.helper.QueryIdHelper;
 import org.apache.drill.exec.rpc.BasicClientWithConnection.ServerConnection;
@@ -692,6 +695,33 @@ public class DrillClient implements Closeable, ConnectionThrottle {
     }
 
     return client.send(RpcType.GET_COLUMNS, reqBuilder.build(), GetColumnsResp.class);
+  }
+
+  /**
+   * Get server properties that represent the list of server session options.
+   *
+   * @return server properties for the server session options.
+   */
+  public ServerProperties getOptions() throws RpcException {
+    DrillRpcFuture<GetOptionsResp> optionsRespDrillRpcFuture = client.send(RpcType.GET_OPTIONS,
+        GetOptionsReq.newBuilder().build(), GetOptionsResp.class);
+    return optionsRespDrillRpcFuture.checkedGet().getServerProperties();
+  }
+
+  /**
+   * Get the server property, which represents particular session option. If such session option is absent the
+   * appropriate system option is returned.
+   *
+   * @param optionName The name of the particular option.
+   * @return server property for the server session option, if it exists, otherwise - system one.
+   * @throws NullPointerException if option name is null
+   */
+  public Property getOption(String optionName) throws RpcException {
+    final GetOptionsReq.Builder reqBuilder = GetOptionsReq.newBuilder();
+    reqBuilder.setOptionName(checkNotNull(optionName, "Option name should not be null"));
+    DrillRpcFuture<GetOptionsResp> optionsRespDrillRpcFuture = client.send(RpcType.GET_OPTIONS,
+        reqBuilder.build(), GetOptionsResp.class);
+    return optionsRespDrillRpcFuture.checkedGet().getServerProperties().getProperties(0);
   }
 
   /**

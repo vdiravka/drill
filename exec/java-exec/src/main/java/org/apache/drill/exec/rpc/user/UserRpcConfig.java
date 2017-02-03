@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -37,6 +37,8 @@ import org.apache.drill.exec.proto.UserProtos.GetSchemasReq;
 import org.apache.drill.exec.proto.UserProtos.GetSchemasResp;
 import org.apache.drill.exec.proto.UserProtos.GetTablesReq;
 import org.apache.drill.exec.proto.UserProtos.GetTablesResp;
+import org.apache.drill.exec.proto.UserProtos.GetOptionsReq;
+import org.apache.drill.exec.proto.UserProtos.GetOptionsResp;
 import org.apache.drill.exec.proto.UserProtos.QueryPlanFragments;
 import org.apache.drill.exec.proto.UserProtos.RpcType;
 import org.apache.drill.exec.proto.UserProtos.RunQuery;
@@ -63,6 +65,7 @@ public class UserRpcConfig {
         .add(RpcType.GET_SCHEMAS, GetSchemasReq.class, RpcType.SCHEMAS, GetSchemasResp.class) // user to bit
         .add(RpcType.GET_TABLES, GetTablesReq.class, RpcType.TABLES, GetTablesResp.class) // user to bit
         .add(RpcType.GET_COLUMNS, GetColumnsReq.class, RpcType.COLUMNS, GetColumnsResp.class) // user to bit
+        .add(RpcType.GET_OPTIONS, GetOptionsReq.class, RpcType.OPTIONS, GetOptionsResp.class) // user to bit
         .add(RpcType.CREATE_PREPARED_STATEMENT, CreatePreparedStatementReq.class,
             RpcType.PREPARED_STATEMENT, CreatePreparedStatementResp.class) // user to bit
         .build();

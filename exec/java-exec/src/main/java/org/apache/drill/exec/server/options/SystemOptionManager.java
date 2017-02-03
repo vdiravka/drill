@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -36,7 +36,6 @@ import org.apache.drill.exec.compile.ClassCompilerSelector;
 import org.apache.drill.exec.compile.ClassTransformer;
 import org.apache.drill.exec.planner.physical.PlannerSettings;
 import org.apache.drill.exec.server.options.OptionValue.OptionType;
-import org.apache.drill.exec.server.options.TypeValidators.BooleanValidator;
 import org.apache.drill.exec.store.sys.PersistentStore;
 import org.apache.drill.exec.store.sys.PersistentStoreConfig;
 import org.apache.drill.exec.store.sys.PersistentStoreProvider;
@@ -92,7 +91,7 @@ public class SystemOptionManager extends BaseOptionManager implements AutoClosea
       PlannerSettings.UNIONALL_DISTRIBUTE,
       PlannerSettings.PARQUET_ROWGROUP_FILTER_PUSHDOWN_PLANNING,
       PlannerSettings.PARQUET_ROWGROUP_FILTER_PUSHDOWN_PLANNING_THRESHOLD,
-      PlannerSettings.ANSI_QUOTES,
+      PlannerSettings.QUOTING_IDENTIFIERS_CHARACTER,
       ExecConstants.CAST_TO_NULLABLE_NUMERIC_OPTION,
       ExecConstants.OUTPUT_FORMAT_VALIDATOR,
       ExecConstants.PARQUET_BLOCK_SIZE_VALIDATOR,

@@ -34,6 +34,7 @@ public enum RpcType implements com.dyuproject.protostuff.EnumLite<RpcType>
     GET_SCHEMAS(15),
     GET_TABLES(16),
     GET_COLUMNS(17),
+    GET_OPTIONS(24),
     CREATE_PREPARED_STATEMENT(22),
     QUERY_DATA(6),
     QUERY_HANDLE(7),
@@ -42,6 +43,7 @@ public enum RpcType implements com.dyuproject.protostuff.EnumLite<RpcType>
     SCHEMAS(19),
     TABLES(20),
     COLUMNS(21),
+    OPTIONS(25),
     PREPARED_STATEMENT(23),
     REQ_META_FUNCTIONS(8),
     RESP_FUNCTION_LIST(9),
@@ -87,6 +89,8 @@ public enum RpcType implements com.dyuproject.protostuff.EnumLite<RpcType>
             case 21: return COLUMNS;
             case 22: return CREATE_PREPARED_STATEMENT;
             case 23: return PREPARED_STATEMENT;
+            case 24: return GET_OPTIONS;
+            case 25: return OPTIONS;
             default: return null;
         }
     }

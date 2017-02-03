@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -17,13 +17,14 @@
  */
 package org.apache.drill.exec.planner.physical;
 
+import org.apache.calcite.avatica.util.Quoting;
+import org.apache.drill.common.exceptions.UserException;
 import org.apache.drill.exec.ExecConstants;
 import org.apache.drill.exec.expr.fn.FunctionImplementationRegistry;
-import org.apache.drill.exec.ops.QueryContext;
 import org.apache.drill.exec.server.options.OptionManager;
 import org.apache.drill.exec.server.options.OptionValidator;
-import org.apache.drill.exec.server.options.TypeValidators;
 import org.apache.drill.exec.server.options.TypeValidators.BooleanValidator;
+import org.apache.drill.exec.server.options.TypeValidators.EnumeratedStringValidator;
 import org.apache.drill.exec.server.options.TypeValidators.LongValidator;
 import org.apache.drill.exec.server.options.TypeValidators.DoubleValidator;
 import org.apache.drill.exec.server.options.TypeValidators.PositiveLongValidator;
@@ -105,8 +106,9 @@ public class PlannerSettings implements Context{
   public static final PositiveLongValidator PARQUET_ROWGROUP_FILTER_PUSHDOWN_PLANNING_THRESHOLD = new PositiveLongValidator(PARQUET_ROWGROUP_FILTER_PUSHDOWN_PLANNING_THRESHOLD_KEY,
       Long.MAX_VALUE, 10000);
 
-  public static final String ANSI_QUOTES_KEY = "planner.parser.ansi_quotes";
-  public static final BooleanValidator ANSI_QUOTES = new BooleanValidator(ANSI_QUOTES_KEY, false);
+  public static final String QUOTING_IDENTIFIERS_CHARACTER_KEY = "planner.parser.quoting_identifiers_character";
+  public static final EnumeratedStringValidator QUOTING_IDENTIFIERS_CHARACTER = new EnumeratedStringValidator(
+      QUOTING_IDENTIFIERS_CHARACTER_KEY, Quoting.BACK_TICK.string, Quoting.DOUBLE_QUOTE.string, Quoting.BRACKET.string);
 
   public OptionManager options = null;
   public FunctionImplementationRegistry functionImplementationRegistry = null;
@@ -264,8 +266,21 @@ public class PlannerSettings implements Context{
     return options.getOption(PARQUET_ROWGROUP_FILTER_PUSHDOWN_PLANNING_THRESHOLD);
   }
 
-  public boolean isAnsiQuotesEnabled() {
-    return options.getOption(ANSI_QUOTES);
+
+  /**
+   * @return Quoting enum for current quoting identifiers character
+   */
+  public Quoting getQuotingIdentifiersCharacter() {
+    for (Quoting value : Quoting.values()) {
+      if (value.string.equals(options.getOption(QUOTING_IDENTIFIERS_CHARACTER))) {
+        return value;
+      }
+    }
+    // this is never reached
+    throw UserException.validationError()
+        .message("Unknown quoting identifier character '%s'",
+            options.getOption(QUOTING_IDENTIFIERS_CHARACTER))
+        .build(logger);
   }
 
   @Override

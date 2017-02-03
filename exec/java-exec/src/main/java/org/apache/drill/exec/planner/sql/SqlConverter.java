@@ -27,7 +27,6 @@ import org.apache.calcite.adapter.java.JavaTypeFactory;
 import org.apache.calcite.avatica.util.Casing;
 import org.apache.calcite.avatica.util.Quoting;
 import org.apache.calcite.jdbc.CalciteSchema;
-import org.apache.calcite.config.Lex;
 import org.apache.calcite.jdbc.CalciteSchemaImpl;
 import org.apache.calcite.jdbc.JavaTypeFactoryImpl;
 import org.apache.calcite.plan.ConventionTraitDef;
@@ -106,19 +105,13 @@ public class SqlConverter {
 
   private String sql;
   private VolcanoPlanner planner;
-  private Lex lex;
 
 
   public SqlConverter(QueryContext context) {
     this.settings = context.getPlannerSettings();
     this.util = (UdfUtilities) context;
     this.functions = context.getFunctionRegistry();
-    this.lex = settings.isAnsiQuotesEnabled() ? Lex.MYSQL_ANSI : Lex.MYSQL;
-    this.parserConfig = SqlParser.configBuilder()
-        .setIdentifierMaxLength((int) this.settings.getIdentifierMaxLength())
-        .setLex(lex)
-        .setParserFactory(DrillParserWithCompoundIdConverter.FACTORY)
-        .build();
+    this.parserConfig = new DrillParserConfig(settings.getQuotingIdentifiersCharacter());
     this.sqlToRelConverterConfig = new SqlToRelConverterConfig();
     this.isInnerQuery = false;
     this.typeFactory = new JavaTypeFactoryImpl(DRILL_TYPE_SYSTEM);
@@ -169,9 +162,9 @@ public class SqlConverter {
       return parser.parseStmt();
     } catch (SqlParseException e) {
 
-      // Attempt to use default back_tick quote character for identifiers when
-      // ANSI_QUOTES option is enabled and parsing with double quotes throws an exception
-      if (settings.isAnsiQuotesEnabled()) {
+      // Attempt to use default back_tick quote character for identifiers, when QUOTING_IDENTIFIERS_CHARACTER
+      // option has not default value and parsing with that quote character throws an exception
+      if (settings.getQuotingIdentifiersCharacter() != Quoting.BACK_TICK) {
         parserConfig = new DrillParserConfig();
         try {
           SqlParser parser = SqlParser.create(sql, parserConfig);
@@ -363,7 +356,16 @@ public class SqlConverter {
 
   private class DrillParserConfig implements SqlParser.Config {
 
-    final long identifierMaxLength = settings.getIdentifierMaxLength();
+    private final long identifierMaxLength = settings.getIdentifierMaxLength();
+    private final Quoting quoting;
+
+    public DrillParserConfig() {
+      this.quoting = Quoting.BACK_TICK;
+    }
+
+    public DrillParserConfig(Quoting quoting) {
+      this.quoting = quoting;
+    }
 
     @Override
     public int identifierMaxLength() {
@@ -382,7 +384,7 @@ public class SqlConverter {
 
     @Override
     public Quoting quoting() {
-      return Quoting.BACK_TICK;
+      return quoting;
     }
 
     @Override

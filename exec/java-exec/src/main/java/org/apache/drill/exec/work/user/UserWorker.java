@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -27,6 +27,7 @@ import org.apache.drill.exec.proto.UserProtos.GetColumnsReq;
 import org.apache.drill.exec.proto.UserProtos.GetQueryPlanFragments;
 import org.apache.drill.exec.proto.UserProtos.GetSchemasReq;
 import org.apache.drill.exec.proto.UserProtos.GetTablesReq;
+import org.apache.drill.exec.proto.UserProtos.GetOptionsReq;
 import org.apache.drill.exec.proto.UserProtos.QueryPlanFragments;
 import org.apache.drill.exec.proto.UserProtos.RunQuery;
 import org.apache.drill.exec.rpc.Acks;
@@ -119,6 +120,10 @@ public class UserWorker{
 
   public void submitColumnsMetadataWork(UserSession session, GetColumnsReq req, ResponseSender sender) {
     bee.addNewWork(MetadataProvider.columns(session, bee.getContext(), req, sender));
+  }
+
+  public void submitOptionsMetadataWork(UserSession session, GetOptionsReq req, ResponseSender sender) {
+    bee.addNewWork(MetadataProvider.options(session, req, sender));
   }
 
   public void submitPreparedStatementWork(final UserClientConnection connection, final CreatePreparedStatementReq req,

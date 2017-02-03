@@ -27,6 +27,7 @@ enum RpcType {
   GET_SCHEMAS = 15; // user is requesting metadata of schema(s)
   GET_TABLES = 16; // user is requesting metadata of table(s)
   GET_COLUMNS = 17; // user is requesting metadata of column(s)
+  GET_OPTIONS = 24; // user is requesting metadata of option(s)
   CREATE_PREPARED_STATEMENT = 22; // user is sending a request to create prepared statement
 
   // bit to user
@@ -37,6 +38,7 @@ enum RpcType {
   SCHEMAS = 19; // return schema metadata in response to GET_SCHEMAS
   TABLES = 20; // return table metadata in response to GET_TABLES
   COLUMNS = 21; // return column metadata in response to GET_COLUMNS
+  OPTIONS = 25; // return server option metadata in response to GET_OPTIONS
   PREPARED_STATEMENT = 23; // return preparated statement in response to CREATE_PREPARED_STATEMENT
 
   REQ_META_FUNCTIONS = 8;
@@ -54,13 +56,17 @@ message UserProperties {
   repeated Property properties = 1;
 }
 
+message ServerProperties {
+  repeated Property properties = 1;
+}
+
 message RpcEndpointInfos {
-    optional string name = 1;           // example: Apache Drill Server, Apache Drill C++ client
-    optional string version = 2;        // example: 1.9.0
-    optional uint32 majorVersion = 3;   // example: 1
-    optional uint32 minorVersion = 4;   // example: 9
-    optional uint32 patchVersion = 5;   // example: 0
-    optional string application = 6;    // example: Tableau 9.3
+  optional string name = 1;           // example: Apache Drill Server, Apache Drill C++ client
+  optional string version = 2;        // example: 1.9.0
+  optional uint32 majorVersion = 3;   // example: 1
+  optional uint32 minorVersion = 4;   // example: 9
+  optional uint32 patchVersion = 5;   // example: 0
+  optional string application = 6;    // example: Tableau 9.3
 }
 
 message UserToBitHandshake {
@@ -447,4 +453,20 @@ message RunQuery {
    * to state on server side which is returned in response to CreatePreparedStatementReq.
    */
   optional PreparedStatementHandle prepared_statement_handle = 5;
+}
+
+/*
+ * Request message to get the server properties for all server session options or one particular session option.
+ */
+message GetOptionsReq {
+  optional string option_name = 1;
+}
+
+/*
+ * Response message for GetSchemasReq.
+ */
+message GetOptionsResp {
+  optional RequestStatus status = 1;
+  optional ServerProperties serverProperties = 2;
+  optional exec.shared.DrillPBError error = 3;
 }

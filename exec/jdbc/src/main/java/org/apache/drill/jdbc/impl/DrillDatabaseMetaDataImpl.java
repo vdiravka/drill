@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -26,8 +26,13 @@ import java.sql.SQLFeatureNotSupportedException;
 
 import org.apache.calcite.avatica.AvaticaConnection;
 import org.apache.calcite.avatica.AvaticaDatabaseMetaData;
+import org.apache.drill.exec.client.DrillClient;
+import org.apache.drill.exec.planner.physical.PlannerSettings;
+import org.apache.drill.exec.proto.UserProtos.Property;
 import org.apache.drill.exec.proto.UserProtos.RpcEndpointInfos;
+import org.apache.drill.exec.proto.UserProtos.ServerProperties;
 import org.apache.calcite.avatica.util.Quoting;
+import org.apache.drill.exec.rpc.RpcException;
 import org.apache.drill.jdbc.AlreadyClosedSqlException;
 import org.apache.drill.jdbc.DrillDatabaseMetaData;
 
@@ -59,6 +64,43 @@ class DrillDatabaseMetaDataImpl extends AvaticaDatabaseMetaData
   private RpcEndpointInfos getServerInfos() throws SQLException {
     DrillConnectionImpl connection = (DrillConnectionImpl) getConnection();
     return connection.getClient().getServerInfos();
+  }
+
+  /**
+   * Helper method to get server properties for the server session options
+   *
+   * @return server properties for the server session options.
+   * @throws SQLException if error in calling {@link DrillDatabaseMetaDataImpl#getConnection()}
+   * or {@link DrillClient#getOptions()}.
+   * Use toString() since getMessage() text doesn't always mention error (DRILL-3020).
+   */
+  private ServerProperties getServerProperties() throws SQLException {
+    DrillConnectionImpl connection = (DrillConnectionImpl) getConnection();
+    DrillClient client = connection.getClient();
+    try {
+      return client.getOptions();
+    } catch (RpcException e) {
+      throw new SQLException("Failure in obtaining server properties: " + e, e);
+    }
+  }
+
+  /**
+   * Helper method to get a server property for the particular server option
+   *
+   * @param optionName option name of the server option
+   * @return server property for the server session option, if it exists, otherwise - system one.
+   * @throws SQLException if error in calling {@link DrillDatabaseMetaDataImpl#getConnection()}
+   * or {@link DrillClient#getOption(String)}. Note: toString() is used since getMessage() text doesn't
+   * always mention error (DRILL-3020).
+   */
+  private Property getServerProperty(String optionName) throws SQLException {
+    DrillConnectionImpl connection = (DrillConnectionImpl) getConnection();
+    DrillClient client = connection.getClient();
+    try {
+      return client.getOption(optionName);
+    } catch (RpcException e) {
+      throw new SQLException("Failure in obtaining server property: " + e, e);
+    }
   }
 
   // Note:  Dynamic proxies could be used to reduce the quantity (450?) of
@@ -235,8 +277,13 @@ class DrillDatabaseMetaDataImpl extends AvaticaDatabaseMetaData
   @Override
   public String getIdentifierQuoteString() throws SQLException {
     throwIfClosed();
-    DrillConnectionImpl connection = (DrillConnectionImpl) getConnection();
-    return connection.useAnsiQuotedIdentifiers() ? Quoting.DOUBLE_QUOTE.string : Quoting.BACK_TICK.string;
+    Property property = getServerProperty(PlannerSettings.QUOTING_IDENTIFIERS_CHARACTER_KEY);
+    for (Quoting value : Quoting.values()) {
+      if (value.string.equals(property.getValue())) {
+        return value.string;
+      }
+    }
+    throw new SQLException("Unknown quoting identifier character " + property.getValue());
   }
 
   @Override

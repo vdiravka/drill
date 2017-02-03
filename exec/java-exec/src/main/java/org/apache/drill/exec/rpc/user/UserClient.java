@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -34,6 +34,7 @@ import org.apache.drill.exec.proto.UserProtos.GetColumnsResp;
 import org.apache.drill.exec.proto.UserProtos.GetQueryPlanFragments;
 import org.apache.drill.exec.proto.UserProtos.GetSchemasResp;
 import org.apache.drill.exec.proto.UserProtos.GetTablesResp;
+import org.apache.drill.exec.proto.UserProtos.GetOptionsResp;
 import org.apache.drill.exec.proto.UserProtos.HandshakeStatus;
 import org.apache.drill.exec.proto.UserProtos.QueryPlanFragments;
 import org.apache.drill.exec.proto.UserProtos.RpcEndpointInfos;
@@ -129,6 +130,8 @@ public class UserClient extends BasicClientWithConnection<RpcType, UserToBitHand
       return GetTablesResp.getDefaultInstance();
     case RpcType.COLUMNS_VALUE:
       return GetColumnsResp.getDefaultInstance();
+    case RpcType.OPTIONS_VALUE:
+      return GetOptionsResp.getDefaultInstance();
     case RpcType.PREPARED_STATEMENT_VALUE:
       return CreatePreparedStatementResp.getDefaultInstance();
     }

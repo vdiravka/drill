@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -38,6 +38,7 @@ import org.apache.drill.common.exceptions.ErrorHelper;
 import org.apache.drill.exec.ops.ViewExpansionContext;
 import org.apache.drill.exec.proto.UserBitShared.DrillPBError;
 import org.apache.drill.exec.proto.UserBitShared.DrillPBError.ErrorType;
+import org.apache.drill.exec.proto.UserProtos;
 import org.apache.drill.exec.proto.UserProtos.CatalogMetadata;
 import org.apache.drill.exec.proto.UserProtos.ColumnMetadata;
 import org.apache.drill.exec.proto.UserProtos.GetCatalogsReq;
@@ -48,6 +49,8 @@ import org.apache.drill.exec.proto.UserProtos.GetSchemasReq;
 import org.apache.drill.exec.proto.UserProtos.GetSchemasResp;
 import org.apache.drill.exec.proto.UserProtos.GetTablesReq;
 import org.apache.drill.exec.proto.UserProtos.GetTablesResp;
+import org.apache.drill.exec.proto.UserProtos.GetOptionsReq;
+import org.apache.drill.exec.proto.UserProtos.GetOptionsResp;
 import org.apache.drill.exec.proto.UserProtos.LikeFilter;
 import org.apache.drill.exec.proto.UserProtos.RequestStatus;
 import org.apache.drill.exec.proto.UserProtos.RpcType;
@@ -57,6 +60,8 @@ import org.apache.drill.exec.rpc.Response;
 import org.apache.drill.exec.rpc.ResponseSender;
 import org.apache.drill.exec.rpc.user.UserSession;
 import org.apache.drill.exec.server.DrillbitContext;
+import org.apache.drill.exec.server.options.OptionList;
+import org.apache.drill.exec.server.options.OptionManager;
 import org.apache.drill.exec.server.options.OptionValue;
 import org.apache.drill.exec.store.SchemaConfig.SchemaConfigInfoProvider;
 import org.apache.drill.exec.store.SchemaTreeProvider;
@@ -118,6 +123,15 @@ public class MetadataProvider {
   public static Runnable columns(final UserSession session, final DrillbitContext dContext,
       final GetColumnsReq req, final ResponseSender responseSender) {
     return new ColumnsProvider(session, dContext, req, responseSender);
+  }
+
+  /**
+   * @return Runnable that transforms the server session options into the server properties
+   * for given {@link GetOptionsReq} and sends response at the end.
+   */
+  public static Runnable options(final UserSession session, final GetOptionsReq req,
+                                 final ResponseSender responseSender) {
+    return new OptionsProvider(session, req, responseSender);
   }
 
   /**
@@ -421,6 +435,67 @@ public class MetadataProvider {
         return new Response(RpcType.COLUMNS, respBuilder.build());
       }
     }
+  }
+
+  private static class OptionsProvider implements Runnable {
+
+    private final UserSession session;
+    private final ResponseSender responseSender;
+    private final GetOptionsReq req;
+
+    private OptionsProvider(final UserSession session, final GetOptionsReq req, final ResponseSender responseSender) {
+      this.session = Preconditions.checkNotNull(session);
+      this.responseSender = Preconditions.checkNotNull(responseSender);
+      this.req = Preconditions.checkNotNull(req);
+    }
+
+    @Override
+    public void run() {
+      final GetOptionsResp.Builder respBuilder = GetOptionsResp.newBuilder();
+      try {
+        String optionName = null;
+        if (req.hasOptionName()) {
+          optionName = req.getOptionName();
+        }
+        respBuilder.setServerProperties(getSessionOptionsAsProperties(optionName));
+        respBuilder.setStatus(RequestStatus.OK);
+      } catch (Throwable e) {
+        respBuilder.setStatus(RequestStatus.FAILED);
+        respBuilder.setError(createPBError("get options", e));
+      } finally {
+        try {
+          responseSender.send(new Response(RpcType.OPTIONS, respBuilder.build()));
+        } catch (final Throwable error) {
+          logger.error("Unhandled metadata provider error", error);
+        }
+      }
+    }
+
+    /**
+     * Helper method, which transforms {@link OptionList} into
+     * {@link org.apache.drill.exec.proto.UserProtos.ServerProperties}
+     *
+     * @param optionName the name of session option. If null - all existing session options are returned
+     * @return server properties for the server session options.
+     */
+    private UserProtos.ServerProperties getSessionOptionsAsProperties(String optionName) {
+      OptionManager sessionOptions = session.getOptions();
+      final UserProtos.ServerProperties.Builder upBuilder = UserProtos.ServerProperties.newBuilder();
+      if (optionName == null) {
+        for (final OptionValue optionValue : sessionOptions.getOptionList()) {
+          upBuilder.addProperties(UserProtos.Property.newBuilder()
+              .setKey(optionValue.getName())
+              .setValue(optionValue.getValue().toString()));
+        }
+      } else {
+        OptionValue optionValue = sessionOptions.getOption(optionName);
+        upBuilder.addProperties(UserProtos.Property.newBuilder()
+            .setKey(optionValue.getName())
+            .setValue(optionValue.getValue().toString()));
+      }
+      return upBuilder.build();
+    }
+
   }
 
   /**

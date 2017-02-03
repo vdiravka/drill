@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -27,7 +27,10 @@ import static org.junit.Assert.fail;
 import java.util.Arrays;
 import java.util.List;
 
+import org.apache.calcite.avatica.util.Quoting;
 import org.apache.drill.BaseTestQuery;
+import org.apache.drill.exec.ExecConstants;
+import org.apache.drill.exec.planner.physical.PlannerSettings;
 import org.apache.drill.exec.proto.UserProtos.CatalogMetadata;
 import org.apache.drill.exec.proto.UserProtos.ColumnMetadata;
 import org.apache.drill.exec.proto.UserProtos.GetCatalogsResp;
@@ -35,7 +38,9 @@ import org.apache.drill.exec.proto.UserProtos.GetColumnsResp;
 import org.apache.drill.exec.proto.UserProtos.GetSchemasResp;
 import org.apache.drill.exec.proto.UserProtos.GetTablesResp;
 import org.apache.drill.exec.proto.UserProtos.LikeFilter;
+import org.apache.drill.exec.proto.UserProtos.Property;
 import org.apache.drill.exec.proto.UserProtos.RequestStatus;
+import org.apache.drill.exec.proto.UserProtos.ServerProperties;
 import org.apache.drill.exec.proto.UserProtos.SchemaMetadata;
 import org.apache.drill.exec.proto.UserProtos.TableMetadata;
 import org.junit.Test;
@@ -303,6 +308,32 @@ public class TestMetadataProvider extends BaseTestQuery {
     verifyColumn("sys", "drillbits", "data_port", columns);
   }
 
+  @Test
+  public void options() throws Exception {
+    try {
+      final String optionValueForQuoting = Quoting.DOUBLE_QUOTE.string;
+      final String optionValueForINT96Reader = Boolean.toString(true);
+      test("ALTER SESSION SET `%s` = '%s'", PlannerSettings.QUOTING_IDENTIFIERS_CHARACTER_KEY, optionValueForQuoting);
+      test("ALTER SESSION SET `%s` = %s", ExecConstants.PARQUET_READER_INT96_AS_TIMESTAMP, optionValueForINT96Reader);
+
+      ServerProperties properties = client.getOptions();
+
+      verifyOption(PlannerSettings.QUOTING_IDENTIFIERS_CHARACTER_KEY, optionValueForQuoting, properties);
+      verifyOption(ExecConstants.PARQUET_READER_INT96_AS_TIMESTAMP, optionValueForINT96Reader, properties);
+    } finally {
+      test("ALTER SESSION RESET `%s`", PlannerSettings.QUOTING_IDENTIFIERS_CHARACTER_KEY);
+      test("ALTER SESSION RESET `%s`", ExecConstants.PARQUET_READER_INT96_AS_TIMESTAMP);
+    }
+  }
+
+  @Test
+  public void option() throws Exception {
+    Property property = client.getOption(PlannerSettings.QUOTING_IDENTIFIERS_CHARACTER_KEY);
+
+    assertEquals(PlannerSettings.QUOTING_IDENTIFIERS_CHARACTER_KEY, property.getKey());
+    assertEquals(Quoting.BACK_TICK.string, property.getValue());
+  }
+
   /** Helper method to verify schema contents */
   private static void verifySchema(String schemaName, List<SchemaMetadata> schemas) {
     for(SchemaMetadata schema : schemas) {
@@ -342,4 +373,17 @@ public class TestMetadataProvider extends BaseTestQuery {
 
     fail(String.format("Failed to find column '%s.%s.%s' in results: %s", schemaName, tableName, columnName, columns));
   }
+
+  /** Helper method to verify option contents */
+  private static void verifyOption(String optionName, String optionValue, ServerProperties serverProperties) {
+    for(Property property : serverProperties.getPropertiesList()) {
+      if (optionName.equals(property.getKey())) {
+        assertEquals(optionValue, property.getValue());
+        return;
+      }
+    }
+
+    fail("Failed to find option '" + optionName + "' in results: " + serverProperties);
+  }
+
 }

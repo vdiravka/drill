@@ -37,6 +37,7 @@ import org.apache.drill.exec.proto.UserProtos.CreatePreparedStatementReq;
 import org.apache.drill.exec.proto.UserProtos.GetCatalogsReq;
 import org.apache.drill.exec.proto.UserProtos.GetColumnsReq;
 import org.apache.drill.exec.proto.UserProtos.GetQueryPlanFragments;
+import org.apache.drill.exec.proto.UserProtos.GetOptionsReq;
 import org.apache.drill.exec.proto.UserProtos.GetSchemasReq;
 import org.apache.drill.exec.proto.UserProtos.GetTablesReq;
 import org.apache.drill.exec.proto.UserProtos.HandshakeStatus;
@@ -184,6 +185,14 @@ public class UserServer extends BasicServer<RpcType, UserClientConnectionImpl> {
         break;
       } catch (final InvalidProtocolBufferException e) {
         throw new RpcException("Failure while decoding GetColumnsReq body.", e);
+      }
+    case RpcType.GET_OPTIONS_VALUE:
+      try {
+        final GetOptionsReq req = GetOptionsReq.PARSER.parseFrom(new ByteBufInputStream(pBody));
+        worker.submitOptionsMetadataWork(connection.getSession(), req, responseSender);
+        break;
+      } catch (final InvalidProtocolBufferException e) {
+        throw new RpcException("Failure while decoding GetOptionsReq body.", e);
       }
     case RpcType.CREATE_PREPARED_STATEMENT_VALUE:
       try {
