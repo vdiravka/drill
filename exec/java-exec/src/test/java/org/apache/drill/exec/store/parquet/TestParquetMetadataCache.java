@@ -36,6 +36,7 @@ public class TestParquetMetadataCache extends PlanTestBase {
   private static final String TEST_RES_PATH = WORKING_PATH + "/src/test/resources";
   private static final String tableName1 = "parquetTable1";
   private static final String tableName2 = "parquetTable2";
+  private static final String RELATIVE_PATHS_METADATA = "relative_paths_metadata";
 
 
   @BeforeClass
@@ -400,19 +401,47 @@ public class TestParquetMetadataCache extends PlanTestBase {
 
   @Test // DRILL-3867
   public void testMoveCache() throws Exception {
-    String tableName = "nation_move";
-    String newTableName = "nation_moved";
-    test("use dfs_test.tmp");
-    test("create table `%s/t1` as select * from cp.`tpch/nation.parquet`", tableName);
-    test("create table `%s/t2` as select * from cp.`tpch/nation.parquet`", tableName);
-    test("refresh table metadata %s", tableName);
-    checkForMetadataFile(tableName);
-    File srcFile = new File(getDfsTestTmpSchemaLocation(), tableName);
-    File dstFile = new File(getDfsTestTmpSchemaLocation(), newTableName);
-    FileUtils.moveDirectory(srcFile, dstFile);
-    Assert.assertFalse("Cache file was not moved successfully", srcFile.exists());
-    int rowCount = testSql(String.format("select * from %s", newTableName));
-    Assert.assertEquals(50, rowCount);
+    final String tableName = "nation_move";
+    final String newTableName = "nation_moved";
+    try {
+      test("use dfs_test.tmp");
+      test("create table `%s/t1` as select * from cp.`tpch/nation.parquet`", tableName);
+      test("create table `%s/t2` as select * from cp.`tpch/nation.parquet`", tableName);
+      test("refresh table metadata %s", tableName);
+      checkForMetadataFile(tableName);
+      File srcFile = new File(getDfsTestTmpSchemaLocation(), tableName);
+      File dstFile = new File(getDfsTestTmpSchemaLocation(), newTableName);
+      FileUtils.moveDirectory(srcFile, dstFile);
+      Assert.assertFalse("Cache file was not moved successfully", srcFile.exists());
+      int rowCount = testSql(String.format("select * from %s", newTableName));
+      Assert.assertEquals(50, rowCount);
+    } finally {
+      test("drop table %s", newTableName);
+    }
+  }
+
+  @Test
+  public void testMetadataCacheAbsolutePaths() throws Exception {
+    try {
+      test("use dfs_test.tmp");
+      final String relative_path_metadata_t1 = RELATIVE_PATHS_METADATA + "/t1";
+      final String relative_path_metadata_t2 = RELATIVE_PATHS_METADATA + "/t2";
+      test("create table `%s` as select * from cp.`tpch/nation.parquet`", relative_path_metadata_t1);
+      test("create table `%s` as select * from cp.`tpch/nation.parquet`", relative_path_metadata_t2);
+      copyMetaDataCacheToTempReplacingInternalPaths("parquet/metadata_with_absolute_path/" +
+          "metadata_directories_with_absolute_paths.requires_replace.txt", RELATIVE_PATHS_METADATA, Metadata.METADATA_DIRECTORIES_FILENAME);
+      copyMetaDataCacheToTempReplacingInternalPaths("parquet/metadata_with_absolute_path/" +
+          "metadata_table_with_absolute_paths.requires_replace.txt", RELATIVE_PATHS_METADATA, Metadata.METADATA_FILENAME);
+      copyMetaDataCacheToTempReplacingInternalPaths("parquet/metadata_with_absolute_path/" +
+          "metadata_table_with_absolute_paths_t1.requires_replace.txt", relative_path_metadata_t1, Metadata.METADATA_FILENAME);
+      copyMetaDataCacheToTempReplacingInternalPaths("parquet/metadata_with_absolute_path/" +
+          "metadata_table_with_absolute_paths_t2.requires_replace.txt", relative_path_metadata_t2, Metadata.METADATA_FILENAME);
+
+      int rowCount = testSql(String.format("select * from %s", RELATIVE_PATHS_METADATA));
+      Assert.assertEquals(50, rowCount);
+    } finally {
+      test("drop table %s", RELATIVE_PATHS_METADATA);
+    }
   }
 
   private void checkForMetadataFile(String table) throws Exception {
