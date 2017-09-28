@@ -613,4 +613,36 @@ public class TestTableGenerator {
     table.close();
   }
 
+  public static void generateHBaseDataset(Connection conn, Admin admin, TableName tableName, int numberRegions) throws Exception {
+    if (admin.tableExists(tableName)) {
+      admin.disableTable(tableName);
+      admin.deleteTable(tableName);
+    }
+
+    HTableDescriptor desc = new HTableDescriptor(tableName);
+    desc.addFamily(new HColumnDescriptor("cf1"));
+    if (numberRegions > 1) {
+      admin.createTable(desc, Arrays.copyOfRange(SPLIT_KEYS, 0, numberRegions-1));
+    } else {
+      admin.createTable(desc);
+    }
+
+    BufferedMutator table = conn.getBufferedMutator(tableName);
+
+    Put p = new Put("b".getBytes());
+    p.addColumn("cf1".getBytes(), "col1".getBytes(), "somedata".getBytes());
+    table.mutate(p);
+
+    p = new Put("c".getBytes());
+    p.addColumn("cf1".getBytes(), "col1".getBytes(), "somedata".getBytes());
+    table.mutate(p);
+
+    p = new Put("d".getBytes());
+    p.addColumn("cf1".getBytes(), "col1".getBytes(), "somedata".getBytes());
+    table.mutate(p);
+
+
+    table.close();
+  }
+
 }

@@ -17,7 +17,11 @@
  */
 package org.apache.drill.hbase;
 
+import org.apache.drill.common.util.RepeatTestRule;
+import org.apache.drill.exec.rpc.user.QueryDataBatch;
 import org.junit.Test;
+
+import java.util.List;
 
 public class HBaseRecordReaderTest extends BaseHBaseTest {
 
@@ -37,6 +41,22 @@ public class HBaseRecordReaderTest extends BaseHBaseTest {
   public void testLocalDistributedFamilySelect() throws Exception {
     String planName = "/hbase/hbase_scan_screen_physical_family_select.json";
     runHBasePhysicalVerifyCount(planName, HBaseTestsSuite.TEST_TABLE_1.getNameAsString(), 4);
+  }
+
+  @Test // To see the results
+  @RepeatTestRule.Repeat(count = 10)
+  public void testEmptyResult() throws Exception {
+    setColumnWidth(50);
+    for(int i = 0; i <= 10; i++) {
+      List<QueryDataBatch> queryDataBatches = runHBaseSQLlWithResults(String.format("select row_key, my.cf1 from hbase.%s my", HBaseTestsSuite.TEST_EMPTY_RESULT.getNameAsString()));
+      printResult(queryDataBatches);
+    }
+  }
+
+  @Test // To get the failure, but stacktrace is pure
+  public void testEmptyResult2() throws Exception {
+    setColumnWidth(50);
+    runHBaseSQLVerifyCount(String.format("select my.cf1 from hbase.%s my", HBaseTestsSuite.TEST_EMPTY_RESULT.getNameAsString()), 3);
   }
 
 }

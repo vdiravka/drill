@@ -62,6 +62,7 @@ public class HBaseTestsSuite {
   private static final boolean IS_DEBUG = ManagementFactory.getRuntimeMXBean().getInputArguments().toString().indexOf("-agentlib:jdwp") > 0;
 
   protected static final TableName TEST_TABLE_1 = TableName.valueOf("TestTable1");
+  protected static final TableName TEST_EMPTY_RESULT = TableName.valueOf("EmptyResultTable");
   protected static final TableName TEST_TABLE_3 = TableName.valueOf("TestTable3");
   protected static final TableName TEST_TABLE_COMPOSITE_DATE = TableName.valueOf("TestTableCompositeDate");
   protected static final TableName TEST_TABLE_COMPOSITE_TIME = TableName.valueOf("TestTableCompositeTime");
@@ -188,6 +189,7 @@ public class HBaseTestsSuite {
      * Will revert to multiple region once the issue is resolved.
      */
     TestTableGenerator.generateHBaseDataset1(conn, admin, TEST_TABLE_1, 2);
+    TestTableGenerator.generateHBaseDataset(conn, admin, TEST_EMPTY_RESULT, 3);
     TestTableGenerator.generateHBaseDataset3(conn, admin, TEST_TABLE_3, 1);
     TestTableGenerator.generateHBaseDatasetCompositeKeyDate(conn, admin, TEST_TABLE_COMPOSITE_DATE, 1);
     TestTableGenerator.generateHBaseDatasetCompositeKeyTime(conn, admin, TEST_TABLE_COMPOSITE_TIME, 1);
