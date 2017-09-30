@@ -281,8 +281,8 @@ public class IteratorValidatorBatchIterator implements CloseableRecordBatch {
         if (batchState == OK_NEW_SCHEMA) {
           lastNewSchema = lastSchema;
         }
-
-        if (logger.isTraceEnabled()) {
+        logger.error(batchTypeName + " " + incoming.getRecordCount());
+//        if (logger.isTraceEnabled()) {
           logger.trace("[#{}; on {}]: incoming next() return: #records = {}, "
                        + "\n  schema:"
                        + "\n    {}, "
@@ -292,7 +292,7 @@ public class IteratorValidatorBatchIterator implements CloseableRecordBatch {
                        lastSchema,
                        lastSchema.equals(prevLastNewSchema) ? "equal" : "not equal",
                        prevLastNewSchema);
-          }
+//          }
 
         if (lastSchema == null) {
           throw new IllegalStateException(
@@ -315,7 +315,7 @@ public class IteratorValidatorBatchIterator implements CloseableRecordBatch {
           VectorValidator.validate(incoming);
         }
       }
-
+      logger.error(batchState.toString());
       return batchState;
     }
     catch (RuntimeException | Error e) {

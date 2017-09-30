@@ -159,8 +159,8 @@ public class UnorderedReceiverBatch implements CloseableRecordBatch {
         batch = getNextBatch();
 
         // skip over empty batches. we do this since these are basically control messages.
-        while (batch != null && batch.getHeader().getDef().getRecordCount() == 0
-            && (!first || batch.getHeader().getDef().getFieldCount() == 0)) {
+        // bad decision for limit 0
+        while (batch != null && batch.getHeader().getDef().getRecordCount() == 0) {
           batch = getNextBatch();
         }
       } finally {
@@ -182,7 +182,7 @@ public class UnorderedReceiverBatch implements CloseableRecordBatch {
       }
 
 
-//      logger.debug("Next received batch {}", batch);
+      logger.error("Next received batch {}", batch);
 
       final RecordBatchDef rbd = batch.getHeader().getDef();
       final boolean schemaChanged = batchLoader.load(rbd, batch.getBody());

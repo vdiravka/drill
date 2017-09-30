@@ -19,6 +19,7 @@ package org.apache.drill.hbase;
 
 import org.apache.drill.common.util.RepeatTestRule;
 import org.apache.drill.exec.rpc.user.QueryDataBatch;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.List;
@@ -48,15 +49,20 @@ public class HBaseRecordReaderTest extends BaseHBaseTest {
   public void testEmptyResult() throws Exception {
     setColumnWidth(50);
     for(int i = 0; i <= 10; i++) {
-      List<QueryDataBatch> queryDataBatches = runHBaseSQLlWithResults(String.format("select row_key, my.cf1 from hbase.%s my", HBaseTestsSuite.TEST_EMPTY_RESULT.getNameAsString()));
-      printResult(queryDataBatches);
+      List<QueryDataBatch> queryDataBatches = runHBaseSQLlWithResults(String.format("select my.cf1 from hbase.%s my", HBaseTestsSuite.TEST_EMPTY_RESULT.getNameAsString()));
+      final int rowCount = printResult(queryDataBatches);
+      Assert.assertEquals(3, rowCount);
     }
   }
 
   @Test // To get the failure, but stacktrace is pure
+//  @RepeatTestRule.Repeat(count = 100)
   public void testEmptyResult2() throws Exception {
     setColumnWidth(50);
-    runHBaseSQLVerifyCount(String.format("select my.cf1 from hbase.%s my", HBaseTestsSuite.TEST_EMPTY_RESULT.getNameAsString()), 3);
+//    System.out.println("Starting reading");
+//    for(int i = 0; i <= 100; i++) {
+      runHBaseSQLVerifyCount(String.format("select my.cf1 from hbase.%s my", HBaseTestsSuite.TEST_EMPTY_RESULT.getNameAsString()), 3);
+//    }
   }
 
 }

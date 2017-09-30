@@ -166,6 +166,7 @@ public class ScanBatch implements CloseableRecordBatch {
       while (true) {
         if (currentReader == null && !getNextReaderIfHas()) {
             releaseAssets(); // All data has been read. Release resource.
+            logger.error("All data have been read. Release resource");
             done = true;
             return IterOutcome.NONE;
         }
