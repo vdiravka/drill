@@ -20,6 +20,7 @@ package org.apache.drill.exec.util;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.drill.common.types.TypeProtos.MinorType;
 import org.apache.drill.common.util.DrillStringUtils;
 import org.apache.drill.exec.record.MaterializedField;
 import org.apache.drill.exec.record.VectorAccessible;
@@ -42,7 +43,12 @@ public class VectorUtil {
     System.out.println(rows + " row(s):");
     List<String> columns = Lists.newArrayList();
     for (VectorWrapper<?> vw : va) {
-      columns.add(vw.getValueVector().getField().getName());
+      MaterializedField field = vw.getValueVector().getField();
+      String colName = field.getName() + "<" + field.getType().getMinorType() + "(" + field.getType().getMode() + ")" + ">";
+      if (field.getType().getMinorType() == MinorType.MAP) {
+        colName += expandMapSchema(field);
+      }
+      columns.add(colName);
     }
 
     int width = columns.size();
@@ -136,8 +142,12 @@ public class VectorUtil {
       width += columnWidth + 2;
       formats.add("| %-" + columnWidth + "s");
       MaterializedField field = vw.getValueVector().getField();
-      columns.add(field.getName() + "<" + field.getType().getMinorType() + "(" + field.getType().getMode() + ")" + ">");
+      String colName = field.getName() + "<" + field.getType().getMinorType() + "(" + field.getType().getMode() + ")" + ">";
       columnIndex++;
+      if (field.getType().getMinorType() == MinorType.MAP) {
+        colName += expandMapSchema(field);
+      }
+      columns.add(colName);
     }
 
     int rows = va.getRecordCount();
@@ -178,6 +188,23 @@ public class VectorUtil {
     for (VectorWrapper<?> vw : va) {
       vw.clear();
     }
+  }
+
+  private static String expandMapSchema(MaterializedField mapField) {
+    StringBuilder buf = new StringBuilder();
+    buf.append("{");
+    String sep = "";
+    for (MaterializedField field : mapField.getChildren()) {
+      String colName = field.getName() + "<" + field.getType().getMinorType() + "(" + field.getType().getMode() + ")" + ">";
+      if (field.getType().getMinorType() == MinorType.MAP) {
+        colName += expandMapSchema(field);
+      }
+      buf.append(sep);
+      sep = ",";
+      buf.append(colName);
+    }
+    buf.append("}");
+    return buf.toString();
   }
 
   public static void allocateVectors(Iterable<ValueVector> valueVectors, int count) {
