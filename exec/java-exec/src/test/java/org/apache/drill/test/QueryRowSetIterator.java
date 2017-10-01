@@ -110,4 +110,9 @@ public class QueryRowSetIterator implements Iterator<DirectRowSet>, Iterable<Dir
   public Iterator<DirectRowSet> iterator() {
     return this;
   }
+
+  @Override
+  public void remove() {
+    throw new UnsupportedOperationException();
+  }
 }
