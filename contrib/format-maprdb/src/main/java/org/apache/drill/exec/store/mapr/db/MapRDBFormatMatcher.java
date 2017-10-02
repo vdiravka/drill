@@ -18,11 +18,20 @@
 package org.apache.drill.exec.store.mapr.db;
 
 import java.io.IOException;
+import java.util.List;
 
+import com.mapr.fs.tables.TableProperties;
+import org.apache.drill.exec.planner.logical.DrillTable;
+import org.apache.drill.exec.store.dfs.DrillFileSystem;
+import org.apache.drill.exec.store.dfs.FileSelection;
+import org.apache.drill.exec.store.dfs.FileSystemPlugin;
+import org.apache.drill.exec.store.dfs.FormatSelection;
 import org.apache.drill.exec.store.mapr.TableFormatMatcher;
 import org.apache.drill.exec.store.mapr.TableFormatPlugin;
 
 import com.mapr.fs.MapRFileStatus;
+import org.apache.drill.exec.store.mapr.db.binary.MapRDBBinaryTable;
+import org.apache.hadoop.fs.Path;
 
 public class MapRDBFormatMatcher extends TableFormatMatcher {
 
@@ -37,6 +46,25 @@ public class MapRDBFormatMatcher extends TableFormatMatcher {
         .getTableProperties(status.getPath())
         .getAttr()
         .getIsMarlinTable();
+  }
+
+  @Override
+  public DrillTable isReadable(DrillFileSystem fs,
+                               FileSelection selection, FileSystemPlugin fsPlugin,
+                               String storageEngineName, String userName) throws IOException {
+
+    if (isFileReadable(fs, selection.getFirstPath(fs))) {
+      List<String> files = selection.getFiles();
+      assert (files.size() == 1);
+      String tableName = files.get(0);
+      TableProperties props = getFormatPlugin().getMaprFS().getTableProperties(new Path(tableName));
+
+      if (!props.getAttr().getJson()) {
+        FormatSelection formatSelection = new FormatSelection(getFormatPlugin().getConfig(), selection);
+        return new MapRDBBinaryTable(storageEngineName, fsPlugin, getFormatPlugin(), formatSelection);
+      }
+    }
+    return null;
   }
 
 }
