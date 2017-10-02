@@ -15,25 +15,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.drill.exec.store.hbase;
+package org.apache.drill.exec.store.mapr.db.binary;
 
 import java.io.IOException;
 
 import org.apache.drill.common.exceptions.UserException;
+import org.apache.drill.exec.store.dfs.FileSystemPlugin;
+import org.apache.drill.exec.store.dfs.FormatSelection;
+import org.apache.drill.exec.store.hbase.AbstractHBaseDrillTable;
+import org.apache.drill.exec.store.mapr.TableFormatPlugin;
+import org.apache.drill.exec.store.mapr.db.MapRDBFormatPlugin;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.Admin;
 
+public class MapRDBBinaryTable extends AbstractHBaseDrillTable {
+  private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(MapRDBBinaryTable.class);
 
-public class DrillHBaseTable extends AbstractHBaseDrillTable {
-  private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(DrillHBaseTable.class);
-
-  public DrillHBaseTable(String storageEngineName, HBaseStoragePlugin plugin, HBaseScanSpec scanSpec) {
-    super(storageEngineName, plugin, scanSpec);
-    try(Admin admin = plugin.getConnection().getAdmin()) {
-      tableDesc = admin.getTableDescriptor(TableName.valueOf(scanSpec.getTableName()));
+  public MapRDBBinaryTable(String storageEngineName, FileSystemPlugin storagePlugin, TableFormatPlugin formatPlugin,
+      FormatSelection selection) {
+    super(storageEngineName, storagePlugin, selection);
+    String tableName = selection.getSelection().getFiles().get(0);
+    try(Admin admin = ((MapRDBFormatPlugin) formatPlugin).getConnection().getAdmin()) {
+      tableDesc = admin.getTableDescriptor(TableName.valueOf(tableName));
     } catch (IOException e) {
       throw UserException.dataReadError()
-          .message("Failure while loading table %s in database %s.", scanSpec.getTableName(), storageEngineName)
+          .message("Failure while loading table %s in database %s.", tableName, storageEngineName)
           .addContext("Message: ", e.getMessage())
           .build(logger);
     }
