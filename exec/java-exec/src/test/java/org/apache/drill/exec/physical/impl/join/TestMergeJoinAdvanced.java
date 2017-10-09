@@ -18,15 +18,15 @@
 package org.apache.drill.exec.physical.impl.join;
 
 import org.apache.drill.test.BaseTestQuery;
-import org.apache.drill.categories.OperatorTest;
 import org.apache.drill.test.TestTools;
+import org.apache.drill.categories.OperatorTest;
 import org.apache.drill.exec.ExecConstants;
 import org.apache.drill.exec.planner.physical.PlannerSettings;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.Ignore;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.TestRule;
 
@@ -41,9 +41,12 @@ import java.util.Random;
 public class TestMergeJoinAdvanced extends BaseTestQuery {
   private static final String LEFT = "merge-join-left.json";
   private static final String RIGHT = "merge-join-right.json";
+  private static String mjpattern = "MergeJoin";
+
 
   private static File leftFile;
   private static File rightFile;
+
 
   @Rule
   public final TestRule TIMEOUT = TestTools.getTimeoutRule(120000); // Longer timeout than usual.
@@ -252,5 +255,20 @@ public class TestMergeJoinAdvanced extends BaseTestQuery {
       .baselineColumns("c1")
       .baselineValues(6000*800L)
       .go();
+  }
+
+  @Test
+  public void testMergeLeftJoinWithEmptyTable() throws Exception {
+    TestNestedLoopJoin.testWithEmptyJoin(dirTestWatcher.getRootDir(), "left outer", mjpattern, 1155L);
+  }
+
+  @Test
+  public void testMergeInnerJoinWithEmptyTable() throws Exception {
+    TestNestedLoopJoin.testWithEmptyJoin(dirTestWatcher.getRootDir(), "inner", mjpattern, 0L);
+  }
+
+  @Test
+  public void testMergeRightJoinWithEmptyTable() throws Exception {
+    TestNestedLoopJoin.testWithEmptyJoin(dirTestWatcher.getRootDir(), "right outer", mjpattern, 0L);
   }
 }

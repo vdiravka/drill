@@ -175,26 +175,44 @@ public class HashJoinBatch extends AbstractBinaryRecordBatch<HashJoinPOP> {
     try {
       rightSchema = right.getSchema();
       final VectorContainer vectors = new VectorContainer(oContext);
-      if (rightUpstream != IterOutcome.NONE) {
-//        state = BatchState.DONE;
-//        return;
-//      }
-        for (final VectorWrapper<?> w : right) {
-          vectors.addOrGet(w.getField());
-        }
-        vectors.buildSchema(SelectionVectorMode.NONE);
-        vectors.setRecordCount(0);
-        hyperContainer = new ExpandableHyperContainer(vectors);
-        hjHelper.addNewBatch(0);
-        buildBatchIndex++;
+//<<<<<<< HEAD
+//      if (rightUpstream != IterOutcome.NONE) {
+////        state = BatchState.DONE;
+////        return;
+////      }
+//        for (final VectorWrapper<?> w : right) {
+//          vectors.addOrGet(w.getField());
+//        }
+//        vectors.buildSchema(SelectionVectorMode.NONE);
+//        vectors.setRecordCount(0);
+//        hyperContainer = new ExpandableHyperContainer(vectors);
+//        hjHelper.addNewBatch(0);
+//        buildBatchIndex++;
+//        setupHashTable();
+//        hashJoinProbe = setupHashJoinProbe();
+//        // Build the container schema and set the counts
+//        for (final VectorWrapper<?> w : container) {
+//          w.getValueVector().allocateNew();
+//        }
+//      } else {
+////        state = BatchState.DONE;
+//=======
+      for (final VectorWrapper<?> w : right) {
+        vectors.addOrGet(w.getField());
+      }
+      vectors.buildSchema(SelectionVectorMode.NONE);
+      vectors.setRecordCount(0);
+      hyperContainer = new ExpandableHyperContainer(vectors);
+      hjHelper.addNewBatch(0);
+      buildBatchIndex++;
+      if (isFurtherProcessingRequired(rightUpstream) && this.right.getRecordCount() > 0) {
         setupHashTable();
-        hashJoinProbe = setupHashJoinProbe();
-        // Build the container schema and set the counts
-        for (final VectorWrapper<?> w : container) {
-          w.getValueVector().allocateNew();
-        }
-      } else {
-//        state = BatchState.DONE;
+      }
+      hashJoinProbe = setupHashJoinProbe();
+      // Build the container schema and set the counts
+      for (final VectorWrapper<?> w : container) {
+        w.getValueVector().allocateNew();
+//>>>>>>> 4388043f0... DRILL-5851: Empty table during a join operation with a non empty table produces cast exception.
       }
       container.buildSchema(BatchSchema.SelectionVectorMode.NONE);
       container.setRecordCount(outputRecords);
@@ -223,8 +241,13 @@ public class HashJoinBatch extends AbstractBinaryRecordBatch<HashJoinPOP> {
       }
 
       // Store the number of records projected
-      if (hashTable != null && (!hashTable.isEmpty() || joinType != JoinRelType.INNER)) {
-        logger.error(hashTable.toString());
+//<<<<<<< HEAD
+//      if (hashTable != null && (!hashTable.isEmpty() || joinType != JoinRelType.INNER)) {
+//        logger.error(hashTable.toString());
+//=======
+      if ((hashTable != null && !hashTable.isEmpty()) || joinType != JoinRelType.INNER) {
+
+//>>>>>>> 4388043f0... DRILL-5851: Empty table during a join operation with a non empty table produces cast exception.
         // Allocate the memory for the vectors in the output container
         allocateVectors();
 
@@ -317,11 +340,19 @@ public class HashJoinBatch extends AbstractBinaryRecordBatch<HashJoinPOP> {
     //Setup the underlying hash table
 
     // skip first batch if count is zero, as it may be an empty schema batch
-    if (rightUpstream != IterOutcome.NONE && right.getRecordCount() == 0) {
+//<<<<<<< HEAD
+//    if (rightUpstream != IterOutcome.NONE && right.getRecordCount() == 0) {
+//=======
+    if (isFurtherProcessingRequired(rightUpstream) && right.getRecordCount() == 0) {
+//>>>>>>> 4388043f0... DRILL-5851: Empty table during a join operation with a non empty table produces cast exception.
       for (final VectorWrapper<?> w : right) {
         w.clear();
       }
       rightUpstream = next(right);
+      if (isFurtherProcessingRequired(rightUpstream) &&
+          right.getRecordCount() > 0 && hashTable == null) {
+        setupHashTable();
+      }
     }
 
     boolean moreData = true;
@@ -546,5 +577,9 @@ public class HashJoinBatch extends AbstractBinaryRecordBatch<HashJoinPOP> {
       hashTable.clear();
     }
     super.close();
+  }
+
+  private boolean isFurtherProcessingRequired(IterOutcome upStream) {
+    return upStream == IterOutcome.OK || upStream == IterOutcome.OK_NEW_SCHEMA;
   }
 }

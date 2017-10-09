@@ -354,9 +354,9 @@ public class TestNullInputMiniPlan extends MiniPlanUnitTestBase{
         .build();
 
     BatchSchema expectedSchema = new SchemaBuilder()
-        .addNullable("a", TypeProtos.MinorType.BIGINT)
-        .addNullable("b", TypeProtos.MinorType.BIGINT)
-        .withSVMode(BatchSchema.SelectionVectorMode.NONE)
+            .addNullable("a", TypeProtos.MinorType.BIGINT)
+            .addNullable("b", TypeProtos.MinorType.BIGINT)
+            .withSVMode(BatchSchema.SelectionVectorMode.NONE)
         .build();
 
     new MiniPlanTestBuilder()

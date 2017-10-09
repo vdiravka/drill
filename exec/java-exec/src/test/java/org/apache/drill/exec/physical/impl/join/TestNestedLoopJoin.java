@@ -24,9 +24,12 @@ import org.apache.drill.common.exceptions.UserRemoteException;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.nio.file.Paths;
-
+import org.apache.drill.exec.planner.physical.PlannerSettings;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.junit.Assert.assertThat;
 
@@ -68,6 +71,9 @@ public class TestNestedLoopJoin extends PlanTestBase {
 
   private static final String testNlJoinInequality_3 = "select r_regionkey from cp.`tpch/region.parquet` "
       + " where r_regionkey > (select min(n_regionkey) * 2 from cp.`tpch/nation.parquet` )";
+
+  private static final String testEmptyJoin = "select count(*) as cnt from cp.`employee.json` emp %s join dfs.`dept.json` " +
+          "as dept on dept.manager = emp.`last_name`";
 
   private static final String testNlJoinBetween = "select " +
       "n.n_nationkey, length(r.r_name) r_name_len, length(r.r_comment) r_comment_len " +
@@ -331,6 +337,57 @@ public class TestNestedLoopJoin extends PlanTestBase {
     } finally {
       test(RESET_HJ);
       test(RESET_JOIN_OPTIMIZATION);
+    }
+  }
+
+  private static void buildFile(String fileName, String[] data, File testDir) throws IOException {
+    try(PrintWriter out = new PrintWriter(new FileWriter(new File(testDir, fileName)))) {
+      for (String line : data) {
+        out.println(line);
+      }
+    }
+  }
+
+  public static void testWithEmptyJoin(File testDir, String joinType,
+                                String joinPattern, long result) throws Exception {
+    buildFile("dept.json", new String[0], testDir);
+    String query = String.format(testEmptyJoin, joinType);
+    testPlanMatchingPatterns(query, new String[]{joinPattern}, new String[]{});
+    testBuilder()
+            .sqlQuery(query)
+            .unOrdered()
+            .baselineColumns("cnt")
+            .baselineValues(result)
+            .build().run();
+  }
+
+  @Test
+  public void testNestedLeftJoinWithEmptyTable() throws Exception {
+    try {
+      alterSession(PlannerSettings.NLJOIN_FOR_SCALAR.getOptionName(), false);
+      testWithEmptyJoin(dirTestWatcher.getRootDir(), "left outer", nlpattern, 1155L);
+    } finally {
+      resetSessionOption(PlannerSettings.HASHJOIN.getOptionName());
+    }
+  }
+
+  @Test
+  public void testNestedInnerJoinWithEmptyTable() throws Exception {
+    try {
+      alterSession(PlannerSettings.NLJOIN_FOR_SCALAR.getOptionName(), false);
+      testWithEmptyJoin(dirTestWatcher.getRootDir(), "inner", nlpattern, 0L);
+    } finally {
+      resetSessionOption(PlannerSettings.HASHJOIN.getOptionName());
+    }
+  }
+
+  @Test
+  public void testNestRightJoinWithEmptyTable() throws Exception {
+    try {
+      alterSession(PlannerSettings.NLJOIN_FOR_SCALAR.getOptionName(), false);
+      testWithEmptyJoin(dirTestWatcher.getRootDir(), "right outer", nlpattern, 0L);
+    } finally {
+      resetSessionOption(PlannerSettings.HASHJOIN.getOptionName());
     }
   }
 }
