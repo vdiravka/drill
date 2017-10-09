@@ -228,4 +228,20 @@ public abstract class AbstractRecordBatch<T extends PhysicalOperator> implements
   public VectorContainer getOutgoingContainer() {
     throw new UnsupportedOperationException(String.format(" You should not call getOutgoingContainer() for class %s", this.getClass().getCanonicalName()));
   }
+
+  public void drainStream(IterOutcome stream, int input, RecordBatch batch) {
+    if (stream == IterOutcome.OK_NEW_SCHEMA || stream == IterOutcome.OK) {
+      for (final VectorWrapper<?> wrapper : batch) {
+        wrapper.getValueVector().clear();
+      }
+      batch.kill(true);
+      stream = next(input, batch);
+      while (stream == IterOutcome.OK_NEW_SCHEMA || stream == IterOutcome.OK) {
+        for (final VectorWrapper<?> wrapper : batch) {
+          wrapper.getValueVector().clear();
+        }
+        stream = next(input, batch);
+      }
+    }
+  }
 }

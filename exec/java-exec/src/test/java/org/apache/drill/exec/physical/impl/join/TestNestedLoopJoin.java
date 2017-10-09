@@ -19,19 +19,17 @@
 package org.apache.drill.exec.physical.impl.join;
 
 import org.apache.drill.categories.OperatorTest;
-import org.apache.drill.PlanTestBase;
 import org.apache.drill.common.exceptions.UserRemoteException;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-
 import java.nio.file.Paths;
-
+import org.apache.drill.exec.planner.physical.PlannerSettings;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.junit.Assert.assertThat;
 
 @Category(OperatorTest.class)
-public class TestNestedLoopJoin extends PlanTestBase {
+public class TestNestedLoopJoin extends JoinTestBase {
 
   private static String nlpattern = "NestedLoopJoin";
 
@@ -331,6 +329,36 @@ public class TestNestedLoopJoin extends PlanTestBase {
     } finally {
       test(RESET_HJ);
       test(RESET_JOIN_OPTIMIZATION);
+    }
+  }
+
+  @Test
+  public void testNestedLeftJoinWithEmptyTable() throws Exception {
+    try {
+      alterSession(PlannerSettings.NLJOIN_FOR_SCALAR.getOptionName(), false);
+      testJoinWithEmptyFile(dirTestWatcher.getRootDir(), "left outer", nlpattern, 1155L);
+    } finally {
+      resetSessionOption(PlannerSettings.HASHJOIN.getOptionName());
+    }
+  }
+
+  @Test
+  public void testNestedInnerJoinWithEmptyTable() throws Exception {
+    try {
+      alterSession(PlannerSettings.NLJOIN_FOR_SCALAR.getOptionName(), false);
+      testJoinWithEmptyFile(dirTestWatcher.getRootDir(), "inner", nlpattern, 0L);
+    } finally {
+      resetSessionOption(PlannerSettings.HASHJOIN.getOptionName());
+    }
+  }
+
+  @Test
+  public void testNestRightJoinWithEmptyTable() throws Exception {
+    try {
+      alterSession(PlannerSettings.NLJOIN_FOR_SCALAR.getOptionName(), false);
+      testJoinWithEmptyFile(dirTestWatcher.getRootDir(), "right outer", nlpattern, 0L);
+    } finally {
+      resetSessionOption(PlannerSettings.HASHJOIN.getOptionName());
     }
   }
 }
