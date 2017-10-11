@@ -17,26 +17,13 @@
  */
 package org.apache.drill.exec.store.hbase;
 
-import java.io.IOException;
-
-import org.apache.drill.common.exceptions.UserException;
-import org.apache.hadoop.hbase.TableName;
-import org.apache.hadoop.hbase.client.Admin;
 
 
 public class DrillHBaseTable extends AbstractHBaseDrillTable {
-  private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(DrillHBaseTable.class);
 
   public DrillHBaseTable(String storageEngineName, HBaseStoragePlugin plugin, HBaseScanSpec scanSpec) {
     super(storageEngineName, plugin, scanSpec);
-    try(Admin admin = plugin.getConnection().getAdmin()) {
-      tableDesc = admin.getTableDescriptor(TableName.valueOf(scanSpec.getTableName()));
-    } catch (IOException e) {
-      throw UserException.dataReadError()
-          .message("Failure while loading table %s in database %s.", scanSpec.getTableName(), storageEngineName)
-          .addContext("Message: ", e.getMessage())
-          .build(logger);
-    }
+    setTableDesc(plugin.getConnection(), scanSpec.getTableName());
   }
 
 }

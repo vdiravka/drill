@@ -20,17 +20,22 @@ package org.apache.drill.exec.store.hbase;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.sql.type.SqlTypeName;
+import org.apache.drill.common.exceptions.UserException;
 import org.apache.drill.exec.planner.logical.DrillTable;
 import org.apache.drill.exec.store.StoragePlugin;
+import org.apache.hadoop.hbase.TableName;
+import org.apache.hadoop.hbase.client.Connection;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.util.Bytes;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Set;
 
 import static org.apache.drill.exec.store.hbase.DrillHBaseConstants.ROW_KEY;
 
 public abstract class AbstractHBaseDrillTable extends DrillTable {
+  private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(AbstractHBaseDrillTable.class);
 
   protected HTableDescriptor tableDesc;
 
@@ -52,6 +57,23 @@ public abstract class AbstractHBaseDrillTable extends DrillTable {
       typeList.add(typeFactory.createMapType(typeFactory.createSqlType(SqlTypeName.VARCHAR), typeFactory.createSqlType(SqlTypeName.ANY)));
     }
     return typeFactory.createStructType(typeList, fieldNameList);
+  }
+
+  /**
+   * Allows to set HTableDescriptor
+   *
+   * @param connection with a server
+   * @param tableName the name of table
+   */
+  protected void setTableDesc(Connection connection, String tableName) {
+    try {
+      tableDesc = connection.getAdmin().getTableDescriptor(TableName.valueOf(tableName));
+    } catch (IOException e) {
+      throw UserException.dataReadError()
+          .message("Failure while loading table %s in database %s.", tableName, getStorageEngineName())
+          .addContext("Message: ", e.getMessage())
+          .build(logger);
+    }
   }
 
 }

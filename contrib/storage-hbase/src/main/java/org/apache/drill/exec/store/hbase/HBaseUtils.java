@@ -36,6 +36,8 @@ import org.apache.hadoop.hbase.util.Bytes;
 import com.google.common.collect.Lists;
 
 public class HBaseUtils {
+  static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(HBaseUtils.class);
+
   static final ParseFilter FILTER_PARSEER = new ParseFilter();
 
   static final int FIRST_FILTER = 0;

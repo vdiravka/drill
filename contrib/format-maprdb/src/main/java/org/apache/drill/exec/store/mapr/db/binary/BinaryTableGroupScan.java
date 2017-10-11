@@ -113,9 +113,9 @@ public class BinaryTableGroupScan extends MapRDBGroupScan implements DrillHBaseC
 
   @Override
   public GroupScan clone(List<SchemaPath> columns) {
-    HBaseUtils.verifyColumns(columns, hTableDesc);
     BinaryTableGroupScan newScan = new BinaryTableGroupScan(this);
-    newScan.columns = columns;
+    newScan.columns = columns == null ? ALL_COLUMNS : columns;
+    HBaseUtils.verifyColumns(columns, hTableDesc);
     return newScan;
   }
 

@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -143,9 +143,9 @@ public class HBaseGroupScan extends AbstractGroupScan implements DrillHBaseConst
 
   @Override
   public GroupScan clone(List<SchemaPath> columns) {
-    HBaseUtils.verifyColumns(columns, hTableDesc);
     HBaseGroupScan newScan = new HBaseGroupScan(this);
     newScan.columns = columns == null ? ALL_COLUMNS : columns;
+    HBaseUtils.verifyColumns(columns, hTableDesc);
     return newScan;
   }
 

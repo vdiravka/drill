@@ -65,7 +65,7 @@ public class MapRDBFormatMatcher extends TableFormatMatcher {
             new FormatSelection(getFormatPlugin().getConfig(), selection));
       } else {
         FormatSelection formatSelection = new FormatSelection(getFormatPlugin().getConfig(), selection);
-        return new MapRDBBinaryTable(storageEngineName, fsPlugin, getFormatPlugin(), formatSelection);
+        return new MapRDBBinaryTable(storageEngineName, fsPlugin, (MapRDBFormatPlugin) getFormatPlugin(), formatSelection);
       }
     }
     return null;

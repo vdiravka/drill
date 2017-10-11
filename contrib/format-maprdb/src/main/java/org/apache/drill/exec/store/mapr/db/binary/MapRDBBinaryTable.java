@@ -17,32 +17,18 @@
  */
 package org.apache.drill.exec.store.mapr.db.binary;
 
-import java.io.IOException;
 
-import org.apache.drill.common.exceptions.UserException;
 import org.apache.drill.exec.store.dfs.FileSystemPlugin;
 import org.apache.drill.exec.store.dfs.FormatSelection;
 import org.apache.drill.exec.store.hbase.AbstractHBaseDrillTable;
-import org.apache.drill.exec.store.mapr.TableFormatPlugin;
 import org.apache.drill.exec.store.mapr.db.MapRDBFormatPlugin;
-import org.apache.hadoop.hbase.TableName;
-import org.apache.hadoop.hbase.client.Admin;
 
 public class MapRDBBinaryTable extends AbstractHBaseDrillTable {
-  private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(MapRDBBinaryTable.class);
 
-  public MapRDBBinaryTable(String storageEngineName, FileSystemPlugin storagePlugin, TableFormatPlugin formatPlugin,
+  public MapRDBBinaryTable(String storageEngineName, FileSystemPlugin storagePlugin, MapRDBFormatPlugin formatPlugin,
       FormatSelection selection) {
     super(storageEngineName, storagePlugin, selection);
-    String tableName = selection.getSelection().getFiles().get(0);
-    try(Admin admin = ((MapRDBFormatPlugin) formatPlugin).getConnection().getAdmin()) {
-      tableDesc = admin.getTableDescriptor(TableName.valueOf(tableName));
-    } catch (IOException e) {
-      throw UserException.dataReadError()
-          .message("Failure while loading table %s in database %s.", tableName, storageEngineName)
-          .addContext("Message: ", e.getMessage())
-          .build(logger);
-    }
+    setTableDesc(formatPlugin.getConnection(), formatPlugin.getTableName(selection.getSelection()));
   }
 
 }
