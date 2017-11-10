@@ -199,36 +199,34 @@ public class ${mode}MapWriter extends AbstractFieldWriter {
   <#assign vectName = "Nullable${capName}" />
 
   <#if minor.class?starts_with("Decimal") >
-  public ${minor.class}Writer ${lowerName}(String name) {
+    public ${capName}Writer ${lowerName}(String name) {
     // returns existing writer
     final FieldWriter writer = fields.get(name.toLowerCase());
     assert writer != null;
     return writer;
   }
 
-  public ${minor.class}Writer ${lowerName}(String name, int scale, int precision) {
+  public ${capName}Writer ${lowerName}(String name, int scale, int precision) {
     final MajorType ${upperName}_TYPE = Types.withScaleAndPrecision(MinorType.${upperName}, DataMode.OPTIONAL, scale, precision);
   <#else>
-  private static final MajorType ${upperName}_TYPE = Types.optional(MinorType.${upperName});
   @Override
-  public ${minor.class}Writer ${lowerName}(String name) {
+  public ${capName}Writer ${lowerName}(String name) {
+    final MajorType ${upperName}_TYPE = Types.optional(MinorType.${upperName});
   </#if>
     FieldWriter writer = fields.get(name.toLowerCase());
     if(writer == null) {
       ValueVector vector;
       ValueVector currentVector = container.getChild(name);
-      if (unionEnabled){
-        ${vectName}Vector v = container.addOrGet(name, ${upperName}_TYPE, ${vectName}Vector.class);
+      ${vectName}Vector v = container.addOrGet(name, ${upperName}_TYPE, ${vectName}Vector.class);
+      if (unionEnabled) {
         writer = new PromotableWriter(v, container);
-        vector = v;
       } else {
-        ${vectName}Vector v = container.addOrGet(name, ${upperName}_TYPE, ${vectName}Vector.class);
         writer = new ${vectName}WriterImpl(v, this);
-        vector = v;
       }
+      vector = v;
       if (currentVector == null || currentVector != vector) {
         vector.allocateNewSafe();
-      } 
+      }
       writer.setPosition(${index});
       fields.put(name.toLowerCase(), writer);
     }

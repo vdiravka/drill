@@ -20,9 +20,12 @@ package org.apache.drill.exec.physical.impl.agg;
 
 import org.apache.drill.BaseTestQuery;
 import org.apache.drill.categories.OperatorTest;
+import org.apache.drill.exec.rpc.user.QueryDataBatch;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+
+import java.util.List;
 
 @Category(OperatorTest.class)
 public class TestHashAggr extends BaseTestQuery{
@@ -59,4 +62,22 @@ public class TestHashAggr extends BaseTestQuery{
     testPhysicalFromFile("agg/hashagg/q8.json");
   }
 
+
+  @Test
+  public void test() throws Exception {
+    String query = "select bucket, count(*) from dfs.tmp.bof_repro_2 group by bucket";
+//    test("alter session set `store.parquet.use_new_reader` = true");
+    test("ALTER SESSION SET  `planner.enable_streamagg`=false");
+//    test("ALTER SESSION SET `exec.enable_union_type` = true;");
+
+//    String query = "select * from dfs.`/tmp/bof_repro_2/0_0_0.parquet`";
+//    String query = "select * from dfs.`/tmp/bof_repro_2/0_0_1.parquet`";
+
+//    String query = "select * from (select CONVERT_FROM('[]','JSON') AS MYCOL, 'Bucket1' AS Bucket FROM (VALUES(1)))";
+//    String query = "select * from (select CONVERT_FROM('[\"hello\",\"hai\"]','JSON') AS MYCOL, 'Bucket1' AS Bucket FROM (VALUES(1)))";
+//    String query = "CREATE TABLE dfs_test.tmp.TEST as select * from (select CONVERT_FROM('[\"hello\",\"hai\"]','JSON') AS MYCOL, 'Bucket1' AS Bucket FROM (VALUES(1)))";
+    setColumnWidths(new int[] {25});
+    List<QueryDataBatch> resultList = testSqlWithResults(query);
+    printResult(resultList);
+  }
 }
