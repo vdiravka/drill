@@ -59,6 +59,7 @@ import org.apache.hadoop.hive.serde2.objectinspector.StructObjectInspector;
 import org.apache.hadoop.hive.serde2.typeinfo.StructTypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoUtils;
+import org.apache.hadoop.hive.ql.io.AcidUtils;
 import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordReader;
@@ -153,6 +154,10 @@ public abstract class HiveAbstractReader extends AbstractRecordReader {
         finalOI = (StructObjectInspector)ObjectInspectorConverters.getConvertedOI(partitionOI, tableOI);
         partTblObjectInspectorConverter = ObjectInspectorConverters.getConverter(partitionOI, finalOI);
         job.setInputFormat(HiveUtilities.getInputFormatClass(job, partition.getSd(), table));
+        if (AcidUtils.isTablePropertyTransactional(partitionProperties)) {
+          AcidUtils.setTransactionalTableScan(job, true);
+          HiveUtilities.setColumnTypes(job, partitionProperties, true, table.getSd());
+        }
       } else {
         // For non-partitioned tables, there is no need to create converter as there are no schema changes expected.
         partitionSerDe = tableSerDe;

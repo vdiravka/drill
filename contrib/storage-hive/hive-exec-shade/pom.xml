@@ -39,14 +39,19 @@
           <groupId>log4j</groupId>
         </exclusion>
         <exclusion>
-          <groupId>commons-codec</groupId>
-          <artifactId>commons-codec</artifactId>
-        </exclusion>
-        <exclusion>
-          <artifactId>calcite-avatica</artifactId>
-          <groupId>org.apache.calcite</groupId>
+          <groupId>org.json</groupId>
+          <artifactId>json</artifactId>
         </exclusion>
       </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.parquet</groupId>
+      <artifactId>parquet-column</artifactId>
+      <version>${parquet.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.tdunning</groupId>
+      <artifactId>json</artifactId>
     </dependency>
   </dependencies>
 
@@ -55,7 +60,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
-        <version>2.1</version>
+        <version>3.1.0</version>
         <executions>
           <execution>
             <phase>package</phase>
@@ -66,16 +71,10 @@
               <artifactSet>
                 <includes>
                   <include>org.apache.hive:hive-exec</include>
-                  <include>com.twitter:parquet-column</include>
-                  <include>com.twitter:parquet-hadoop</include>
+                  <include>org.apache.parquet:parquet-column</include>
                   <include>commons-codec:commons-codec</include>
-                  <include>com.twitter:parquet-format</include>
-                  <include>com.twitter:parquet-common</include>
-                  <include>com.twitter:parquet-jackson</include>
-                  <include>com.twitter:parquet-encoding</include>
-                  <include>com.twitter:parquet-generator</include>
                   <include>org.apache.calcite:calcite-core</include>
-                  <include>org.apache.calcite.avatica:avatica-core</include>
+                  <include>org.apache.calcite:calcite-avatica</include>
                 </includes>
               </artifactSet>
               <createDependencyReducedPom>false</createDependencyReducedPom>
@@ -84,10 +83,6 @@
                 <relocation>
                   <pattern>com.google.</pattern>
                   <shadedPattern>hive.com.google.</shadedPattern>
-                </relocation>
-                <relocation>
-                  <pattern>parquet.</pattern>
-                  <shadedPattern>hive.parquet.</shadedPattern>
                 </relocation>
                 <relocation>
                   <pattern>org.apache.commons.codec.</pattern>
@@ -105,12 +100,21 @@
                   <pattern>org.apache.calcite.</pattern>
                   <shadedPattern>hive.org.apache.calcite.</shadedPattern>
                 </relocation>
+                <relocation>
+                  <pattern>com.fasterxml.jackson.</pattern>
+                  <shadedPattern>hive.com.fasterxml.jackson.</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>org.apache.parquet.</pattern>
+                  <shadedPattern>hive.org.apache.parquet.</shadedPattern>
+                </relocation>
               </relocations>
               <filters>
                 <filter>
                   <artifact>org.apache.hive:hive-exec</artifact>
                   <excludes>
                     <exclude>org/json/*</exclude>
+                    <exclude>org/apache/parquet/schema/*</exclude>
                   </excludes>
                 </filter>
               </filters>
