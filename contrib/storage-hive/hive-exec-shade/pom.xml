@@ -27,7 +27,7 @@
   <artifactId>drill-hive-exec-shaded</artifactId>
   <packaging>jar</packaging>
   <name>contrib/hive-storage-plugin/hive-exec-shaded</name>
-
+<!--TODO: need to exclude com.codahale.metrics:metrics-core and fasterxml.jackson.core:jackson-core -->
   <dependencies>
     <dependency>
       <groupId>org.apache.hive</groupId>
