@@ -104,8 +104,7 @@ public class HiveUtilities {
           return Boolean.parseBoolean(value);
         case DECIMAL: {
           DecimalTypeInfo decimalTypeInfo = (DecimalTypeInfo) typeInfo;
-          return HiveDecimalUtils.enforcePrecisionScale(HiveDecimal.create(value),
-              decimalTypeInfo.precision(), decimalTypeInfo.scale());
+          return HiveDecimalUtils.enforcePrecisionScale(HiveDecimal.create(value), decimalTypeInfo);
         }
         case DOUBLE:
           return Double.parseDouble(value);

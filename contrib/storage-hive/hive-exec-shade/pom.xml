@@ -42,6 +42,10 @@
           <groupId>commons-codec</groupId>
           <artifactId>commons-codec</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>org.json</groupId>
+          <artifactId>json</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
   </dependencies>
@@ -100,6 +104,10 @@
                 <relocation>
                   <pattern>org.apache.calcite.</pattern>
                   <shadedPattern>hive.org.apache.calcite.</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>com.fasterxml.jackson.</pattern>
+                  <shadedPattern>hive.com.fasterxml.jackson.</shadedPattern>
                 </relocation>
               </relocations>
               <filters>
