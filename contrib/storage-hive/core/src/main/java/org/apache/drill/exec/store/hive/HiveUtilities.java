@@ -51,10 +51,13 @@ import org.apache.drill.exec.vector.ValueVector;
 import org.apache.drill.exec.work.ExecErrorConstants;
 
 import org.apache.hadoop.hive.common.type.HiveDecimal;
+import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.hadoop.hive.metastore.MetaStoreUtils;
 import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.StorageDescriptor;
 import org.apache.hadoop.hive.metastore.api.Table;
+import org.apache.hadoop.hive.ql.exec.Utilities;
+import org.apache.hadoop.hive.ql.io.IOConstants;
 import org.apache.hadoop.hive.ql.metadata.HiveStorageHandler;
 import org.apache.hadoop.hive.ql.metadata.HiveUtils;
 import org.apache.hadoop.hive.serde.serdeConstants;
@@ -104,8 +107,7 @@ public class HiveUtilities {
           return Boolean.parseBoolean(value);
         case DECIMAL: {
           DecimalTypeInfo decimalTypeInfo = (DecimalTypeInfo) typeInfo;
-          return HiveDecimalUtils.enforcePrecisionScale(HiveDecimal.create(value),
-              decimalTypeInfo.precision(), decimalTypeInfo.scale());
+          return HiveDecimalUtils.enforcePrecisionScale(HiveDecimal.create(value), decimalTypeInfo);
         }
         case DOUBLE:
           return Double.parseDouble(value);
@@ -506,6 +508,52 @@ public class HiveUtilities {
     int skipHeader = retrieveIntProperty(tableProperties, serdeConstants.HEADER_COUNT, -1);
     int skipFooter = retrieveIntProperty(tableProperties, serdeConstants.FOOTER_COUNT, -1);
     return skipHeader > 0 || skipFooter > 0;
+  }
+
+  /**
+   * This method checks whether the schema evolution properties are set in job conf for the input format. If they
+   * aren't set, method sets the column names and types from table/partition properties or storage descriptor.
+   * @param job the job to update
+   * @param properties table or partition properties
+   * @param isAcidTable true if the table is transactional, false otherwise
+   * @param sd storage descriptor
+   */
+  public static void setColumnTypes(JobConf job, Properties properties, boolean isAcidTable, StorageDescriptor sd) {
+
+    // No work is needed, if schema evolution is used
+    if (Utilities.isSchemaEvolutionEnabled(job, isAcidTable) && job.get(IOConstants.SCHEMA_EVOLUTION_COLUMNS) != null &&
+        job.get(IOConstants.SCHEMA_EVOLUTION_COLUMNS_TYPES) != null) {
+      return;
+    }
+
+    String colNames;
+    String colTypes;
+
+    // Try to get get column names and types from table or partition properties. If they are absent there, get columns
+    // data from storage descriptor of the table
+    if (properties.containsKey(serdeConstants.LIST_COLUMNS) && properties.containsKey(serdeConstants.LIST_COLUMN_TYPES)) {
+      colNames = job.get(serdeConstants.LIST_COLUMNS);
+      colTypes = job.get(serdeConstants.LIST_COLUMN_TYPES);
+    } else {
+      StringBuilder colNamesBuilder = new StringBuilder();
+      StringBuilder colTypesBuilder = new StringBuilder();
+      boolean isFirst = true;
+      for(FieldSchema col: sd.getCols()) {
+        if (isFirst) {
+          isFirst = false;
+        } else {
+          colNamesBuilder.append(',');
+          colTypesBuilder.append(',');
+        }
+        colNamesBuilder.append(col.getName());
+        colTypesBuilder.append(col.getType());
+      }
+      colNames = colNamesBuilder.toString();
+      colTypes = colTypesBuilder.toString();
+    }
+
+    job.set(IOConstants.SCHEMA_EVOLUTION_COLUMNS, colNames);
+    job.set(IOConstants.SCHEMA_EVOLUTION_COLUMNS_TYPES, colTypes);
   }
 }
 
