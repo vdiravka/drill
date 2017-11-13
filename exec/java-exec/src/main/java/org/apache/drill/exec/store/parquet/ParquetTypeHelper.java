@@ -101,7 +101,7 @@ public class ParquetTypeHelper {
   }
 
   public static DataMode getDataModeForRepetition(Repetition repetition) {
-    return modeMap.inverse().get(Repetition.OPTIONAL);
+    return modeMap.inverse().get(repetition);
   }
 
   public static OriginalType getOriginalTypeForMinorType(MinorType minorType) {

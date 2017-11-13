@@ -52,7 +52,6 @@ package org.apache.drill.exec.vector.complex.writer;
     <#list vv.types as type><#list type.minor as minor>
     <#assign lowerName = minor.class?uncap_first />
     <#if lowerName == "int" ><#assign lowerName = "integer" /></#if>
-    <#assign upperName = minor.class?upper_case />
     <#assign capName = minor.class?cap_first />
     <#if minor.class?starts_with("Decimal") >
     ${capName}Writer ${lowerName}(String name, int scale, int precision);
@@ -77,14 +76,23 @@ package org.apache.drill.exec.vector.complex.writer;
     <#list vv.types as type><#list type.minor as minor>
     <#assign lowerName = minor.class?uncap_first />
     <#if lowerName == "int" ><#assign lowerName = "integer" /></#if>
-    <#assign upperName = minor.class?upper_case />
     <#assign capName = minor.class?cap_first />
     ${capName}Writer ${lowerName}();
     </#list></#list>
   }
 
   public interface ScalarWriter extends
-  <#list vv.types as type><#list type.minor as minor><#assign name = minor.class?cap_first /> ${name}Writer, </#list></#list> BaseWriter {}
+  <#list vv.types as type><#list type.minor as minor><#list ["Required", "Optional"] as scalarMode>
+  <#if scalarMode == "Optional">
+    <#assign name = "Nullable${minor.class?cap_first}" /> ${name}Writer,
+  <#else>
+    <#assign name = minor.class?cap_first /> ${name}Writer,
+  </#if>
+
+
+  </#list></#list></#list>
+
+  BaseWriter {}
 
   public interface ComplexWriter {
     void allocate();
