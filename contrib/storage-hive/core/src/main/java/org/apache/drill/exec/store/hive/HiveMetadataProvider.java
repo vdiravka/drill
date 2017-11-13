@@ -36,6 +36,7 @@ import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.metastore.MetaStoreUtils;
 import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.StorageDescriptor;
+import org.apache.hadoop.hive.ql.io.AcidUtils;
 import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.FileSplit;
 import org.apache.hadoop.mapred.InputFormat;
@@ -264,6 +265,10 @@ public class HiveMetadataProvider {
           final List<LogicalInputSplit> splits = Lists.newArrayList();
           final JobConf job = new JobConf(hiveConf);
           HiveUtilities.addConfToJob(job, properties);
+          if (AcidUtils.isTablePropertyTransactional(properties)) {
+            AcidUtils.setTransactionalTableScan(job, true);
+            HiveUtilities.setColumnTypes(job, properties, true, sd);
+          }
           job.setInputFormat(HiveUtilities.getInputFormatClass(job, sd, hiveReadEntry.getTable()));
           final Path path = new Path(sd.getLocation());
           final FileSystem fs = path.getFileSystem(job);

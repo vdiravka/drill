@@ -210,6 +210,7 @@
     <dependency>
       <groupId>org.apache.calcite</groupId>
       <artifactId>calcite-core</artifactId>
+      <version>${calcite.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.calcite.avatica</groupId>
@@ -729,6 +730,7 @@
                 <artifactItem>
                   <groupId>org.apache.calcite</groupId>
                   <artifactId>calcite-core</artifactId>
+                  <version>${calcite.version}</version>
                   <type>jar</type>
                   <overWrite>true</overWrite>
                   <outputDirectory>${project.build.directory}/</outputDirectory>
