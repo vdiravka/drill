@@ -42,7 +42,15 @@
           <groupId>commons-codec</groupId>
           <artifactId>commons-codec</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>org.json</groupId>
+          <artifactId>json</artifactId>
+        </exclusion>
       </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>com.tdunning</groupId>
+      <artifactId>json</artifactId>
     </dependency>
   </dependencies>
 
@@ -51,7 +59,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
-        <version>2.1</version>
+        <version>3.1.0</version>
         <executions>
           <execution>
             <phase>package</phase>
@@ -72,34 +80,39 @@
                   <include>com.twitter:parquet-generator</include>
                   <include>org.apache.calcite:calcite-core</include>
                   <include>org.apache.calcite:calcite-avatica</include>
+                  <include>org.apache.calcite:calcite-linq4j</include>
                 </includes>
               </artifactSet>
               <createDependencyReducedPom>false</createDependencyReducedPom>
               <promoteTransitiveDependencies>true</promoteTransitiveDependencies>
               <relocations>
                 <relocation>
-                  <pattern>com.google.</pattern>
-                  <shadedPattern>hive.com.google.</shadedPattern>
+                  <pattern>com.google</pattern>
+                  <shadedPattern>hive.com.google</shadedPattern>
                 </relocation>
                 <relocation>
-                  <pattern>parquet.</pattern>
-                  <shadedPattern>hive.parquet.</shadedPattern>
+                  <pattern>org.apache.commons.codec</pattern>
+                  <shadedPattern>hive.org.apache.commons.codec</shadedPattern>
                 </relocation>
                 <relocation>
-                  <pattern>org.apache.commons.codec.</pattern>
-                  <shadedPattern>hive.org.apache.commons.codec.</shadedPattern>
+                  <pattern>net.hydromatic</pattern>
+                  <shadedPattern>hive.net.hydromatic</shadedPattern>
                 </relocation>
                 <relocation>
-                  <pattern>net.hydromatic.</pattern>
-                  <shadedPattern>hive.net.hydromatic.</shadedPattern>
+                  <pattern>org.eigenbase</pattern>
+                  <shadedPattern>hive.org.eigenbase</shadedPattern>
                 </relocation>
                 <relocation>
-                  <pattern>org.eigenbase.</pattern>
-                  <shadedPattern>hive.org.eigenbase.</shadedPattern>
+                  <pattern>org.apache.calcite</pattern>
+                  <shadedPattern>hive.org.apache.calcite</shadedPattern>
                 </relocation>
                 <relocation>
-                  <pattern>org.apache.calcite.</pattern>
-                  <shadedPattern>hive.org.apache.calcite.</shadedPattern>
+                  <pattern>com.fasterxml.jackson</pattern>
+                  <shadedPattern>hive.com.fasterxml.jackson</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>org.apache.parquet</pattern>
+                  <shadedPattern>hive.org.apache.parquet</shadedPattern>
                 </relocation>
               </relocations>
               <filters>

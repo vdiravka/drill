@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -43,7 +43,9 @@ import static org.apache.hadoop.hive.conf.HiveConf.ConfVars.HIVE_AUTHORIZATION_E
 import static org.apache.hadoop.hive.conf.HiveConf.ConfVars.HIVE_AUTHORIZATION_MANAGER;
 import static org.apache.hadoop.hive.conf.HiveConf.ConfVars.HIVE_SERVER2_ENABLE_DOAS;
 import static org.apache.hadoop.hive.conf.HiveConf.ConfVars.METASTOREURIS;
+import static org.apache.hadoop.hive.conf.HiveConf.ConfVars.METASTORE_AUTO_CREATE_ALL;
 import static org.apache.hadoop.hive.conf.HiveConf.ConfVars.METASTORE_EXECUTE_SET_UGI;
+import static org.apache.hadoop.hive.conf.HiveConf.ConfVars.METASTORE_SCHEMA_VERIFICATION;
 
 @Category({SlowTest.class, HiveStorageTest.class})
 public class TestSqlStdBasedAuthorization extends BaseTestHiveImpersonation {
@@ -90,6 +92,8 @@ public class TestSqlStdBasedAuthorization extends BaseTestHiveImpersonation {
     hiveConf.set(ConfVars.HIVE_SERVER2_ENABLE_DOAS.varname, "false");
     hiveConf.set(ConfVars.METASTORE_EXECUTE_SET_UGI.varname, "false");
     hiveConf.set(ConfVars.USERS_IN_ADMIN_ROLE.varname, processUser);
+    hiveConf.set(ConfVars.METASTORE_SCHEMA_VERIFICATION.varname, "false");
+    hiveConf.set(ConfVars.METASTORE_AUTO_CREATE_ALL.varname, "true");
   }
 
   private static Map<String, String> getHivePluginConfig() {
@@ -100,7 +104,8 @@ public class TestSqlStdBasedAuthorization extends BaseTestHiveImpersonation {
     hiveConfig.put(METASTORE_EXECUTE_SET_UGI.varname, hiveConf.get(METASTORE_EXECUTE_SET_UGI.varname));
     hiveConfig.put(HIVE_AUTHORIZATION_ENABLED.varname, hiveConf.get(HIVE_AUTHORIZATION_ENABLED.varname));
     hiveConfig.put(HIVE_AUTHENTICATOR_MANAGER.varname, SessionStateUserAuthenticator.class.getName());
-    hiveConfig.put(HIVE_AUTHORIZATION_MANAGER.varname, SQLStdHiveAuthorizerFactory.class.getName());
+    hiveConfig.put(METASTORE_SCHEMA_VERIFICATION.varname, hiveConf.get(METASTORE_SCHEMA_VERIFICATION.varname));
+    hiveConfig.put(METASTORE_AUTO_CREATE_ALL.varname, hiveConf.get(METASTORE_AUTO_CREATE_ALL.varname));
     return hiveConfig;
   }
 

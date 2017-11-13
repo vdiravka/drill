@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -72,6 +72,8 @@ public class BaseTestHiveImpersonation extends BaseTestImpersonation {
 
     hiveConf.set(ConfVars.SCRATCHDIR.varname, "file://" + scratchDir.getAbsolutePath());
     hiveConf.set(ConfVars.LOCALSCRATCHDIR.varname, localScratchDir.getAbsolutePath());
+    hiveConf.set(ConfVars.METASTORE_SCHEMA_VERIFICATION.varname, "false");
+    hiveConf.set(ConfVars.METASTORE_AUTO_CREATE_ALL.varname, "true");
 
     // Set MiniDFS conf in HiveConf
     hiveConf.set(FS_DEFAULT_NAME_KEY, dfsConf.get(FS_DEFAULT_NAME_KEY));
@@ -87,6 +89,8 @@ public class BaseTestHiveImpersonation extends BaseTestImpersonation {
     final int port = MetaStoreUtils.findFreePort();
 
     hiveConf.set(METASTOREURIS.varname, "thrift://localhost:" + port);
+    hiveConf.set(ConfVars.METASTORE_SCHEMA_VERIFICATION.varname, "false");
+    hiveConf.set(ConfVars.METASTORE_AUTO_CREATE_ALL.varname, "true");
 
     MetaStoreUtils.startMetaStore(port, ShimLoader.getHadoopThriftAuthBridge(), hiveConf);
   }

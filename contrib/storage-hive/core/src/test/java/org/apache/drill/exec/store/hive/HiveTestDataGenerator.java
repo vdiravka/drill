@@ -81,6 +81,8 @@ public class HiveTestDataGenerator {
     config.put("javax.jdo.option.ConnectionURL", String.format("jdbc:derby:;databaseName=%s;create=true", dbDir));
     config.put("hive.metastore.warehouse.dir", whDir);
     config.put(FileSystem.FS_DEFAULT_NAME_KEY, FileSystem.DEFAULT_FS);
+    config.put("hive.metastore.schema.verification", "false");
+    config.put("datanucleus.schema.autoCreateAll", "true");
   }
 
   /**
@@ -149,6 +151,9 @@ public class HiveTestDataGenerator {
     conf.set(ConfVars.SCRATCHDIR.varname,  scratchDir.getAbsolutePath());
     conf.set(ConfVars.LOCALSCRATCHDIR.varname, localScratchDir.getAbsolutePath());
     conf.set(ConfVars.DYNAMICPARTITIONINGMODE.varname, "nonstrict");
+    conf.set(ConfVars.METASTORE_AUTO_CREATE_ALL.varname, "true");
+    conf.set(ConfVars.METASTORE_SCHEMA_VERIFICATION.varname, "false");
+    conf.set(ConfVars.HIVESTATSAUTOGATHER.varname, "false");
 
     SessionState ss = new SessionState(conf);
     SessionState.start(ss);
