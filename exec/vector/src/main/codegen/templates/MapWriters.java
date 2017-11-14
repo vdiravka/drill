@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -194,43 +194,37 @@ public class ${mode}MapWriter extends AbstractFieldWriter {
   <#assign lowerName = minor.class?uncap_first />
   <#if lowerName == "int" ><#assign lowerName = "integer" /></#if>
   <#assign upperName = minor.class?upper_case />
-  <#assign capName = minor.class?cap_first />
-  <#assign vectName = capName />
-  <#assign vectName = "${capName}" />
-  <#assign nullableVectName = "Nullable${capName}" />
+  <#assign vectName = minor.class?cap_first />
+  <#assign nullableVectName = "Nullable${vectName}" />
 
   <#if minor.class?starts_with("Decimal") >
     @Override
-    public ${capName}Writer ${lowerName}(String name) {
+    public ${vectName}Writer ${lowerName}(String name, TypeProtos.DataMode dataMode) {
     // returns existing writer
     final FieldWriter writer = fields.get(name.toLowerCase());
     assert writer != null;
     return writer;
   }
 
-  public ${capName}Writer ${lowerName}(String name, DataMode dataMode) {
-    // returns existing writer
-    final FieldWriter writer = fields.get(name.toLowerCase());
-    assert writer != null;
-    return writer;
-  }
-
-  public ${capName}Writer ${lowerName}(String name, DataMode dataMode, int scale, int precision) {
-    final MajorType ${upperName}_TYPE = Types.withScaleAndPrecision(MinorType.${upperName}, DataMode.OPTIONAL, scale, precision);
+  public ${vectName}Writer ${lowerName}(String name, TypeProtos.DataMode dataMode, int scale, int precision) {
+    final MajorType ${upperName}_TYPE = Types.withScaleAndPrecision(MinorType.${upperName},
+      TypeProtos.DataMode.OPTIONAL, scale, precision);
   <#else>
 
-  public ${capName}Writer ${lowerName}(String name, DataMode dataMode) {
+  public ${vectName}Writer ${lowerName}(String name, TypeProtos.DataMode dataMode) {
     final MajorType ${upperName}_TYPE = Types.withMode(MinorType.${upperName}, dataMode);
   </#if>
     FieldWriter writer = fields.get(name.toLowerCase());
     if(writer == null) {
       ValueVector vector;
       ValueVector currentVector = container.getChild(name);
-      vector = dataMode == DataMode.OPTIONAL ? container.addOrGet(name, ${upperName}_TYPE, ${nullableVectName}Vector.class) : container.addOrGet(name, ${upperName}_TYPE, ${vectName}Vector.class);
+      vector = dataMode == TypeProtos.DataMode.OPTIONAL ? container.addOrGet(name, ${upperName}_TYPE,
+        ${nullableVectName}Vector.class) : container.addOrGet(name, ${upperName}_TYPE, ${vectName}Vector.class);
       if (unionEnabled) {
         writer = new PromotableWriter(vector, container);
       } else {
-        writer = dataMode == DataMode.OPTIONAL ? new ${nullableVectName}WriterImpl((${nullableVectName}Vector) vector, this) : new ${vectName}WriterImpl((${vectName}Vector) vector, this);
+        writer = dataMode == TypeProtos.DataMode.OPTIONAL ? new ${nullableVectName}WriterImpl((${nullableVectName}Vector) vector, this) :
+          new ${vectName}WriterImpl((${vectName}Vector) vector, this);
       }
       if (currentVector == null || currentVector != vector) {
         vector.allocateNewSafe();
@@ -240,18 +234,6 @@ public class ${mode}MapWriter extends AbstractFieldWriter {
     }
     return writer;
   }
-
-  <#if minor.class?starts_with("Decimal") >
-    @Override
-    public ${capName}Writer ${lowerName}(String name, int scale, int precision) {
-      return ${lowerName}(name, DataMode.OPTIONAL, scale, precision);
-    }
-  <#else>
-    @Override
-    public ${capName}Writer ${lowerName}(String name) {
-      return ${lowerName}(name, DataMode.OPTIONAL);
-    }
-  </#if>
 
   </#list></#list>
 
