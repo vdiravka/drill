@@ -193,4 +193,17 @@ public class TestParquetComplex extends BaseTestQuery {
         .run();
   }
 
+  @Test //DRILL-5970
+  public void testParquetComplexTypesAggregation() throws Exception {
+    final String table = "dfs.`${WORKING_PATH}/src/test/resources/store/parquet/complex/files_with_complex_and_primitive_types/`";
+    String query = String.format("select bucket, count(*) as number from %s group by bucket", table);
+
+    testBuilder()
+        .sqlQuery(query)
+        .baselineColumns("bucket", "number")
+        .baselineValues("Bucket1", 2L)
+        .build()
+        .run();
+  }
+
 }

@@ -207,8 +207,7 @@ public class ${mode}MapWriter extends AbstractFieldWriter {
   }
 
   public ${vectName}Writer ${lowerName}(String name, TypeProtos.DataMode dataMode, int scale, int precision) {
-    final MajorType ${upperName}_TYPE = Types.withScaleAndPrecision(MinorType.${upperName},
-      TypeProtos.DataMode.OPTIONAL, scale, precision);
+    final MajorType ${upperName}_TYPE = Types.withScaleAndPrecision(MinorType.${upperName}, dataMode, scale, precision);
   <#else>
 
   public ${vectName}Writer ${lowerName}(String name, TypeProtos.DataMode dataMode) {
