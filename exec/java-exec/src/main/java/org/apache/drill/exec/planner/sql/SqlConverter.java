@@ -23,7 +23,6 @@ import java.util.Set;
 
 import com.google.common.base.Strings;
 import org.apache.calcite.adapter.java.JavaTypeFactory;
-import org.apache.calcite.jdbc.CalciteSchema;
 import org.apache.calcite.jdbc.JavaTypeFactoryImpl;
 import org.apache.calcite.plan.ConventionTraitDef;
 import org.apache.calcite.plan.RelOptCluster;
@@ -40,16 +39,21 @@ import org.apache.calcite.rel.type.RelDataTypeSystemImpl;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.schema.SchemaPlus;
+import org.apache.calcite.sql.SqlBasicCall;
+import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlOperatorTable;
+import org.apache.calcite.sql.SqlSelect;
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.apache.calcite.sql.parser.SqlParser;
 import org.apache.calcite.sql.parser.SqlParserPos;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.sql.util.ChainedSqlOperatorTable;
+import org.apache.calcite.sql.validate.SelectNamespace;
 import org.apache.calcite.sql.validate.SqlConformance;
 import org.apache.calcite.sql.validate.SqlValidatorCatalogReader;
 import org.apache.calcite.sql.validate.SqlValidatorImpl;
+import org.apache.calcite.sql.validate.SqlValidatorNamespace;
 import org.apache.calcite.sql.validate.SqlValidatorScope;
 import org.apache.calcite.sql2rel.RelDecorrelator;
 import org.apache.calcite.sql2rel.SqlToRelConverter;
@@ -172,13 +176,20 @@ public class SqlConverter {
       SqlNode validatedNode = validator.validate(parsedNode);
       return validatedNode;
     } catch (RuntimeException e) {
-      UserException.Builder builder = UserException
-          .validationError(e)
-          .addContext("SQL Query", sql);
-      if (isInnerQuery) {
-        builder.message("Failure validating a view your query is dependent upon.");
+      // TODO: investigate whether can be rewritten with using cursor in validator. If possible can be written for Apache Drill
+      SqlNode correctedSqlNode;
+      correctedSqlNode = removeFailedUnionSelect(parsedNode);
+      if (correctedSqlNode != null) {
+        return validate(correctedSqlNode);
+      } else {
+        UserException.Builder builder = UserException
+            .validationError(e)
+            .addContext("SQL Query", sql);
+        if (isInnerQuery) {
+          builder.message("Failure validating a view your query is dependent upon.");
+        }
+        throw builder.build(logger);
       }
-      throw builder.build(logger);
     }
   }
 
@@ -213,10 +224,31 @@ public class SqlConverter {
 
   private class DrillValidator extends SqlValidatorImpl {
     private final Set<SqlValidatorScope> identitySet = Sets.newIdentityHashSet();
+    private SqlNode lastSelect;
 
     protected DrillValidator(SqlOperatorTable opTab, SqlValidatorCatalogReader catalogReader,
         RelDataTypeFactory typeFactory, SqlConformance conformance) {
       super(opTab, catalogReader, typeFactory, conformance);
+    }
+
+    /**
+     * This method is overridden to keep the last validated query
+     *
+     * @param namespace which is validated
+     */
+    @Override
+    protected void validateNamespace(final SqlValidatorNamespace namespace) {
+      if (namespace instanceof SelectNamespace) {
+        lastSelect = namespace.getNode();
+      }
+      namespace.validate();
+      if (namespace.getNode() != null) {
+        setValidatedNodeType(namespace.getNode(), namespace.getType());
+      }
+    }
+
+    public SqlNode getLastSelect() {
+      return lastSelect;
     }
   }
 
@@ -550,4 +582,42 @@ public class SqlConverter {
               SchemaUtilites.SCHEMA_PATH_JOINER.join(defaultSchemaPath, schemaPath), drillConfig);
     }
   }
+
+  /**
+   * This method can return the valid SqlNode in case of absent table for UNION set operator
+   *
+   * @param parsedNode failed SqlBasicCall
+   * @return valid query or null
+   */
+  private SqlNode removeFailedUnionSelect(SqlNode parsedNode) {
+    if (parsedNode instanceof SqlBasicCall) {
+      SqlBasicCall call = (SqlBasicCall) parsedNode;
+      if (parsedNode.getKind().equals(SqlKind.UNION)) {
+        SqlNode[] operands = call.getOperands();
+        if (operands[0] instanceof SqlBasicCall) {
+          if (operands[1].equals(validator.getLastSelect())) {
+            return operands[0];
+          } else {
+            SqlNode validSqlNode = removeFailedUnionSelect(operands[0]);
+            if (validSqlNode != null) {
+              call.setOperand(0, validSqlNode);
+              return parsedNode;
+            }
+          }
+        } else if (operands[0] instanceof SqlSelect && operands.length == 2) {
+          if (operands[0].equals(validator.lastSelect)) {
+            return operands[1];
+          } else if (operands[1].equals(validator.getLastSelect())) {
+            return operands[0];
+          }
+        }
+      } else if (parsedNode.getKind().equals(SqlKind.AS) && call.getOperands()[0] instanceof SqlBasicCall) {
+        return removeFailedUnionSelect(call.getOperands()[0]);
+      }
+    }
+
+    // validating failure isn't connected to the absent table in the query with UNION set operator
+    return null;
+  }
+
 }
