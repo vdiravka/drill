@@ -210,21 +210,12 @@ public class TestParquetMetadataCache extends PlanTestBase {
   @Test //DRILL-4511
   @Category(UnlikelyTest.class)
   public void testTableDoesNotExistWithEmptyDirectory() throws Exception {
-    String dirName = "empty_directory";
-    File path = new File(dirTestWatcher.getRootDir(), dirName);
-    path.mkdirs();
-
-    try {
-      path.mkdir();
-      testBuilder()
-          .sqlQuery("refresh table metadata dfs.`%s`", dirName)
-          .unOrdered()
-          .baselineColumns("ok", "summary")
-          .baselineValues(false, String.format("Table %s does not exist.", dirName))
-          .go();
-    } finally {
-      FileUtils.deleteQuietly(path);
-    }
+    testBuilder()
+        .sqlQuery("refresh table metadata dfs.`%s`", EMPTY_DIR_NAME)
+        .unOrdered()
+        .baselineColumns("ok", "summary")
+        .baselineValues(false, String.format("Table %s is empty and doesn't contain any parquet files.", EMPTY_DIR_NAME))
+        .go();
   }
 
   @Test //DRILL-4511

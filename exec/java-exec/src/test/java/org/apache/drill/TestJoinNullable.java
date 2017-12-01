@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -566,6 +566,19 @@ public class TestJoinNullable extends BaseTestQuery {
         .baselineValues("B", null, null, "B")
         .baselineValues("B", "L_B_1", "L_B_1", "B")
         .go();
+  }
+
+  /** InnerJoin with empty dir table on nullable cols, MergeJoin */
+  // TODO: the same tests should be for HashJoin operator, DRILL-6070
+  @Test
+  public void testMergeInnerJoinWthEmptyDirOnNullableCol() throws Exception {
+    String query = String.format("select t1.a1, t1.b1, t2.a2, t2.b2 from cp.`jsoninput/nullable1.json` t1 inner join " +
+        " dfs.`%s` t2 on t1.b1 = t2.b2", EMPTY_DIR_NAME);
+    final int expectedRecordCount = 0;
+
+    enableJoin(false, true);
+    final int actualRecordCount = testSql(query);
+    assertEquals("Number of output rows", expectedRecordCount, actualRecordCount);
   }
 
   private static void resetJoinOptions() throws Exception {

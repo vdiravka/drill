@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -78,11 +78,11 @@ public class RefreshMetadataHandler extends DefaultSqlHandler {
 
       final Table table = schema.getTable(tableName);
 
-      if(table == null){
+      if(table == null) {
         return direct(false, "Table %s does not exist.", tableName);
       }
 
-      if(! (table instanceof DrillTable) ){
+      if(!(table instanceof DrillTable)) {
         return notSupported(tableName);
       }
 
@@ -90,7 +90,12 @@ public class RefreshMetadataHandler extends DefaultSqlHandler {
       final DrillTable drillTable = (DrillTable) table;
 
       final Object selection = drillTable.getSelection();
-      if( !(selection instanceof FormatSelection) ){
+
+      if (selection == null) {
+        return direct(false, "Table %s is empty and doesn't contain any parquet files.", tableName);
+      }
+
+      if (!(selection instanceof FormatSelection)) {
         return notSupported(tableName);
       }
 
