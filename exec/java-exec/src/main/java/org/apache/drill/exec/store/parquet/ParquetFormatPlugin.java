@@ -250,20 +250,12 @@ public class ParquetFormatPlugin implements FormatPlugin{
     }
 
     boolean isDirReadable(DrillFileSystem fs, FileStatus dir) {
-      Path p = new Path(dir.getPath(), ParquetFileWriter.PARQUET_METADATA_FILE);
       try {
-        if (fs.exists(p)) {
-          return true;
-        } else {
-
-          if (metaDataFileExists(fs, dir)) {
-            return true;
-          }
-          List<FileStatus> statuses = DrillFileSystemUtil.listFiles(fs, dir.getPath(), false);
-          return !statuses.isEmpty() && super.isFileReadable(fs, statuses.get(0));
-        }
+        // There should be at least one file, which is readable by Drill
+        List<FileStatus> statuses = DrillFileSystemUtil.listFiles(fs, dir.getPath(), false);
+        return !statuses.isEmpty() && super.isFileReadable(fs, statuses.get(0));
       } catch (IOException e) {
-        logger.info("Failure while attempting to check for Parquet metadata file.", e);
+        logger.info("Failure while attempting to check availability of reading parquet files.", e);
         return false;
       }
     }

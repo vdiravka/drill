@@ -177,4 +177,33 @@ public class TestEmptyInputSql extends BaseTestQuery {
         .run();
   }
 
+  @Test
+  public void testEmptyDirectory() throws Exception {
+    final BatchSchema expectedSchema = new SchemaBuilder().build();
+
+    testBuilder()
+        .sqlQuery("select * from dfs.`%s`", EMPTY_DIR_NAME)
+        .schemaBaseLine(expectedSchema)
+        .build()
+        .run();
+  }
+
+  @Test
+  public void testEmptyDirectoryAndFieldInQuery() throws Exception {
+    final List<Pair<SchemaPath, TypeProtos.MajorType>> expectedSchema = Lists.newArrayList();
+    final TypeProtos.MajorType majorType = TypeProtos.MajorType.newBuilder()
+        .setMinorType(TypeProtos.MinorType.INT) // field "key" is absent in schema-less table
+        .setMode(TypeProtos.DataMode.OPTIONAL)
+        .build();
+    expectedSchema.add(Pair.of(SchemaPath.getSimplePath("key"), majorType));
+
+    testBuilder()
+        .sqlQuery("select key from dfs.`%s`", EMPTY_DIR_NAME)
+        .schemaBaseLine(expectedSchema)
+        .build()
+        .run();
+  }
+
+
+
 }
