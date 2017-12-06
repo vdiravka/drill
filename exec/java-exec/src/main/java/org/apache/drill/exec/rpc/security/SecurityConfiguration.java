@@ -22,6 +22,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.CommonConfigurationKeys;
 
 import java.io.InputStream;
+import java.net.URL;
 import java.util.Properties;
 
 
@@ -33,13 +34,18 @@ public class SecurityConfiguration extends Configuration {
     try {
       // Load the properties file containing the namespace prefix based on profile used
       // to build jdbc-all package. This prefix is used to add on certain Hadoop classes class path.
-      final InputStream inputStream = SecurityConfiguration.class.getClassLoader().getResourceAsStream("profile.props");
+      ClassLoader classLoader = SecurityConfiguration.class.getClassLoader();
+      final InputStream inputStream = classLoader.getResourceAsStream("profile.props");
 
       // For null inputStream prop.load() throws NullPointerException
       // Get the property value and set it in system property
       prop.load(inputStream);
       System.setProperty("drill.security.namespacePrefix", prop.getProperty("package.namespace.prefix").trim());
+      System.setProperty("java.security.auth.login.config", classLoader.getResource("mapr.login.conf").getPath());
 
+      System.out.println(System.getProperties());
+      System.out.println();
+      System.out.println(prop);
     } catch (Exception ex) {
       // Ignore the exception which means that property value will be null and is handled in consumer of System Property
     }
@@ -60,7 +66,7 @@ public class SecurityConfiguration extends Configuration {
     final String originalClassName = get(CommonConfigurationKeys.HADOOP_SECURITY_GROUP_MAPPING);
     final String profilePrefix = System.getProperty("drill.security.namespacePrefix");
 
-    if (!Strings.isNullOrEmpty(profilePrefix)) {
+    if (originalClassName != null && !Strings.isNullOrEmpty(profilePrefix) && !originalClassName.startsWith(profilePrefix)) {
       set(CommonConfigurationKeys.HADOOP_SECURITY_GROUP_MAPPING, profilePrefix + originalClassName);
     }
   }
