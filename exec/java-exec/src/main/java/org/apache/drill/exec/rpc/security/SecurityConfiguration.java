@@ -33,12 +33,15 @@ public class SecurityConfiguration extends Configuration {
     try {
       // Load the properties file containing the namespace prefix based on profile used
       // to build jdbc-all package. This prefix is used to add on certain Hadoop classes class path.
-      final InputStream inputStream = SecurityConfiguration.class.getClassLoader().getResourceAsStream("profile.props");
+      ClassLoader classLoader = SecurityConfiguration.class.getClassLoader();
+      final InputStream inputStream = classLoader.getResourceAsStream("profile.props");
 
       // For null inputStream prop.load() throws NullPointerException
       // Get the property value and set it in system property
       prop.load(inputStream);
       System.setProperty("drill.security.namespacePrefix", prop.getProperty("package.namespace.prefix").trim());
+      // TODO: this may be initialized in the POM file. And can be used from MapR client package.
+      System.setProperty("java.security.auth.login.config", classLoader.getResource("mapr.login.conf").getPath());
 
     } catch (Exception ex) {
       // Ignore the exception which means that property value will be null and is handled in consumer of System Property
