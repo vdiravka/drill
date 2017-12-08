@@ -27,7 +27,7 @@ import java.util.Properties;
 
 
 public class SecurityConfiguration extends Configuration {
-  //private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(SecurityConfiguration.class);
+  private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(SecurityConfiguration.class);
 
   static {
     Properties prop = new Properties();
@@ -41,13 +41,14 @@ public class SecurityConfiguration extends Configuration {
       // Get the property value and set it in system property
       prop.load(inputStream);
       System.setProperty("drill.security.namespacePrefix", prop.getProperty("package.namespace.prefix").trim());
-      System.setProperty("java.security.auth.login.config", classLoader.getResource("mapr.login.conf").getPath());
+//      System.setProperty("java.security.auth.login.config", classLoader.getResource("mapr.login.conf").getPath());
 
       System.out.println(System.getProperties());
       System.out.println();
       System.out.println(prop);
     } catch (Exception ex) {
       // Ignore the exception which means that property value will be null and is handled in consumer of System Property
+      logger.debug("System property can be not installed. {}", ex);
     }
   }
 

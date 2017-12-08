@@ -549,7 +549,15 @@
         <id>mapr</id>
         <properties>
           <package.namespace.prefix />
+          <java.security.auth.login.config>mapr.login.conf</java.security.auth.login.config>
         </properties>
+        <!--May be replace out of the profile or even better replace properties with systemProperties-->
+        <systemProperties>
+          <systemProperty>
+            <key>java.security.auth.login.config</key>
+            <value>${java.security.auth.login.config}</value>
+          </systemProperty>
+        </systemProperties>
 
         <build>
           <plugins>
