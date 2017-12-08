@@ -26,6 +26,7 @@ import org.apache.drill.categories.UnlikelyTest;
 import org.apache.drill.common.exceptions.UserException;
 import org.apache.drill.common.expression.SchemaPath;
 import org.apache.drill.common.types.TypeProtos;
+import org.apache.drill.exec.rpc.user.QueryDataBatch;
 import org.apache.drill.exec.work.foreman.SqlUnsupportedException;
 import org.apache.drill.exec.work.foreman.UnsupportedRelOperatorException;
 import org.apache.drill.test.BaseTestQuery;
@@ -209,19 +210,19 @@ public class TestUnionAll extends BaseTestQuery {
 
   @Test
   public void testUnionAllViewExpandableStar() throws Exception {
-    test("use dfs.tmp");
-    test("create view nation_view_testunionall as select n_name, n_nationkey from cp.`tpch/nation.parquet`;");
-    test("create view region_view_testunionall as select r_name, r_regionkey from cp.`tpch/region.parquet`;");
-
-    String query1 = "(select * from dfs.tmp.`nation_view_testunionall`) " +
-                    "union all " +
-                    "(select * from dfs.tmp.`region_view_testunionall`) ";
-
-    String query2 =  "(select r_name, r_regionkey from cp.`tpch/region.parquet`) " +
-                     "union all " +
-                     "(select * from dfs.tmp.`nation_view_testunionall`)";
-
     try {
+      test("use dfs.tmp");
+      test("create view nation_view_testunionall_expandable_star as select n_name, n_nationkey from cp.`tpch/nation.parquet`;");
+      test("create view region_view_testunionall_expandable_star as select r_name, r_regionkey from cp.`tpch/region.parquet`;");
+
+      String query1 = "(select * from dfs.tmp.`nation_view_testunionall_expandable_star`) " +
+          "union all " +
+          "(select * from dfs.tmp.`region_view_testunionall_expandable_star`) ";
+
+      String query2 =  "(select r_name, r_regionkey from cp.`tpch/region.parquet`) " +
+          "union all " +
+          "(select * from dfs.tmp.`nation_view_testunionall_expandable_star`)";
+
       testBuilder()
           .sqlQuery(query1)
           .unOrdered()
@@ -238,42 +239,42 @@ public class TestUnionAll extends BaseTestQuery {
           .baselineColumns("r_name", "r_regionkey")
           .build().run();
     } finally {
-      test("drop view nation_view_testunionall");
-      test("drop view region_view_testunionall");
+      test("drop view if exists nation_view_testunionall_expandable_star");
+      test("drop view if exists region_view_testunionall_expandable_star");
     }
   }
 
   @Test(expected = UnsupportedRelOperatorException.class) // see DRILL-2002
   public void testUnionAllViewUnExpandableStar() throws Exception {
-    test("use dfs.tmp");
-    test("create view nation_view_testunionall as select * from cp.`tpch/nation.parquet`;");
-
     try {
-      String query = "(select * from dfs.tmp.`nation_view_testunionall`) " +
+      test("use dfs.tmp");
+      test("create view nation_view_testunionall_expandable_star as select * from cp.`tpch/nation.parquet`;");
+
+      String query = "(select * from dfs.tmp.`nation_view_testunionall_expandable_star`) " +
                      "union all (select * from cp.`tpch/region.parquet`)";
       test(query);
     } catch(UserException ex) {
       SqlUnsupportedException.errorClassNameToException(ex.getOrCreatePBError(false).getException().getExceptionClass());
       throw ex;
     } finally {
-      test("drop view nation_view_testunionall");
+      test("drop view if exists nation_view_testunionall_expandable_star");
     }
   }
 
   @Test
   public void testDiffDataTypesAndModes() throws Exception {
-    test("use dfs.tmp");
-    test("create view nation_view_testunionall as select n_name, n_nationkey from cp.`tpch/nation.parquet`;");
-    test("create view region_view_testunionall as select r_name, r_regionkey from cp.`tpch/region.parquet`;");
-
-    String t1 = "(select n_comment, n_regionkey from cp.`tpch/nation.parquet` limit 5)";
-    String t2 = "(select * from nation_view_testunionall  limit 5)";
-    String t3 = "(select full_name, store_id from cp.`employee.json` limit 5)";
-    String t4 = "(select * from region_view_testunionall  limit 5)";
-
-    String query1 = t1 + " union all " + t2 + " union all " + t3 + " union all " + t4;
-
     try {
+      test("use dfs.tmp");
+      test("create view nation_view_testunionall_expandable_star as select n_name, n_nationkey from cp.`tpch/nation.parquet`;");
+      test("create view region_view_testunionall_expandable_star as select r_name, r_regionkey from cp.`tpch/region.parquet`;");
+
+      String t1 = "(select n_comment, n_regionkey from cp.`tpch/nation.parquet` limit 5)";
+      String t2 = "(select * from nation_view_testunionall_expandable_star  limit 5)";
+      String t3 = "(select full_name, store_id from cp.`employee.json` limit 5)";
+      String t4 = "(select * from region_view_testunionall_expandable_star  limit 5)";
+
+      String query1 = t1 + " union all " + t2 + " union all " + t3 + " union all " + t4;
+
       testBuilder()
           .sqlQuery(query1)
           .unOrdered()
@@ -282,8 +283,8 @@ public class TestUnionAll extends BaseTestQuery {
           .baselineColumns("n_comment", "n_regionkey")
           .build().run();
     } finally {
-      test("drop view nation_view_testunionall");
-      test("drop view region_view_testunionall");
+      test("drop view if exists nation_view_testunionall_expandable_star");
+      test("drop view if exists region_view_testunionall_expandable_star");
     }
   }
 
@@ -619,6 +620,17 @@ public class TestUnionAll extends BaseTestQuery {
         .schemaBaseLine(expectedSchema)
         .build()
         .run();
+  }
+
+  @Test
+  public void test() throws Exception {
+    setColumnWidths(new int[] {25, 25});
+//    List<QueryDataBatch> queryDataBatches = testSqlWithResults("select key from cp.`/store/json/booleanData.json` where 1 = 0 " +
+//        " union all " +
+//        " select key from cp.`/store/json/booleanData.json` where 1 = 0");
+
+    List<QueryDataBatch> queryDataBatches = testSqlWithResults("select key from cp.`/store/json/booleanData.json`");
+    printResult(queryDataBatches);
   }
 
   @Test // see DRILL-2746
@@ -1122,6 +1134,19 @@ public class TestUnionAll extends BaseTestQuery {
     }
   }
 
+  @Test
+  public void testMy() throws Exception {
+    setColumnWidths(new int[] {25, 25});
+//    List<QueryDataBatch> queryDataBatches = testSqlWithResults("select key from cp.`/store/json/booleanData.json` where 1 = 0 " +
+//        " union all " +
+//        " select key from cp.`/store/json/booleanData.json` where 1 = 0");
+
+    List<QueryDataBatch> queryDataBatches = testSqlWithResults("SELECT o_custkey FROM " +
+        " ((select o1.o_custkey from dfs.`/multilevel/parquet/1994` o1 inner join dfs.`/multilevel/parquet/1995` o2 on o1.o_orderkey = o2.o_custkey) " +
+        " Union All (SELECT o_custkey FROM dfs.`/multilevel/parquet/1994` limit 1))");
+    printResult(queryDataBatches);
+  }
+
   @Test // DRILL-4833  // limit 1 is on LHS of union-all
   @Category(UnlikelyTest.class)
   public void testDrill4833_2() throws Exception {
@@ -1197,4 +1222,13 @@ public class TestUnionAll extends BaseTestQuery {
       .baselineValues("1", "2", "1", null, "a")
       .go();
   }
+
+  @Test
+  public void testFailedUnion() throws Exception {
+    test("select `value` from dfs.`/home/vitalii/Documents/parquet_for_union/date1.parquet` UNION ALL " +
+        "select `value` from dfs.`/home/vitalii/Documents/parquet_for_union/date2.parquet` UNION ALL " +
+        "select `value` from dfs.`/home/vitalii/Documents/parquet_for_union/date3.parquet`");
+  }
+
+  //270
 }

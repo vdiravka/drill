@@ -263,6 +263,8 @@ public class FileSelection {
     }
     final FileStatus[] statuses = fs.globStatus(combined); // note: this would expand wildcards
     if (statuses == null) {
+      // TODO: replace with logger.debug
+      logger.error("File \"{}\" is not found for the \"{}\" schema", combined.toUri().getPath(), fs.getScheme());
       return null;
     }
     final FileSelection fileSel = create(Lists.newArrayList(statuses), null, combined.toUri().getPath());

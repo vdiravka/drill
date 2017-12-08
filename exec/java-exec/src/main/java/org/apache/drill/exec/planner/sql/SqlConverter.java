@@ -176,12 +176,12 @@ public class SqlConverter {
       SqlNode validatedNode = validator.validate(parsedNode);
       return validatedNode;
     } catch (RuntimeException e) {
-      // TODO: investigate whether can be rewritten with using cursor in validator. If possible can be written for Apache Drill
-      SqlNode correctedSqlNode;
-      correctedSqlNode = removeFailedUnionSelect(parsedNode);
-      if (correctedSqlNode != null) {
-        return validate(correctedSqlNode);
-      } else {
+//      // TODO: investigate whether can be rewritten with using cursor in validator. If possible can be written for Apache Drill
+//      SqlNode correctedSqlNode;
+//      correctedSqlNode = removeFailedUnionSelect(parsedNode);
+//      if (correctedSqlNode != null) {
+//        return validate(correctedSqlNode);
+//      } else {
         UserException.Builder builder = UserException
             .validationError(e)
             .addContext("SQL Query", sql);
@@ -191,7 +191,7 @@ public class SqlConverter {
         throw builder.build(logger);
       }
     }
-  }
+//  }
 
   public RelDataType getOutputType(SqlNode validatedNode) {
     return validator.getValidatedNodeType(validatedNode);
@@ -241,6 +241,8 @@ public class SqlConverter {
       if (namespace instanceof SelectNamespace) {
         lastSelect = namespace.getNode();
       }
+      pushFunctionCall();
+//      TODO: after fail run the code with emptytable if UNION ALL operator is used
       namespace.validate();
       if (namespace.getNode() != null) {
         setValidatedNodeType(namespace.getNode(), namespace.getType());
@@ -249,6 +251,14 @@ public class SqlConverter {
 
     public SqlNode getLastSelect() {
       return lastSelect;
+    }
+
+    private class DrillFunctionParamInfo extends FunctionParamInfo {
+
+      DrillFunctionParamInfo() {
+//        cursorPosToSelectMap
+      }
+
     }
   }
 
@@ -527,6 +537,8 @@ public class SqlConverter {
       // Check the schema and throw a valid SchemaNotFound exception instead of TableNotFound exception.
       if (table == null) {
         isValidSchema(names);
+        // it is possible to implement it
+//        validator.getParentCursor()
       }
 
       return table;
@@ -589,35 +601,35 @@ public class SqlConverter {
    * @param parsedNode failed SqlBasicCall
    * @return valid query or null
    */
-  private SqlNode removeFailedUnionSelect(SqlNode parsedNode) {
-    if (parsedNode instanceof SqlBasicCall) {
-      SqlBasicCall call = (SqlBasicCall) parsedNode;
-      if (parsedNode.getKind().equals(SqlKind.UNION)) {
-        SqlNode[] operands = call.getOperands();
-        if (operands[0] instanceof SqlBasicCall) {
-          if (operands[1].equals(validator.getLastSelect())) {
-            return operands[0];
-          } else {
-            SqlNode validSqlNode = removeFailedUnionSelect(operands[0]);
-            if (validSqlNode != null) {
-              call.setOperand(0, validSqlNode);
-              return parsedNode;
-            }
-          }
-        } else if (operands[0] instanceof SqlSelect && operands.length == 2) {
-          if (operands[0].equals(validator.lastSelect)) {
-            return operands[1];
-          } else if (operands[1].equals(validator.getLastSelect())) {
-            return operands[0];
-          }
-        }
-      } else if (parsedNode.getKind().equals(SqlKind.AS) && call.getOperands()[0] instanceof SqlBasicCall) {
-        return removeFailedUnionSelect(call.getOperands()[0]);
-      }
-    }
-
-    // validating failure isn't connected to the absent table in the query with UNION set operator
-    return null;
-  }
+//  private SqlNode removeFailedUnionSelect(SqlNode parsedNode) {
+//    if (parsedNode instanceof SqlBasicCall) {
+//      SqlBasicCall call = (SqlBasicCall) parsedNode;
+//      if (parsedNode.getKind().equals(SqlKind.UNION)) {
+//        SqlNode[] operands = call.getOperands();
+//        if (operands[0] instanceof SqlBasicCall) {
+//          if (operands[1].equals(validator.getLastSelect())) {
+//            return operands[0];
+//          } else {
+//            SqlNode validSqlNode = removeFailedUnionSelect(operands[0]);
+//            if (validSqlNode != null) {
+//              call.setOperand(0, validSqlNode);
+//              return parsedNode;
+//            }
+//          }
+//        } else if (operands[0] instanceof SqlSelect && operands.length == 2) {
+//          if (operands[0].equals(validator.lastSelect)) {
+//            return operands[1];
+//          } else if (operands[1].equals(validator.getLastSelect())) {
+//            return operands[0];
+//          }
+//        }
+//      } else if (parsedNode.getKind().equals(SqlKind.AS) && call.getOperands()[0] instanceof SqlBasicCall) {
+//        return removeFailedUnionSelect(call.getOperands()[0]);
+//      }
+//    }
+//
+//    // validating failure isn't connected to the absent table in the query with UNION set operator
+//    return null;
+//  }
 
 }

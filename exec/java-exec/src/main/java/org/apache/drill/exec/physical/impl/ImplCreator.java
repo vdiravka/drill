@@ -136,6 +136,11 @@ public class ImplCreator {
 
     final List<RecordBatch> childRecordBatches = getChildren(op, context);
 
+    // revert all changes from this class
+//    if (op instanceof EmptyUnionScan) {
+//      return new EmptyBatch();
+//    }
+
     if (context.isImpersonationEnabled()) {
       final UserGroupInformation proxyUgi = ImpersonationUtil.createProxyUgi(op.getUserName(), context.getQueryUserName());
       try {

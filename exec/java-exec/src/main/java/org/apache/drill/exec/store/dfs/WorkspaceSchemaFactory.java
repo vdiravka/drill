@@ -54,6 +54,7 @@ import org.apache.drill.exec.dotdrill.DotDrillFile;
 import org.apache.drill.exec.dotdrill.DotDrillType;
 import org.apache.drill.exec.dotdrill.DotDrillUtil;
 import org.apache.drill.exec.dotdrill.View;
+import org.apache.drill.exec.planner.logical.SchemalessTable;
 import org.apache.drill.exec.store.StorageStrategy;
 import org.apache.drill.exec.planner.logical.CreateTableEntry;
 import org.apache.drill.exec.planner.logical.DrillTable;
@@ -69,7 +70,6 @@ import org.apache.drill.exec.util.DrillFileSystemUtil;
 import org.apache.drill.exec.util.ImpersonationUtil;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.permission.FsAction;
 import org.apache.hadoop.fs.permission.FsPermission;
@@ -408,6 +408,7 @@ public class WorkspaceSchemaFactory {
 
   public class WorkspaceSchema extends AbstractSchema implements ExpandingConcurrentMap.MapValueFactory<TableInstance, DrillTable> {
     private final ExpandingConcurrentMap<TableInstance, DrillTable> tables = new ExpandingConcurrentMap<>(this);
+//    private final ExpandingConcurrentSet<TableInstance, Boolean> missingTables = new ExpandingConcurrentMap<>(this);
     private final SchemaConfig schemaConfig;
     private DrillFileSystem fs;
 
@@ -608,7 +609,9 @@ public class WorkspaceSchemaFactory {
         final FileSelection fileSelection = FileSelection
             .create(getFS(), config.getLocation(), key.sig.name, config.allowAccessOutsideWorkspace());
         if (fileSelection == null) {
-          return null;
+//          TODO: add session option to control DUMMY_TABLE
+//          return null;
+          return new SchemalessTable(storageEngineName, plugin, schemaConfig.getUserName());
         }
 
         final boolean hasDirectories = fileSelection.containsDirectories(getFS());

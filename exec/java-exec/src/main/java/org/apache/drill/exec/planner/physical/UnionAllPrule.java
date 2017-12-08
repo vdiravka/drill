@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -40,8 +40,7 @@ public class UnionAllPrule extends Prule {
   protected static final Logger tracer = CalciteTrace.getPlannerTracer();
 
   private UnionAllPrule() {
-    super(
-        RelOptHelper.any(DrillUnionRel.class), "Prel.UnionAllPrule");
+    super(RelOptHelper.any(DrillUnionRel.class), "Prel.UnionAllPrule");
   }
 
   @Override
