@@ -438,11 +438,9 @@ public class FileSelection {
 
   /**
    * Setting this as true allows to identify this as empty directory file selection
-   *
-   * @param emptyDirectory empty directory flag
    */
-  public void setEmptyDirectory(boolean emptyDirectory) {
-    this.emptyDirectory = emptyDirectory;
+  public void setEmptyDirectory() {
+    this.emptyDirectory = true;
   }
 
 

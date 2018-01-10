@@ -32,7 +32,7 @@ import java.util.List;
 @JsonTypeName("schemaless-scan")
 public class SchemalessScan extends AbstractGroupScan implements SubScan {
 
-  private String selectionRoot;
+  private final String selectionRoot;
 
   public SchemalessScan(String userName, String selectionRoot) {
     super(userName);

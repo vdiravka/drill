@@ -949,6 +949,23 @@ public class TestParquetMetadataCache extends PlanTestBase {
         .run();
   }
 
+  @Test
+  public void testEmptyDirectoryWithMetadataDirFile() throws Exception {
+    final String emptyDirNameWithMetadataFile = "empty_directory";
+    dirTestWatcher.makeTestTmpSubDir(Paths.get(emptyDirNameWithMetadataFile));
+    dirTestWatcher.copyResourceToTestTmp(
+            Paths.get("parquet", "metadata_files_with_old_versions", "v3_1", "metadata_directories.requires_replace.txt"),
+            Paths.get(emptyDirNameWithMetadataFile, Metadata.METADATA_DIRECTORIES_FILENAME));
+
+    final BatchSchema expectedSchema = new SchemaBuilder().build();
+
+    testBuilder()
+            .sqlQuery("select * from dfs.tmp.`%s`", emptyDirNameWithMetadataFile)
+            .schemaBaseLine(expectedSchema)
+            .build()
+            .run();
+  }
+
   /**
    * Helper method for checking the metadata file existence
    *
