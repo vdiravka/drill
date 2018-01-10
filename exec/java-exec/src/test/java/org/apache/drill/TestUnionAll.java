@@ -26,9 +26,11 @@ import org.apache.drill.categories.UnlikelyTest;
 import org.apache.drill.common.exceptions.UserException;
 import org.apache.drill.common.expression.SchemaPath;
 import org.apache.drill.common.types.TypeProtos;
+import org.apache.drill.exec.record.BatchSchema;
 import org.apache.drill.exec.work.foreman.SqlUnsupportedException;
 import org.apache.drill.exec.work.foreman.UnsupportedRelOperatorException;
 import org.apache.drill.test.BaseTestQuery;
+import org.apache.drill.test.rowSet.SchemaBuilder;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -47,9 +49,12 @@ public class TestUnionAll extends BaseTestQuery {
   private static final String enableDistribute = "alter session set `planner.enable_unionall_distribute` = true";
   private static final String defaultDistribute = "alter session reset `planner.enable_unionall_distribute`";
 
+  private static final String EMPTY_DIR_NAME = "empty_directory";
+
   @BeforeClass
   public static void setupTestFiles() {
     dirTestWatcher.copyResourceToRoot(Paths.get("multilevel", "parquet"));
+    dirTestWatcher.makeTestTmpSubDir(Paths.get(EMPTY_DIR_NAME));
   }
 
   @Test  // Simple Union-All over two scans
@@ -1203,13 +1208,14 @@ public class TestUnionAll extends BaseTestQuery {
     String rootSimple = "/store/json/booleanData.json";
 
     testBuilder()
-        .sqlQuery("SELECT key FROM cp.`%s` UNION ALL SELECT key FROM dfs.`%s`",
+        .sqlQuery("SELECT key FROM cp.`%s` UNION ALL SELECT key FROM dfs.tmp.`%s`",
             rootSimple, EMPTY_DIR_NAME)
         .unOrdered()
         .baselineColumns("key")
         .baselineValues(true)
         .baselineValues(false)
-        .build().run();
+        .build()
+        .run();
   }
 
   @Test
@@ -1217,7 +1223,7 @@ public class TestUnionAll extends BaseTestQuery {
     final String rootSimple = "/store/json/booleanData.json";
 
     testBuilder()
-        .sqlQuery("SELECT key FROM dfs.`%s` UNION ALL SELECT key FROM cp.`%s`",
+        .sqlQuery("SELECT key FROM dfs.tmp.`%s` UNION ALL SELECT key FROM cp.`%s`",
             EMPTY_DIR_NAME, rootSimple)
         .unOrdered()
         .baselineColumns("key")
@@ -1228,9 +1234,20 @@ public class TestUnionAll extends BaseTestQuery {
   }
 
   @Test
+  public void testUnionAllBothEmptyDirs() throws Exception {
+    final BatchSchema expectedSchema = new SchemaBuilder().build();
+
+    testBuilder()
+        .sqlQuery("SELECT key FROM dfs.tmp.`%1$s` UNION ALL SELECT key FROM dfs.tmp.`%1$s`", EMPTY_DIR_NAME)
+        .schemaBaseLine(expectedSchema)
+        .build()
+        .run();
+  }
+
+  @Test
   public void testUnionAllMiddleEmptyDir() throws Exception {
     final String query = "SELECT n_regionkey FROM cp.`tpch/nation.parquet` UNION ALL " +
-        "SELECT missing_key FROM dfs.`%s` UNION ALL SELECT r_regionkey FROM cp.`tpch/region.parquet`";
+        "SELECT missing_key FROM dfs.tmp.`%s` UNION ALL SELECT r_regionkey FROM cp.`tpch/region.parquet`";
 
     testBuilder()
         .sqlQuery(query, EMPTY_DIR_NAME)
@@ -1238,7 +1255,8 @@ public class TestUnionAll extends BaseTestQuery {
         .csvBaselineFile("testframework/testUnionAllQueries/q1.tsv")
         .baselineTypes(TypeProtos.MinorType.INT)
         .baselineColumns("n_regionkey")
-        .build().run();
+        .build()
+        .run();
   }
 
   @Test
@@ -1246,8 +1264,8 @@ public class TestUnionAll extends BaseTestQuery {
     final String rootSimple = "/store/json/booleanData.json";
 
     testBuilder()
-        .sqlQuery("SELECT key FROM dfs.`%1$s` UNION ALL SELECT key FROM " +
-            "(SELECT key FROM dfs.`%1$s` UNION ALL SELECT key FROM cp.`%2$s`)",
+        .sqlQuery("SELECT key FROM dfs.tmp.`%1$s` UNION ALL SELECT key FROM " +
+            "(SELECT key FROM dfs.tmp.`%1$s` UNION ALL SELECT key FROM cp.`%2$s`)",
             EMPTY_DIR_NAME, rootSimple)
         .unOrdered()
         .baselineColumns("key")

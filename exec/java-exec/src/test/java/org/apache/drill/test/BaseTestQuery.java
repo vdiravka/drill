@@ -78,12 +78,6 @@ import org.apache.drill.test.ClusterFixture;
 public class BaseTestQuery extends ExecTest {
   private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(BaseTestQuery.class);
 
-  /**
-   * Temp empty directory name. The directory exists under the <b>dfs.root</b> workspace. <br>
-   * Can be used for any tests, where empty directory is necessary.
-   */
-  protected static final String EMPTY_DIR_NAME = "emptyDir";
-
   private static final int MAX_WIDTH_PER_NODE = 2;
 
   @SuppressWarnings("serial")
@@ -125,15 +119,6 @@ public class BaseTestQuery extends ExecTest {
     // turns on the verbose errors in tests
     // sever side stacktraces are added to the message before sending back to the client
     test("ALTER SESSION SET `exec.errors.verbose` = true");
-    emptyDirCreating();
-  }
-
-  /**
-   * Creates an empty directory under <b>dfs.root</b> schema.
-   */
-  private static void emptyDirCreating() {
-    File path = new File(dirTestWatcher.getRootDir(), EMPTY_DIR_NAME);
-    path.mkdirs();
   }
 
   protected static void updateTestCluster(int newDrillbitCount, DrillConfig newConfig) {

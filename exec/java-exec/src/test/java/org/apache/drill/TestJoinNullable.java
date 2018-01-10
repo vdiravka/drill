@@ -24,6 +24,8 @@ import org.apache.drill.test.BaseTestQuery;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import java.nio.file.Paths;
+
 @Category(OperatorTest.class)
 public class TestJoinNullable extends BaseTestQuery {
   static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(TestJoinNullable.class);
@@ -569,11 +571,14 @@ public class TestJoinNullable extends BaseTestQuery {
   }
 
   /** InnerJoin with empty dir table on nullable cols, MergeJoin */
-  // TODO: the same tests should be for HashJoin operator, DRILL-6070
+  // TODO: the same tests should be added for HashJoin operator, DRILL-6070
   @Test
   public void testMergeInnerJoinWthEmptyDirOnNullableCol() throws Exception {
+    final String emptyDirName = "empty_directory";
+    dirTestWatcher.makeTestTmpSubDir(Paths.get(emptyDirName));
+
     String query = String.format("select t1.a1, t1.b1, t2.a2, t2.b2 from cp.`jsoninput/nullable1.json` t1 inner join " +
-        " dfs.`%s` t2 on t1.b1 = t2.b2", EMPTY_DIR_NAME);
+        " dfs.tmp.`%s` t2 on t1.b1 = t2.b2", emptyDirName);
     final int expectedRecordCount = 0;
 
     enableJoin(false, true);

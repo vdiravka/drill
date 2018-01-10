@@ -32,12 +32,16 @@ import java.util.List;
 @JsonTypeName("schemaless-scan")
 public class SchemalessScan extends AbstractGroupScan implements SubScan {
 
-  public SchemalessScan(String userName) {
+  private String selectionRoot;
+
+  public SchemalessScan(String userName, String selectionRoot) {
     super(userName);
+    this.selectionRoot = selectionRoot;
   }
 
-  public SchemalessScan(AbstractGroupScan that) {
+  public SchemalessScan(final SchemalessScan that) {
     super(that);
+    this.selectionRoot = that.selectionRoot;
   }
 
   @Override
@@ -57,6 +61,12 @@ public class SchemalessScan extends AbstractGroupScan implements SubScan {
   @Override
   public String getDigest() {
     return toString();
+  }
+
+  @Override
+  public String toString() {
+    final String pattern = "SchemalessScan [selectionRoot = %s]";
+    return String.format(pattern, selectionRoot);
   }
 
   @Override

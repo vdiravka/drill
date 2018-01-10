@@ -24,8 +24,10 @@ import mockit.integration.junit4.JMockit;
 import org.apache.drill.PlanTestBase;
 import org.apache.drill.categories.UnlikelyTest;
 import org.apache.commons.io.FileUtils;
+import org.apache.drill.exec.record.BatchSchema;
 import org.apache.drill.exec.store.dfs.MetadataContext;
 import org.apache.drill.exec.planner.physical.PlannerSettings;
+import org.apache.drill.test.rowSet.SchemaBuilder;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -210,11 +212,14 @@ public class TestParquetMetadataCache extends PlanTestBase {
   @Test //DRILL-4511
   @Category(UnlikelyTest.class)
   public void testTableDoesNotExistWithEmptyDirectory() throws Exception {
+    final String emptyDirName = "empty_directory";
+    dirTestWatcher.makeTestTmpSubDir(Paths.get(emptyDirName));
+
     testBuilder()
-        .sqlQuery("refresh table metadata dfs.`%s`", EMPTY_DIR_NAME)
+        .sqlQuery("refresh table metadata dfs.tmp.`%s`", emptyDirName)
         .unOrdered()
         .baselineColumns("ok", "summary")
-        .baselineValues(false, String.format("Table %s is empty and doesn't contain any parquet files.", EMPTY_DIR_NAME))
+        .baselineValues(false, String.format("Table %s is empty and doesn't contain any parquet files.", emptyDirName))
         .go();
   }
 
@@ -925,6 +930,23 @@ public class TestParquetMetadataCache extends PlanTestBase {
     } finally {
       test("drop table if exists dfs.tmp.`t7`");
     }
+  }
+
+  @Test
+  public void testEmptyDirectoryWithMetadataFile() throws Exception {
+    final String emptyDirNameWithMetadataFile = "empty_directory";
+    dirTestWatcher.makeTestTmpSubDir(Paths.get(emptyDirNameWithMetadataFile));
+    dirTestWatcher.copyResourceToTestTmp(
+        Paths.get("parquet", "metadata_files_with_old_versions", "v3_1", "metadata_table.requires_replace.txt"),
+        Paths.get(emptyDirNameWithMetadataFile, Metadata.METADATA_FILENAME));
+
+    final BatchSchema expectedSchema = new SchemaBuilder().build();
+
+    testBuilder()
+        .sqlQuery("select * from dfs.tmp.`%s`", emptyDirNameWithMetadataFile)
+        .schemaBaseLine(expectedSchema)
+        .build()
+        .run();
   }
 
   /**
