@@ -21,8 +21,6 @@ import org.apache.drill.test.BaseTestQuery;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 public class TestParquetGroupScan extends BaseTestQuery {
 
@@ -58,7 +56,7 @@ public class TestParquetGroupScan extends BaseTestQuery {
 
     int actualRecordCount = testSql("SELECT * FROM dfs.tmp.`4376_1/60*`");
     int expectedRecordCount = 1984;
-    assertEquals(String.format("Received unexpected number of rows in output: expected=%d, received=%s",
+    assertEquals(String.format("Received unexpected number of rows in output: expected = %d, received = %s",
         expectedRecordCount, actualRecordCount), expectedRecordCount, actualRecordCount);
   }
 
@@ -68,7 +66,7 @@ public class TestParquetGroupScan extends BaseTestQuery {
 
     int actualRecordCount = testSql("SELECT * FROM dfs.tmp.`4376_2/604*`");
     int expectedRecordCount = 0;
-    assertEquals(String.format("Received unexpected number of rows in output: expected=%d, received=%s",
+    assertEquals(String.format("Received unexpected number of rows in output: expected = %d, received = %s",
         expectedRecordCount, actualRecordCount), expectedRecordCount, actualRecordCount);
   }
 
@@ -78,7 +76,7 @@ public class TestParquetGroupScan extends BaseTestQuery {
 
     int actualRecordCount = testSql("SELECT * FROM dfs.tmp.`4376_3/604*`");
     int expectedRecordCount = 0;
-    assertEquals(String.format("Received unexpected number of rows in output: expected=%d, received=%s",
+    assertEquals(String.format("Received unexpected number of rows in output: expected = %d, received = %s",
         expectedRecordCount, actualRecordCount), expectedRecordCount, actualRecordCount);
   }
 
@@ -88,7 +86,7 @@ public class TestParquetGroupScan extends BaseTestQuery {
 
     int actualRecordCount = testSql("SELECT * FROM dfs.tmp.`4376_4/6041`");
     int expectedRecordCount = 0;
-    assertEquals(String.format("Received unexpected number of rows in output: expected=%d, received=%s",
+    assertEquals(String.format("Received unexpected number of rows in output: expected = %d, received = %s",
         expectedRecordCount, actualRecordCount), expectedRecordCount, actualRecordCount);
   }
 
@@ -98,7 +96,7 @@ public class TestParquetGroupScan extends BaseTestQuery {
 
     int actualRecordCount = testSql("SELECT * FROM dfs.tmp.`4376_5/6041`");
     int expectedRecordCount = 0;
-    assertEquals(String.format("Received unexpected number of rows in output: expected=%d, received=%s",
+    assertEquals(String.format("Received unexpected number of rows in output: expected = %d, received = %s",
         expectedRecordCount, actualRecordCount), expectedRecordCount, actualRecordCount);
   }
 }

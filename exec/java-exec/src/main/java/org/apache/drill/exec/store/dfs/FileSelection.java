@@ -56,6 +56,11 @@ public class FileSelection {
    */
   private MetadataContext metaContext = null;
 
+  /**
+   * Indicates whether this selectionRoot is an empty directory
+   */
+  private boolean emptyDirectory;
+
   private enum StatusType {
     NOT_CHECKED,         // initial state
     NO_DIRS,             // no directories in this selection
@@ -423,6 +428,23 @@ public class FileSelection {
   public MetadataContext getMetaContext() {
     return metaContext;
   }
+
+  /**
+   * @return true if this file selectionRoot points to an empty directory, false otherwise
+   */
+  public boolean isEmptyDirectory() {
+    return emptyDirectory;
+  }
+
+  /**
+   * Setting this as true allows to identify this as empty directory file selection
+   *
+   * @param emptyDirectory empty directory flag
+   */
+  public void setEmptyDirectory(boolean emptyDirectory) {
+    this.emptyDirectory = emptyDirectory;
+  }
+
 
   @Override
   public String toString() {

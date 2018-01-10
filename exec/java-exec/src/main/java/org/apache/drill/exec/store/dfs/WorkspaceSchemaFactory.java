@@ -631,8 +631,9 @@ public class WorkspaceSchemaFactory {
 
         final FileSelection newSelection = hasDirectories ? fileSelection.minusDirectories(getFS()) : fileSelection;
         if (newSelection == null) {
-          // empty directory/selection means that this is empty and schemaless table
-          return new DynamicDrillTable(plugin, storageEngineName, schemaConfig.getUserName(), newSelection);
+          // empty directory/selection means that this is the empty and schemaless table
+          fileSelection.setEmptyDirectory(true);
+          return new DynamicDrillTable(plugin, storageEngineName, schemaConfig.getUserName(), fileSelection);
         }
 
         for (final FormatMatcher matcher : fileMatchers) {

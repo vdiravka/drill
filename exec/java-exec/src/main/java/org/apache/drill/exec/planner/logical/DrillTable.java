@@ -33,6 +33,7 @@ import org.apache.drill.common.logical.StoragePluginConfig;
 import org.apache.drill.exec.physical.base.SchemalessScan;
 import org.apache.drill.exec.physical.base.GroupScan;
 import org.apache.drill.exec.store.StoragePlugin;
+import org.apache.drill.exec.store.dfs.FileSelection;
 import org.apache.drill.exec.util.ImpersonationUtil;
 
 public abstract class DrillTable implements Table {
@@ -86,8 +87,11 @@ public abstract class DrillTable implements Table {
 
   public GroupScan getGroupScan() throws IOException{
     if (scan == null) {
-      this.scan = selection != null ? plugin.getPhysicalScan(userName, new JSONOptions(selection))
-          : new SchemalessScan(userName);
+      if (selection instanceof FileSelection && ((FileSelection) selection).isEmptyDirectory()) {
+        this.scan = new SchemalessScan(userName, ((FileSelection) selection).getSelectionRoot());
+      } else {
+        this.scan = plugin.getPhysicalScan(userName, new JSONOptions(selection));
+      }
     }
     return scan;
   }
