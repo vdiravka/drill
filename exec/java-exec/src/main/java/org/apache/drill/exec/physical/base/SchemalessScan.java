@@ -30,9 +30,9 @@ import java.util.List;
  *  The type of scan operator, which allows to scan schemaless tables ({@link DynamicDrillTable} with null selection)
  */
 @JsonTypeName("schemaless-scan")
-public class SchemalessScan extends AbstractGroupScan implements SubScan {
+public class SchemalessScan extends AbstractFileGroupScan implements SubScan {
 
-  private String selectionRoot;
+  private final String selectionRoot;
 
   public SchemalessScan(String userName, String selectionRoot) {
     super(userName);
@@ -86,5 +86,9 @@ public class SchemalessScan extends AbstractGroupScan implements SubScan {
     return ScanStats.ZERO_RECORD_TABLE;
   }
 
+  @Override
+  public boolean supportsPartitionFilterPushdown() {
+    return false;
+  }
 
 }

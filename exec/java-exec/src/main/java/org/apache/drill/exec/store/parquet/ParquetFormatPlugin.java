@@ -29,8 +29,10 @@ import org.apache.drill.common.logical.StoragePluginConfig;
 import org.apache.drill.exec.ExecConstants;
 import org.apache.drill.exec.exception.OutOfMemoryException;
 import org.apache.drill.exec.ops.FragmentContext;
+import org.apache.drill.exec.physical.base.AbstractFileGroupScan;
 import org.apache.drill.exec.physical.base.AbstractWriter;
 import org.apache.drill.exec.physical.base.PhysicalOperator;
+import org.apache.drill.exec.physical.base.SchemalessScan;
 import org.apache.drill.exec.physical.impl.WriterRecordBatch;
 import org.apache.drill.exec.planner.logical.DrillTable;
 import org.apache.drill.exec.planner.logical.DynamicDrillTable;
@@ -165,9 +167,15 @@ public class ParquetFormatPlugin implements FormatPlugin{
   }
 
   @Override
-  public ParquetGroupScan getGroupScan(String userName, FileSelection selection, List<SchemaPath> columns)
+  public AbstractFileGroupScan getGroupScan(String userName, FileSelection selection, List<SchemaPath> columns)
       throws IOException {
-    return new ParquetGroupScan(userName, selection, this, columns);
+    ParquetGroupScan parquetGroupScan = new ParquetGroupScan(userName, selection, this, columns);
+    if (parquetGroupScan.getEntries().isEmpty()) {
+      // If ParquetGroupScan does not contain any entries, it means selection directories are empty and
+      // metadata cache files are invalid, return schemaless scan
+      return new SchemalessScan(userName, parquetGroupScan.getSelectionRoot());
+    }
+    return parquetGroupScan;
   }
 
   @Override
@@ -250,12 +258,20 @@ public class ParquetFormatPlugin implements FormatPlugin{
     }
 
     boolean isDirReadable(DrillFileSystem fs, FileStatus dir) {
+      Path p = new Path(dir.getPath(), ParquetFileWriter.PARQUET_METADATA_FILE);
       try {
-        // There should be at least one file, which is readable by Drill
-        List<FileStatus> statuses = DrillFileSystemUtil.listFiles(fs, dir.getPath(), false);
-        return !statuses.isEmpty() && super.isFileReadable(fs, statuses.get(0));
+        if (fs.exists(p)) {
+          return true;
+        } else {
+
+          if (metaDataFileExists(fs, dir)) {
+            return true;
+          }
+          List<FileStatus> statuses = DrillFileSystemUtil.listFiles(fs, dir.getPath(), false);
+          return !statuses.isEmpty() && super.isFileReadable(fs, statuses.get(0));
+        }
       } catch (IOException e) {
-        logger.info("Failure while attempting to check availability of reading parquet files.", e);
+        logger.info("Failure while attempting to check for Parquet metadata file.", e);
         return false;
       }
     }

@@ -430,19 +430,18 @@ public class FileSelection {
   }
 
   /**
-   * @return true if this file selectionRoot points to an empty directory, false otherwise
+   * @return true if this {@link FileSelection#selectionRoot} points to an empty directory, false otherwise
    */
   public boolean isEmptyDirectory() {
     return emptyDirectory;
   }
 
   /**
-   * Setting this as true allows to identify this as empty directory file selection
-   *
-   * @param emptyDirectory empty directory flag
+   * Setting {@link FileSelection#emptyDirectory} as true allows to identify this {@link FileSelection#selectionRoot}
+   * as an empty directory
    */
-  public void setEmptyDirectory(boolean emptyDirectory) {
-    this.emptyDirectory = emptyDirectory;
+  public void setEmptyDirectoryStatus() {
+    this.emptyDirectory = true;
   }
 
 
