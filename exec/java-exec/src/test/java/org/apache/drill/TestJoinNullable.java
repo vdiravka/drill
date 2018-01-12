@@ -17,9 +17,11 @@
  */
 package org.apache.drill;
 
+import static org.apache.drill.PlanTestBase.testPlanMatchingPatterns;
 import static org.junit.Assert.assertEquals;
 
 import org.apache.drill.categories.OperatorTest;
+import org.apache.drill.exec.planner.physical.PlannerSettings;
 import org.apache.drill.test.BaseTestQuery;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -30,12 +32,6 @@ import java.nio.file.Paths;
 public class TestJoinNullable extends BaseTestQuery {
   static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(TestJoinNullable.class);
 
-  private static void enableJoin(boolean hj, boolean mj) throws Exception {
-    test("alter session set `planner.enable_hashjoin` = %s", hj);
-    test("alter session set `planner.enable_mergejoin` = %s", mj);
-    test("alter session set `planner.slice_target` = 1");
-  }
-
   /** InnerJoin on nullable cols, HashJoin */
   @Test
   public void testHashInnerJoinOnNullableColumns() throws Exception {
@@ -43,7 +39,7 @@ public class TestJoinNullable extends BaseTestQuery {
       " cp.`jsoninput/nullable2.json` t2 where t1.b1 = t2.b2";
     final int expectedRecordCount = 1;
 
-    enableJoin(true, false);
+    enableJoin(true, false, false);
     final int actualRecordCount = testSql(query);
     assertEquals("Number of output rows", expectedRecordCount, actualRecordCount);
   }
@@ -57,7 +53,7 @@ public class TestJoinNullable extends BaseTestQuery {
 
     final int expectedRecordCount = 2;
 
-    enableJoin(true, false);
+    enableJoin(true, false, false);
     final int actualRecordCount = testSql(query);
     assertEquals("Number of output rows", expectedRecordCount, actualRecordCount);
   }
@@ -71,7 +67,7 @@ public class TestJoinNullable extends BaseTestQuery {
 
     final int expectedRecordCount = 4;
 
-    enableJoin(true, false);
+    enableJoin(true, false, false);
     final int actualRecordCount = testSql(query);
     assertEquals("Number of output rows", expectedRecordCount, actualRecordCount);
   }
@@ -85,7 +81,7 @@ public class TestJoinNullable extends BaseTestQuery {
 
     final int expectedRecordCount = +5;
 
-    enableJoin(true, false);
+    enableJoin(true, false, false);
     final int actualRecordCount = testSql(query);
     assertEquals("Number of output rows", expectedRecordCount, actualRecordCount);
   }
@@ -100,7 +96,7 @@ public class TestJoinNullable extends BaseTestQuery {
             + " where t1.b1 = t2.b2";
     final int expectedRecordCount = 1;
 
-    enableJoin(false, true);
+    enableJoin(false, true, false);
     final int actualRecordCount = testSql(query);
     assertEquals("Number of output rows", expectedRecordCount, actualRecordCount);
   }
@@ -114,7 +110,7 @@ public class TestJoinNullable extends BaseTestQuery {
 
     final int expectedRecordCount = 2;
 
-    enableJoin(false, true);
+    enableJoin(false, true, false);
     final int actualRecordCount = testSql(query);
     assertEquals("Number of output rows", expectedRecordCount, actualRecordCount);
   }
@@ -128,7 +124,7 @@ public class TestJoinNullable extends BaseTestQuery {
 
     final int expectedRecordCount = 4;
 
-    enableJoin(false, true);
+    enableJoin(false, true, false);
     final int actualRecordCount = testSql(query);
     assertEquals("Number of output rows", expectedRecordCount, actualRecordCount);
   }
@@ -144,7 +140,7 @@ public class TestJoinNullable extends BaseTestQuery {
             + "      using ( key )";
     final int expectedRecordCount = 6;
 
-    enableJoin(false, true);
+    enableJoin(false, true, false);
     final int actualRecordCount = testSql(query);
     assertEquals("Number of output rows", expectedRecordCount, actualRecordCount);
   }
@@ -162,7 +158,7 @@ public class TestJoinNullable extends BaseTestQuery {
             + "    USING ( key )";
     final int expectedRecordCount = 6;
 
-    enableJoin(false, true);
+    enableJoin(false, true, false);
     final int actualRecordCount = testSql(query);
     assertEquals("Number of output rows", expectedRecordCount, actualRecordCount);
   }
@@ -180,7 +176,7 @@ public class TestJoinNullable extends BaseTestQuery {
             + "    USING ( key )";
     final int expectedRecordCount = 6;
 
-    enableJoin(false, true);
+    enableJoin(false, true, false);
     final int actualRecordCount = testSql(query);
     assertEquals("Number of output rows", expectedRecordCount, actualRecordCount);
   }
@@ -198,7 +194,7 @@ public class TestJoinNullable extends BaseTestQuery {
             + "    USING ( key )";
     final int expectedRecordCount = 6;
 
-    enableJoin(false, true);
+    enableJoin(false, true, false);
     final int actualRecordCount = testSql(query);
     assertEquals("Number of output rows", expectedRecordCount, actualRecordCount);
   }
@@ -216,7 +212,7 @@ public class TestJoinNullable extends BaseTestQuery {
             + "    USING ( key )";
     final int expectedRecordCount = 6;
 
-    enableJoin(false, true);
+    enableJoin(false, true, false);
     final int actualRecordCount = testSql(query);
     assertEquals("Number of output rows", expectedRecordCount, actualRecordCount);
   }
@@ -238,7 +234,7 @@ public class TestJoinNullable extends BaseTestQuery {
             + "    USING ( key )";
     final int expectedRecordCount = 6;
 
-    enableJoin(false, true);
+    enableJoin(false, true, false);
     final int actualRecordCount = testSql(query);
     assertEquals("Number of output rows", expectedRecordCount, actualRecordCount);
   }
@@ -258,7 +254,7 @@ public class TestJoinNullable extends BaseTestQuery {
             + "    USING ( key )";
     final int expectedRecordCount = 6;
 
-    enableJoin(false, true);
+    enableJoin(false, true, false);
     final int actualRecordCount = testSql(query);
     assertEquals("Number of output rows", expectedRecordCount, actualRecordCount);
   }
@@ -278,7 +274,7 @@ public class TestJoinNullable extends BaseTestQuery {
             + "    USING ( key )";
     final int expectedRecordCount = 6;
 
-    enableJoin(false, true);
+    enableJoin(false, true, false);
     final int actualRecordCount = testSql(query);
     assertEquals("Number of output rows", expectedRecordCount, actualRecordCount);
   }
@@ -298,7 +294,7 @@ public class TestJoinNullable extends BaseTestQuery {
             + "    USING ( key )";
     final int expectedRecordCount = 6;
 
-    enableJoin(false, true);
+    enableJoin(false, true, false);
     final int actualRecordCount = testSql(query);
     assertEquals("Number of output rows", expectedRecordCount, actualRecordCount);
   }
@@ -319,7 +315,7 @@ public class TestJoinNullable extends BaseTestQuery {
             + "    USING ( key )";
     final int expectedRecordCount = 6;
 
-    enableJoin(false, true);
+    enableJoin(false, true, false);
     final int actualRecordCount = testSql(query);
     assertEquals("Number of output rows", expectedRecordCount, actualRecordCount);
   }
@@ -340,7 +336,7 @@ public class TestJoinNullable extends BaseTestQuery {
             + "    USING ( key )";
     final int expectedRecordCount = 6;
 
-    enableJoin(false, true);
+    enableJoin(false, true, false);
     final int actualRecordCount = testSql(query);
     assertEquals("Number of output rows", expectedRecordCount, actualRecordCount);
   }
@@ -361,7 +357,7 @@ public class TestJoinNullable extends BaseTestQuery {
             + "    USING ( key )";
     final int expectedRecordCount = 6;
 
-    enableJoin(false, true);
+    enableJoin(false, true, false);
     final int actualRecordCount = testSql(query);
     assertEquals("Number of output rows", expectedRecordCount, actualRecordCount);
   }
@@ -382,7 +378,7 @@ public class TestJoinNullable extends BaseTestQuery {
             + "    USING ( key )";
     final int expectedRecordCount = 6;
 
-    enableJoin(false, true);
+    enableJoin(false, true, false);
     final int actualRecordCount = testSql(query);
     assertEquals("Number of output rows", expectedRecordCount, actualRecordCount);
   }
@@ -468,7 +464,7 @@ public class TestJoinNullable extends BaseTestQuery {
 
   @Test
   public void testMixedEqualAndIsNotDistinctHashJoin() throws Exception {
-    enableJoin(true, false);
+    enableJoin(true, false, false);
     try {
       final String query = "SELECT * FROM " +
           "cp.`jsoninput/nullEqualJoin1.json` t1 JOIN " +
@@ -482,7 +478,7 @@ public class TestJoinNullable extends BaseTestQuery {
 
   @Test
   public void testMixedEqualAndIsNotDistinctMergeJoin() throws Exception {
-    enableJoin(false, true);
+    enableJoin(false, true, false);
     try {
       final String query = "SELECT * FROM " +
           "cp.`jsoninput/nullEqualJoin1.json` t1 JOIN " +
@@ -496,7 +492,7 @@ public class TestJoinNullable extends BaseTestQuery {
 
   @Test
   public void testMixedEqualAndIsNotDistinctFilterHashJoin() throws Exception {
-    enableJoin(true, false);
+    enableJoin(true, false, false);
     try {
       final String query = "SELECT * FROM " +
           "cp.`jsoninput/nullEqualJoin1.json` t1 JOIN " +
@@ -512,7 +508,7 @@ public class TestJoinNullable extends BaseTestQuery {
 
   @Test
   public void testMixedEqualAndIsNotDistinctFilterMergeJoin() throws Exception {
-    enableJoin(false, true);
+    enableJoin(false, true, false);
     try {
       final String query = "SELECT * FROM " +
           "cp.`jsoninput/nullEqualJoin1.json` t1 JOIN " +
@@ -528,7 +524,7 @@ public class TestJoinNullable extends BaseTestQuery {
 
   @Test
   public void testMixedEqualAndEqualOrHashJoin() throws Exception {
-    enableJoin(true, false);
+    enableJoin(true, false, false);
     try {
       final String query = "SELECT * FROM " +
           "cp.`jsoninput/nullEqualJoin1.json` t1 JOIN " +
@@ -544,7 +540,7 @@ public class TestJoinNullable extends BaseTestQuery {
 
   @Test
   public void testMixedEqualAndEqualOrMergeJoin() throws Exception {
-    enableJoin(false, true);
+    enableJoin(false, true, false);
     try {
       final String query = "SELECT * FROM " +
           "cp.`jsoninput/nullEqualJoin1.json` t1 JOIN " +
@@ -570,25 +566,20 @@ public class TestJoinNullable extends BaseTestQuery {
         .go();
   }
 
-  /** InnerJoin with empty dir table on nullable cols, MergeJoin */
-  // TODO: the same tests should be added for HashJoin operator, DRILL-6070
-  @Test
-  public void testMergeInnerJoinWthEmptyDirOnNullableCol() throws Exception {
-    final String emptyDirName = "empty_directory";
-    dirTestWatcher.makeTestTmpSubDir(Paths.get(emptyDirName));
-
-    String query = String.format("select t1.a1, t1.b1, t2.a2, t2.b2 from cp.`jsoninput/nullable1.json` t1 inner join " +
-        " dfs.tmp.`%s` t2 on t1.b1 = t2.b2", emptyDirName);
-    final int expectedRecordCount = 0;
-
-    enableJoin(false, true);
-    final int actualRecordCount = testSql(query);
-    assertEquals("Number of output rows", expectedRecordCount, actualRecordCount);
+  private static void enableJoin(boolean hj, boolean mj, boolean nlj) throws Exception {
+    setSessionOption((PlannerSettings.HASHJOIN.getOptionName()), hj);
+    setSessionOption((PlannerSettings.MERGEJOIN.getOptionName()), mj);
+    setSessionOption((PlannerSettings.NESTEDLOOPJOIN.getOptionName()), nlj);
+    setSessionOption((PlannerSettings.NLJOIN_FOR_SCALAR.getOptionName()), !(nlj));
   }
 
   private static void resetJoinOptions() throws Exception {
-    test("alter session set `planner.enable_hashjoin` = true");
-    test("alter session set `planner.enable_mergejoin` = false");
+    resetSessionOption((PlannerSettings.HASHJOIN.getOptionName()));
+    resetSessionOption((PlannerSettings.MERGEJOIN.getOptionName()));
+    resetSessionOption((PlannerSettings.NESTEDLOOPJOIN.getOptionName()));
+    resetSessionOption((PlannerSettings.NLJOIN_FOR_SCALAR.getOptionName()));
    }
+
+  private static String nlpattern = "NestedLoopJoin";
 
 }

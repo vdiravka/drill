@@ -66,6 +66,8 @@ import com.sun.codemodel.JExpression;
 import com.sun.codemodel.JVar;
 
 public class HashJoinBatch extends AbstractBinaryRecordBatch<HashJoinPOP> {
+  private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(new Object() {}.getClass().getEnclosingClass());
+
   public static final long ALLOCATOR_INITIAL_RESERVATION = 1 * 1024 * 1024;
   public static final long ALLOCATOR_MAX_RESERVATION = 20L * 1000 * 1000 * 1000;
 
@@ -173,19 +175,26 @@ public class HashJoinBatch extends AbstractBinaryRecordBatch<HashJoinPOP> {
     try {
       rightSchema = right.getSchema();
       final VectorContainer vectors = new VectorContainer(oContext);
-      for (final VectorWrapper<?> w : right) {
-        vectors.addOrGet(w.getField());
-      }
-      vectors.buildSchema(SelectionVectorMode.NONE);
-      vectors.setRecordCount(0);
-      hyperContainer = new ExpandableHyperContainer(vectors);
-      hjHelper.addNewBatch(0);
-      buildBatchIndex++;
-      setupHashTable();
-      hashJoinProbe = setupHashJoinProbe();
-      // Build the container schema and set the counts
-      for (final VectorWrapper<?> w : container) {
-        w.getValueVector().allocateNew();
+      if (rightUpstream != IterOutcome.NONE) {
+//        state = BatchState.DONE;
+//        return;
+//      }
+        for (final VectorWrapper<?> w : right) {
+          vectors.addOrGet(w.getField());
+        }
+        vectors.buildSchema(SelectionVectorMode.NONE);
+        vectors.setRecordCount(0);
+        hyperContainer = new ExpandableHyperContainer(vectors);
+        hjHelper.addNewBatch(0);
+        buildBatchIndex++;
+        setupHashTable();
+        hashJoinProbe = setupHashJoinProbe();
+        // Build the container schema and set the counts
+        for (final VectorWrapper<?> w : container) {
+          w.getValueVector().allocateNew();
+        }
+      } else {
+//        state = BatchState.DONE;
       }
       container.buildSchema(BatchSchema.SelectionVectorMode.NONE);
       container.setRecordCount(outputRecords);
@@ -200,7 +209,9 @@ public class HashJoinBatch extends AbstractBinaryRecordBatch<HashJoinPOP> {
       /* If we are here for the first time, execute the build phase of the
        * hash join and setup the run time generated class for the probe side
        */
-      if (state == BatchState.FIRST) {
+      logger.error(rightUpstream.toString());
+      logger.error(leftUpstream.toString());
+      if (state == BatchState.FIRST && rightUpstream != IterOutcome.NONE) {
         // Build the hash table, using the build side record batches.
         executeBuildPhase();
         //                IterOutcome next = next(HashJoinHelper.LEFT_INPUT, left);
@@ -212,8 +223,8 @@ public class HashJoinBatch extends AbstractBinaryRecordBatch<HashJoinPOP> {
       }
 
       // Store the number of records projected
-      if (!hashTable.isEmpty() || joinType != JoinRelType.INNER) {
-
+      if (hashTable != null && (!hashTable.isEmpty() || joinType != JoinRelType.INNER)) {
+        logger.error(hashTable.toString());
         // Allocate the memory for the vectors in the output container
         allocateVectors();
 
@@ -236,6 +247,7 @@ public class HashJoinBatch extends AbstractBinaryRecordBatch<HashJoinPOP> {
           return IterOutcome.OK;
         }
       } else {
+        logger.error("Should be here");
         // Our build side is empty, we won't have any matches, clear the probe side
         if (leftUpstream == IterOutcome.OK_NEW_SCHEMA || leftUpstream == IterOutcome.OK) {
           for (final VectorWrapper<?> wrapper : left) {
@@ -305,7 +317,7 @@ public class HashJoinBatch extends AbstractBinaryRecordBatch<HashJoinPOP> {
     //Setup the underlying hash table
 
     // skip first batch if count is zero, as it may be an empty schema batch
-    if (right.getRecordCount() == 0) {
+    if (rightUpstream != IterOutcome.NONE && right.getRecordCount() == 0) {
       for (final VectorWrapper<?> w : right) {
         w.clear();
       }
