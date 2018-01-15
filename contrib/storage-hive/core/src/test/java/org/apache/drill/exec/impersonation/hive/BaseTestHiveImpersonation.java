@@ -38,6 +38,7 @@ import java.util.Map;
 import static org.apache.drill.exec.store.hive.HiveTestDataGenerator.createFileWithPermissions;
 import static org.apache.hadoop.fs.FileSystem.FS_DEFAULT_NAME_KEY;
 import static org.apache.hadoop.hive.conf.HiveConf.ConfVars.METASTOREURIS;
+import static org.apache.hadoop.hive.conf.HiveConf.ConfVars.METASTORE_SCHEMA_VERIFICATION;
 
 public class BaseTestHiveImpersonation extends BaseTestImpersonation {
   protected static final String hivePluginName = "hive";
@@ -72,6 +73,7 @@ public class BaseTestHiveImpersonation extends BaseTestImpersonation {
 
     hiveConf.set(ConfVars.SCRATCHDIR.varname, "file://" + scratchDir.getAbsolutePath());
     hiveConf.set(ConfVars.LOCALSCRATCHDIR.varname, localScratchDir.getAbsolutePath());
+    hiveConf.set(METASTORE_SCHEMA_VERIFICATION.varname, "false");
 
     // Set MiniDFS conf in HiveConf
     hiveConf.set(FS_DEFAULT_NAME_KEY, dfsConf.get(FS_DEFAULT_NAME_KEY));
@@ -87,6 +89,7 @@ public class BaseTestHiveImpersonation extends BaseTestImpersonation {
     final int port = MetaStoreUtils.findFreePort();
 
     hiveConf.set(METASTOREURIS.varname, "thrift://localhost:" + port);
+    hiveConf.set(METASTORE_SCHEMA_VERIFICATION.varname, "false");
 
     MetaStoreUtils.startMetaStore(port, ShimLoader.getHadoopThriftAuthBridge(), hiveConf);
   }

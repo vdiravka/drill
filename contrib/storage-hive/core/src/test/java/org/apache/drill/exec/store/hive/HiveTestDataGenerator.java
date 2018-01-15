@@ -45,6 +45,7 @@ import com.google.common.collect.Maps;
 import org.apache.hadoop.hive.serde.serdeConstants;
 
 import static org.apache.drill.exec.hive.HiveTestUtilities.executeQuery;
+import static org.apache.hadoop.hive.conf.HiveConf.ConfVars.METASTORE_SCHEMA_VERIFICATION;
 
 public class HiveTestDataGenerator {
   private static final String HIVE_TEST_PLUGIN_NAME = "hive";
@@ -78,6 +79,7 @@ public class HiveTestDataGenerator {
 
     config = Maps.newHashMap();
     config.put("hive.metastore.uris", "");
+    config.put("hive.metastore.schema.verification", "false");
     config.put("javax.jdo.option.ConnectionURL", String.format("jdbc:derby:;databaseName=%s;create=true", dbDir));
     config.put("hive.metastore.warehouse.dir", whDir);
     config.put(FileSystem.FS_DEFAULT_NAME_KEY, FileSystem.DEFAULT_FS);
@@ -149,6 +151,7 @@ public class HiveTestDataGenerator {
     conf.set(ConfVars.SCRATCHDIR.varname,  scratchDir.getAbsolutePath());
     conf.set(ConfVars.LOCALSCRATCHDIR.varname, localScratchDir.getAbsolutePath());
     conf.set(ConfVars.DYNAMICPARTITIONINGMODE.varname, "nonstrict");
+    conf.set(METASTORE_SCHEMA_VERIFICATION.varname, "false");
 
     SessionState ss = new SessionState(conf);
     SessionState.start(ss);

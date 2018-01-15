@@ -44,6 +44,7 @@ import static org.apache.hadoop.hive.conf.HiveConf.ConfVars.HIVE_AUTHORIZATION_M
 import static org.apache.hadoop.hive.conf.HiveConf.ConfVars.HIVE_SERVER2_ENABLE_DOAS;
 import static org.apache.hadoop.hive.conf.HiveConf.ConfVars.METASTOREURIS;
 import static org.apache.hadoop.hive.conf.HiveConf.ConfVars.METASTORE_EXECUTE_SET_UGI;
+import static org.apache.hadoop.hive.conf.HiveConf.ConfVars.METASTORE_SCHEMA_VERIFICATION;
 
 @Category({SlowTest.class, HiveStorageTest.class})
 public class TestSqlStdBasedAuthorization extends BaseTestHiveImpersonation {
@@ -89,6 +90,7 @@ public class TestSqlStdBasedAuthorization extends BaseTestHiveImpersonation {
     hiveConf.set(HIVE_AUTHORIZATION_MANAGER.varname, SQLStdConfOnlyAuthorizerFactory.class.getName());
     hiveConf.set(ConfVars.HIVE_SERVER2_ENABLE_DOAS.varname, "false");
     hiveConf.set(ConfVars.METASTORE_EXECUTE_SET_UGI.varname, "false");
+    hiveConf.set(ConfVars.METASTORE_SCHEMA_VERIFICATION.varname, "false");
     hiveConf.set(ConfVars.USERS_IN_ADMIN_ROLE.varname, processUser);
   }
 
@@ -98,6 +100,7 @@ public class TestSqlStdBasedAuthorization extends BaseTestHiveImpersonation {
     hiveConfig.put(FS_DEFAULT_NAME_KEY, dfsConf.get(FS_DEFAULT_NAME_KEY));
     hiveConfig.put(HIVE_SERVER2_ENABLE_DOAS.varname, hiveConf.get(HIVE_SERVER2_ENABLE_DOAS.varname));
     hiveConfig.put(METASTORE_EXECUTE_SET_UGI.varname, hiveConf.get(METASTORE_EXECUTE_SET_UGI.varname));
+    hiveConfig.put(METASTORE_SCHEMA_VERIFICATION.varname, hiveConf.get(METASTORE_SCHEMA_VERIFICATION.varname));
     hiveConfig.put(HIVE_AUTHORIZATION_ENABLED.varname, hiveConf.get(HIVE_AUTHORIZATION_ENABLED.varname));
     hiveConfig.put(HIVE_AUTHENTICATOR_MANAGER.varname, SessionStateUserAuthenticator.class.getName());
     hiveConfig.put(HIVE_AUTHORIZATION_MANAGER.varname, SQLStdHiveAuthorizerFactory.class.getName());
