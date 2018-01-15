@@ -46,6 +46,7 @@ import org.apache.hadoop.hive.serde.serdeConstants;
 
 import static org.apache.drill.exec.hive.HiveTestUtilities.executeQuery;
 import static org.apache.hadoop.hive.conf.HiveConf.ConfVars.METASTORE_SCHEMA_VERIFICATION;
+import static org.apache.hadoop.hive.conf.HiveConf.ConfVars.HIVESTATSAUTOGATHER;
 
 public class HiveTestDataGenerator {
   private static final String HIVE_TEST_PLUGIN_NAME = "hive";
@@ -152,6 +153,7 @@ public class HiveTestDataGenerator {
     conf.set(ConfVars.LOCALSCRATCHDIR.varname, localScratchDir.getAbsolutePath());
     conf.set(ConfVars.DYNAMICPARTITIONINGMODE.varname, "nonstrict");
     conf.set(METASTORE_SCHEMA_VERIFICATION.varname, "false");
+    conf.set(HIVESTATSAUTOGATHER.varname, "false"); // TODO: check if this property necessary in other places
 
     SessionState ss = new SessionState(conf);
     SessionState.start(ss);
