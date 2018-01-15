@@ -48,6 +48,7 @@ import static org.apache.hadoop.hive.conf.HiveConf.ConfVars.HIVE_SERVER2_ENABLE_
 import static org.apache.hadoop.hive.conf.HiveConf.ConfVars.METASTOREURIS;
 import static org.apache.hadoop.hive.conf.HiveConf.ConfVars.METASTORE_EXECUTE_SET_UGI;
 import static org.apache.hadoop.hive.conf.HiveConf.ConfVars.METASTORE_PRE_EVENT_LISTENERS;
+import static org.apache.hadoop.hive.conf.HiveConf.ConfVars.METASTORE_SCHEMA_VERIFICATION;
 import static org.apache.hadoop.hive.conf.HiveConf.ConfVars.DYNAMICPARTITIONINGMODE;
 
 @Category({SlowTest.class, HiveStorageTest.class})
@@ -126,6 +127,7 @@ public class TestStorageBasedHiveAuthorization extends BaseTestHiveImpersonation
     hiveConf.set(HIVE_METASTORE_AUTHENTICATOR_MANAGER.varname, HadoopDefaultMetastoreAuthenticator.class.getName());
     hiveConf.set(HIVE_METASTORE_AUTHORIZATION_MANAGER.varname, StorageBasedAuthorizationProvider.class.getName());
     hiveConf.set(HIVE_METASTORE_AUTHORIZATION_AUTH_READS.varname, "true");
+    hiveConf.set(METASTORE_SCHEMA_VERIFICATION.varname, "false");
     hiveConf.set(METASTORE_EXECUTE_SET_UGI.varname, "true");
     hiveConf.set(DYNAMICPARTITIONINGMODE.varname, "nonstrict");
   }
@@ -136,6 +138,7 @@ public class TestStorageBasedHiveAuthorization extends BaseTestHiveImpersonation
     hiveConfig.put(FS_DEFAULT_NAME_KEY, dfsConf.get(FS_DEFAULT_NAME_KEY));
     hiveConfig.put(HIVE_SERVER2_ENABLE_DOAS.varname, hiveConf.get(HIVE_SERVER2_ENABLE_DOAS.varname));
     hiveConfig.put(METASTORE_EXECUTE_SET_UGI.varname, hiveConf.get(METASTORE_EXECUTE_SET_UGI.varname));
+    hiveConfig.put(METASTORE_SCHEMA_VERIFICATION.varname, hiveConf.get(METASTORE_SCHEMA_VERIFICATION.varname));
     return hiveConfig;
   }
 
