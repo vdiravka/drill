@@ -84,6 +84,8 @@
                   <include>com.twitter:parquet-generator</include>
                   <include>org.apache.calcite:calcite-core</include>
                   <include>org.apache.calcite.avatica:avatica-core</include>
+                  <!--<include>org.apache.calcite:calcite-avatica</include>-->
+                  <include>org.apache.calcite:calcite-linq4j</include>
                 </includes>
               </artifactSet>
               <createDependencyReducedPom>false</createDependencyReducedPom>
