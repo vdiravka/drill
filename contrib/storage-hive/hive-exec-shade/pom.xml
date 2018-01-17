@@ -47,8 +47,20 @@
           <groupId>org.apache.calcite</groupId>
         </exclusion>
         <exclusion>
+          <artifactId>calcite-core</artifactId>
+          <groupId>org.apache.calcite</groupId>
+        </exclusion>
+        <exclusion>
           <groupId>org.json</groupId>
           <artifactId>json</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>commons-lang</groupId>
+          <artifactId>commons-lang</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.commons</groupId>
+          <artifactId>commons-lang3</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -56,6 +68,29 @@
       <groupId>com.tdunning</groupId>
       <artifactId>json</artifactId>
     </dependency>
+    <!--<dependency>-->
+      <!--<groupId>org.apache.calcite.avatica</groupId>-->
+      <!--<artifactId>avatica</artifactId>-->
+    <!--</dependency>-->
+    <!--<dependency>-->
+      <!--<groupId>org.apache.calcite.avatica</groupId>-->
+      <!--<artifactId>avatica-core</artifactId>-->
+      <!--<version>${avatica.version}</version>-->
+      <!--<exclusions>-->
+        <!--<exclusion>-->
+          <!--<groupId>org.apache.calcite.avatica</groupId>-->
+          <!--<artifactId>avatica-core</artifactId>-->
+        <!--</exclusion>-->
+        <!--<exclusion>-->
+          <!--<groupId>commons-logging</groupId>-->
+          <!--<artifactId>commons-logging</artifactId>-->
+        <!--</exclusion>-->
+        <!--<exclusion>-->
+          <!--<artifactId>protobuf-java</artifactId>-->
+          <!--<groupId>com.google.protobuf</groupId>-->
+        <!--</exclusion>-->
+      <!--</exclusions>-->
+    <!--</dependency>-->
   </dependencies>
 
   <build>
@@ -83,7 +118,8 @@
                   <include>com.twitter:parquet-encoding</include>
                   <include>com.twitter:parquet-generator</include>
                   <include>org.apache.calcite:calcite-core</include>
-                  <include>org.apache.calcite.avatica:avatica-core</include>
+                  <include>org.apache.calcite.avatica:avatica</include>
+                  <!--<include>org.apache.calcite.avatica:avatica-core</include>-->
                   <!--<include>org.apache.calcite:calcite-avatica</include>-->
                   <include>org.apache.calcite:calcite-linq4j</include>
                 </includes>
@@ -111,13 +147,20 @@
                   <pattern>org.eigenbase.</pattern>
                   <shadedPattern>hive.org.eigenbase.</shadedPattern>
                 </relocation>
-                <relocation>
-                  <pattern>org.apache.calcite.</pattern>
-                  <shadedPattern>hive.org.apache.calcite.</shadedPattern>
-                </relocation>
+                <!--<relocation>-->
+                  <!--<pattern>org.apache.calcite.</pattern>-->
+                  <!--<shadedPattern>hive.org.apache.calcite.</shadedPattern>-->
+                  <!--<excludes>-->
+                    <!--<exclude>org.apache.calcite.avatica.</exclude>-->
+                  <!--</excludes>-->
+                <!--</relocation>-->
                 <relocation>
                   <pattern>com.fasterxml.jackson.</pattern>
                   <shadedPattern>hive.com.fasterxml.jackson.</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>parquet.</pattern>
+                  <shadedPattern>hive.parquet.</shadedPattern>
                 </relocation>
               </relocations>
               <filters>
