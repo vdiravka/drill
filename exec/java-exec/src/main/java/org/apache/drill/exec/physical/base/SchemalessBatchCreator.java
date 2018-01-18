@@ -20,7 +20,7 @@ package org.apache.drill.exec.physical.base;
 import java.util.List;
 
 import org.apache.drill.common.exceptions.ExecutionSetupException;
-import org.apache.drill.exec.ops.FragmentContext;
+import org.apache.drill.exec.ops.ExecutorFragmentContext;
 import org.apache.drill.exec.physical.impl.BatchCreator;
 import org.apache.drill.exec.record.CloseableRecordBatch;
 import org.apache.drill.exec.record.SchemalessBatch;
@@ -32,7 +32,7 @@ import org.apache.drill.exec.record.RecordBatch;
 public class SchemalessBatchCreator implements BatchCreator<SchemalessScan> {
 
   @Override
-  public CloseableRecordBatch getBatch(FragmentContext context, SchemalessScan subScan, List<RecordBatch> children)
+  public CloseableRecordBatch getBatch(ExecutorFragmentContext context, SchemalessScan subScan, List<RecordBatch> children)
       throws ExecutionSetupException {
     return new SchemalessBatch();
   }
