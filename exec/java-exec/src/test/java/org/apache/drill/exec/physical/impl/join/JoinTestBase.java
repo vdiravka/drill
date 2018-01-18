@@ -19,24 +19,24 @@ package org.apache.drill.exec.physical.impl.join;
 
 import org.apache.drill.categories.OperatorTest;
 import org.apache.drill.PlanTestBase;
-import org.apache.drill.common.exceptions.UserRemoteException;
-import org.junit.BeforeClass;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.nio.file.Paths;
+
 import org.apache.drill.exec.planner.physical.PlannerSettings;
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.junit.Assert.assertThat;
 
 
 @Category(OperatorTest.class)
 public class JoinTestBase extends PlanTestBase {
 
-  private static final String testEmptyJoin = "select count(*) as cnt from cp.`employee.json` emp %s join dfs.`dept.json` " +
+  public static final String HJ_PATTERN = "HashJoin";
+  public static final String MJ_PATTERN = "MergeJoin";
+  public static final String NLJ_PATTERN = "NestedLoopJoin";
+
+
+  private static final String TEST_EMPTY_JOIN = "select count(*) as cnt from cp.`employee.json` emp %s join dfs.`dept.json` " +
           "as dept on dept.manager = emp.`last_name`";
 
   /**
@@ -50,7 +50,7 @@ public class JoinTestBase extends PlanTestBase {
   public void testJoinWithEmptyFile(File testDir, String joinType,
                          String joinPattern, long result) throws Exception {
     buildFile("dept.json", new String[0], testDir);
-    String query = String.format(testEmptyJoin, joinType);
+    String query = String.format(TEST_EMPTY_JOIN, joinType);
     testPlanMatchingPatterns(query, new String[]{joinPattern}, new String[]{});
     testBuilder()
             .sqlQuery(query)
@@ -66,5 +66,29 @@ public class JoinTestBase extends PlanTestBase {
         out.println(line);
       }
     }
+  }
+
+  /**
+   * Allows to enable necessary join operator.
+   * @param hj hash join operator
+   * @param mj merge join operator
+   * @param nlj nested-loop join operator
+   * @throws Exception If any exception is obtained, all set options should be reset
+   */
+  public static void enableJoin(boolean hj, boolean mj, boolean nlj) throws Exception {
+    setSessionOption((PlannerSettings.HASHJOIN.getOptionName()), hj);
+    setSessionOption((PlannerSettings.MERGEJOIN.getOptionName()), mj);
+    setSessionOption((PlannerSettings.NESTEDLOOPJOIN.getOptionName()), nlj);
+    setSessionOption((PlannerSettings.NLJOIN_FOR_SCALAR.getOptionName()), !(nlj));
+  }
+
+  /**
+   * Allows to reset session options of custom join operators
+   */
+  public static void resetJoinOptions() {
+    resetSessionOption((PlannerSettings.HASHJOIN.getOptionName()));
+    resetSessionOption((PlannerSettings.MERGEJOIN.getOptionName()));
+    resetSessionOption((PlannerSettings.NESTEDLOOPJOIN.getOptionName()));
+    resetSessionOption((PlannerSettings.NLJOIN_FOR_SCALAR.getOptionName()));
   }
 }

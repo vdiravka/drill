@@ -1,4 +1,4 @@
-/*
+/**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -23,8 +23,6 @@ import org.apache.drill.categories.OperatorTest;
 import org.apache.drill.test.BaseTestQuery;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-
-import java.nio.file.Paths;
 
 @Category(OperatorTest.class)
 public class TestJoinNullable extends BaseTestQuery {
@@ -568,22 +566,6 @@ public class TestJoinNullable extends BaseTestQuery {
         .baselineValues("B", null, null, "B")
         .baselineValues("B", "L_B_1", "L_B_1", "B")
         .go();
-  }
-
-  /** InnerJoin with empty dir table on nullable cols, MergeJoin */
-  // TODO: the same tests should be added for HashJoin operator, DRILL-6070
-  @Test
-  public void testMergeInnerJoinWthEmptyDirOnNullableCol() throws Exception {
-    final String emptyDirName = "empty_directory";
-    dirTestWatcher.makeTestTmpSubDir(Paths.get(emptyDirName));
-
-    String query = String.format("select t1.a1, t1.b1, t2.a2, t2.b2 from cp.`jsoninput/nullable1.json` t1 inner join " +
-        " dfs.tmp.`%s` t2 on t1.b1 = t2.b2", emptyDirName);
-    final int expectedRecordCount = 0;
-
-    enableJoin(false, true);
-    final int actualRecordCount = testSql(query);
-    assertEquals("Number of output rows", expectedRecordCount, actualRecordCount);
   }
 
   private static void resetJoinOptions() throws Exception {
