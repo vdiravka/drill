@@ -876,6 +876,14 @@
             <groupId>org.mortbay.jetty</groupId>
             <artifactId>servlet-api-2.5</artifactId>
           </exclusion>
+          <!--<exclusion>-->
+            <!--<groupId>com.google.guava</groupId>-->
+            <!--<artifactId>guava</artifactId>-->
+          <!--</exclusion>-->
+          <!--<exclusion>-->
+            <!--<groupId>org.apache.calcite</groupId>-->
+            <!--<artifactId>calcite-avatica</artifactId>-->
+          <!--</exclusion>-->
         </exclusions>
       </dependency>
       <dependency>
@@ -1007,6 +1015,11 @@
       <dependency>
         <groupId>com.fasterxml.jackson.core</groupId>
         <artifactId>jackson-annotations</artifactId>
+        <version>${jackson.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-databind</artifactId>
         <version>${jackson.version}</version>
       </dependency>
       <dependency>
@@ -1743,8 +1756,26 @@
 
           <dependency>
             <groupId>org.apache.calcite</groupId>
-            <artifactId>calcite-core</artifactId>
+            <artifactId>calcite-avatica</artifactId>
             <version>${calcite.version}</version>
+            <exclusions>
+              <exclusion>
+                <artifactId>jackson-core</artifactId>
+                <groupId>com.fasterxml.jackson.core</groupId>
+              </exclusion>
+            </exclusions>
+          </dependency>
+
+          <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>${jackson.version}</version>
+          </dependency>
+
+          <dependency>
+            <groupId>org.apache.calcite</groupId>
+            <artifactId>calcite-core</artifactId>
+            <!--<version>${calcite.version}</version>-->
             <exclusions>
               <exclusion>
                 <groupId>org.jgrapht</groupId>

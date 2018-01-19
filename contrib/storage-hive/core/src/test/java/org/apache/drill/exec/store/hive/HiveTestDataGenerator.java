@@ -47,6 +47,10 @@ import org.apache.hadoop.hive.serde.serdeConstants;
 import static org.apache.drill.exec.hive.HiveTestUtilities.executeQuery;
 import static org.apache.hadoop.hive.conf.HiveConf.ConfVars.METASTORE_SCHEMA_VERIFICATION;
 import static org.apache.hadoop.hive.conf.HiveConf.ConfVars.HIVESTATSAUTOGATHER;
+import static org.apache.hadoop.hive.conf.HiveConf.ConfVars.HIVE_SUPPORT_CONCURRENCY;
+import static org.apache.hadoop.hive.conf.HiveConf.ConfVars.HIVE_ZOOKEEPER_CLIENT_PORT;
+import static org.apache.hadoop.hive.conf.HiveConf.ConfVars.HIVE_LOCK_MANAGER;
+import static org.apache.hadoop.hive.conf.HiveConf.ConfVars.METASTORE_AUTO_CREATE_ALL;
 
 public class HiveTestDataGenerator {
   private static final String HIVE_TEST_PLUGIN_NAME = "hive";
@@ -81,9 +85,12 @@ public class HiveTestDataGenerator {
     config = Maps.newHashMap();
     config.put("hive.metastore.uris", "");
     config.put("hive.metastore.schema.verification", "false");
+    config.put("hive.support.concurrency", "true");
     config.put("javax.jdo.option.ConnectionURL", String.format("jdbc:derby:;databaseName=%s;create=true", dbDir));
     config.put("hive.metastore.warehouse.dir", whDir);
+//    config.put("hive.zookeeper.client.port", "2181");
     config.put(FileSystem.FS_DEFAULT_NAME_KEY, FileSystem.DEFAULT_FS);
+    config.put("datanucleus.schema.autoCreateAll", "true");
   }
 
   /**
@@ -154,6 +161,10 @@ public class HiveTestDataGenerator {
     conf.set(ConfVars.DYNAMICPARTITIONINGMODE.varname, "nonstrict");
     conf.set(METASTORE_SCHEMA_VERIFICATION.varname, "false");
     conf.set(HIVESTATSAUTOGATHER.varname, "false"); // TODO: check if this property necessary in other places
+//    conf.set(HIVE_SUPPORT_CONCURRENCY.varname, "true"); // TODO: check if this property necessary in other places
+//    conf.set(HIVE_ZOOKEEPER_CLIENT_PORT.varname, "2181"); // TODO: check if this property necessary in other places
+//    conf.set(HIVE_LOCK_MANAGER.varname, "org.apache.hadoop.hive.ql.lockmgr.DbLockManager"); // TODO: check if this property necessary in other places
+    conf.set(METASTORE_AUTO_CREATE_ALL.varname, "true"); // TODO: check if this property necessary in other places
 
     SessionState ss = new SessionState(conf);
     SessionState.start(ss);

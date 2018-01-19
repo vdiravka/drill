@@ -45,10 +45,14 @@
       the FileSystem implementation class.  The uri's authority is used to
       determine the host, port, etc. for a filesystem.</description>
   </property>
-  <property>
-    <name>datanucleus.autoCreateTables</name>
-    <value>true</value>
-  </property>
+  <!--<property>-->
+    <!--<name>datanucleus.autoCreateTables</name>-->
+    <!--<value>false</value>-->
+  <!--</property>-->
+  <!--<property>-->
+    <!--<name>datanucleus.autoCreateAll</name>-->
+    <!--<value>true</value>-->
+  <!--</property>-->
   <property>
     <name>hive.metastore.schema.verification</name>
     <value>false</value>

@@ -50,6 +50,10 @@
       <scope>test</scope>
     </dependency>
     <dependency>
+      <groupId>org.codehaus.janino</groupId>
+      <artifactId>janino</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.apache.kerby</groupId>
       <artifactId>kerb-simplekdc</artifactId>
       <version>${kerby.version}</version>
@@ -210,6 +214,7 @@
     <dependency>
       <groupId>org.apache.calcite</groupId>
       <artifactId>calcite-core</artifactId>
+      <version>${calcite.version}</version>
     </dependency>
     <dependency>
       <groupId>net.sf.jpam</groupId>
@@ -725,6 +730,7 @@
                 <artifactItem>
                   <groupId>org.apache.calcite</groupId>
                   <artifactId>calcite-core</artifactId>
+                  <version>${calcite.version}</version>
                   <type>jar</type>
                   <overWrite>true</overWrite>
                   <outputDirectory>${project.build.directory}/</outputDirectory>

@@ -17,9 +17,13 @@
  */
 package org.apache.drill.exec.fn.hive;
 
+import ch.qos.logback.classic.Level;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.drill.categories.HiveStorageTest;
+import org.apache.drill.exec.physical.impl.xsort.managed.ExternalSortBatch;
+import org.apache.drill.test.BaseTestQuery;
+import org.apache.drill.test.LogFixture;
 import org.apache.drill.test.QueryTestUtil;
 import org.apache.drill.test.TestBuilder;
 import org.apache.drill.categories.SlowTest;
@@ -29,6 +33,7 @@ import org.apache.drill.exec.compile.ClassTransformer;
 import org.apache.drill.exec.hive.HiveTestBase;
 import org.apache.drill.exec.server.options.OptionValue;
 import org.joda.time.DateTime;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -36,6 +41,19 @@ import java.util.List;
 
 @Category({SlowTest.class, HiveStorageTest.class})
 public class TestInbuiltHiveUDFs extends HiveTestBase {
+//  private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(TestInbuiltHiveUDFs.class);
+//
+//  @BeforeClass
+//  public static void setupLogging() {
+//    LogFixture.LogFixtureBuilder logBuilder = LogFixture.builder()
+//        // Log to the console for debugging convenience
+//        .toConsole()
+//        // All debug messages in the xsort package
+//        .logger("org.apache.drill.exec.physical.impl.xsort", Level.DEBUG)
+//        // And trace messages for one class.
+//        .logger(ExternalSortBatch.class, Level.TRACE);
+//    logBuilder.build();
+//  }
 
   @Test // DRILL-3273
   public void testConcatWS() throws Exception {

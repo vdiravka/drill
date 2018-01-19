@@ -17,8 +17,11 @@
  */
 package org.apache.drill.exec.hive;
 
+import ch.qos.logback.classic.Level;
 import org.apache.drill.PlanTestBase;
+import org.apache.drill.exec.physical.impl.xsort.managed.ExternalSortBatch;
 import org.apache.drill.exec.store.hive.HiveTestDataGenerator;
+import org.apache.drill.test.LogFixture;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 

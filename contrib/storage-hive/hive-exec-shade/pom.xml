@@ -46,6 +46,18 @@
           <groupId>org.json</groupId>
           <artifactId>json</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>com.google.guava</groupId>
+          <artifactId>guava</artifactId>
+        </exclusion>
+        <!--<exclusion>-->
+          <!--<groupId>org.apache.calcite</groupId>-->
+          <!--<artifactId>calcite-core</artifactId>-->
+        <!--</exclusion>-->
+        <!--<exclusion>-->
+          <!--<groupId>org.apache.calcite</groupId>-->
+          <!--<artifactId>calcite-linq4j</artifactId>-->
+        <!--</exclusion>-->
       </exclusions>
     </dependency>
     <dependency>
@@ -59,7 +71,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
-        <version>2.1</version>
+        <version>2.4.1</version>
         <executions>
           <execution>
             <phase>package</phase>
@@ -78,10 +90,17 @@
                   <include>com.twitter:parquet-jackson</include>
                   <include>com.twitter:parquet-encoding</include>
                   <include>com.twitter:parquet-generator</include>
+                  <!-- avatica is not defined in root POM, that's why
+                  it is 1.6 version, unlike calcite-core-->
                   <include>org.apache.calcite:calcite-core</include>
                   <include>org.apache.calcite:calcite-avatica</include>
                   <include>org.apache.calcite:calcite-linq4j</include>
                 </includes>
+                <excludes>
+                  <!--<exclude>org.apache.hive:hive-exec</exclude>-->
+                  <exclude>org.codehaus.janino:*</exclude>
+                  <exclude>com.fasterxml.jackson.core:*</exclude>
+                </excludes>
               </artifactSet>
               <createDependencyReducedPom>false</createDependencyReducedPom>
               <promoteTransitiveDependencies>true</promoteTransitiveDependencies>
@@ -108,18 +127,31 @@
                 </relocation>
                 <relocation>
                   <pattern>org.apache.calcite.</pattern>
-                  <shadedPattern>hive.org.apache.calcite.</shadedPattern>
+                  <shadedPattern>custom.org.apache.calcite.</shadedPattern>
+                  <excludes>
+                    <exclude>org.apache.calcite.avatica.</exclude>
+                  </excludes>
                 </relocation>
                 <relocation>
                   <pattern>com.fasterxml.jackson.</pattern>
                   <shadedPattern>hive.com.fasterxml.jackson.</shadedPattern>
                 </relocation>
+                <!--<relocation>-->
+                  <!--<pattern>com.google.guava.</pattern>-->
+                  <!--<shadedPattern>hive.com.google.guava.</shadedPattern>-->
+                <!--</relocation>-->
+                <!--<relocation>-->
+                  <!--<pattern>com.google.guava.</pattern>-->
+                  <!--<shadedPattern>hive.com.google.guava.</shadedPattern>-->
+                <!--</relocation>-->
               </relocations>
               <filters>
                 <filter>
                   <artifact>org.apache.hive:hive-exec</artifact>
                   <excludes>
                     <exclude>org/json/*</exclude>
+                    <!--<exclude>com/google/common/base/*</exclude>-->
+                    <exclude>com/google/*</exclude>
                   </excludes>
                 </filter>
               </filters>
