@@ -70,10 +70,10 @@ public class Hive${entry.hiveReader}Reader extends HiveAbstractReader {
   Object value;
 </#if>
 
-  public Hive${entry.hiveReader}Reader(HiveTableWithColumnCache table, HivePartition partition, Collection<InputSplit> inputSplit, List<SchemaPath> projectedColumns,
+  public Hive${entry.hiveReader}Reader(HiveTableWithColumnCache table, HivePartition partition, Collection<InputSplit> inputSplits, List<SchemaPath> projectedColumns,
                       FragmentContext context, final HiveConf hiveConf,
                       UserGroupInformation proxyUgi) throws ExecutionSetupException {
-    super(table, partition, inputSplit, projectedColumns, context, hiveConf, proxyUgi);
+    super(table, partition, inputSplits, projectedColumns, context, hiveConf, proxyUgi);
   }
 
   public  void internalInit(Properties tableProperties, RecordReader<Object, Object> reader) {

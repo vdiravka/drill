@@ -59,6 +59,8 @@ import org.apache.hadoop.hive.serde2.objectinspector.StructObjectInspector;
 import org.apache.hadoop.hive.serde2.typeinfo.StructTypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoUtils;
+import org.apache.hadoop.hive.ql.io.orc.OrcSplit;
+import org.apache.hadoop.hive.ql.io.orc.OrcFile;
 import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordReader;
@@ -118,6 +120,19 @@ public abstract class HiveAbstractReader extends AbstractRecordReader {
                             UserGroupInformation proxyUgi) throws ExecutionSetupException {
     this.table = table;
     this.partition = partition;
+
+    if (inputSplits != null) {
+      for (InputSplit inputSplit : inputSplits) {
+        logger.error(inputSplit + " to be read");
+      }
+    } else {
+      logger.error("inputSplit is null");
+    }
+    if (partition != null) {
+      logger.error(partition + " partition");
+    } else {
+      logger.error("partition is null");
+    }
     this.empty = (inputSplits == null || inputSplits.isEmpty());
     this.inputSplitsIterator = empty ? Collections.<InputSplit>emptyIterator() : inputSplits.iterator();
     this.hiveConf = hiveConf;
@@ -138,6 +153,7 @@ public abstract class HiveAbstractReader extends AbstractRecordReader {
     Properties tableProperties;
     try {
       tableProperties = HiveUtilities.getTableMetadata(table);
+      logger.error(String.valueOf(tableProperties) + "  Table properties" );
       final Properties partitionProperties =
           (partition == null) ?  tableProperties :
               HiveUtilities.getPartitionMetadata(partition, table);
@@ -147,6 +163,7 @@ public abstract class HiveAbstractReader extends AbstractRecordReader {
       final StructObjectInspector tableOI = getStructOI(tableSerDe);
 
       if (partition != null) {
+        logger.error("partition is present");
         partitionSerDe = createSerDe(job, partition.getSd().getSerdeInfo().getSerializationLib(), partitionProperties);
         partitionOI = getStructOI(partitionSerDe);
 
@@ -232,6 +249,10 @@ public abstract class HiveAbstractReader extends AbstractRecordReader {
           if (partition != null) {
             selectedPartitionValues.add(
                 HiveUtilities.convertPartitionType(pType, partition.getValues().get(i), defaultPartitionValue));
+            logger.error(" ");
+            logger.error(String.valueOf(partition));
+            logger.error(String.valueOf(partitionNames));
+            logger.error(String.valueOf(selectedPartitionNames));
           }
         }
       }
@@ -239,7 +260,7 @@ public abstract class HiveAbstractReader extends AbstractRecordReader {
       throw new ExecutionSetupException("Failure while initializing Hive Reader " + this.getClass().getName(), e);
     }
 
-    if (!empty && initNextReader(job)) {
+    if (!empty && partition != null && initNextReader(job)) {
       internalInit(tableProperties, reader);
     }
   }
@@ -257,6 +278,19 @@ public abstract class HiveAbstractReader extends AbstractRecordReader {
         closeReader();
       }
       InputSplit inputSplit = inputSplitsIterator.next();
+      logger.error(inputSplit + "this should be the file");
+
+      OrcSplit split = (OrcSplit) inputSplit;
+      logger.error(split.getOrcTail() + " tail!!!!!!!");
+      OrcFile.ReaderOptions readerOptions = OrcFile.readerOptions(conf);
+      logger.error(readerOptions+ " options");
+      OrcFile.ReaderOptions options = readerOptions.maxLength(split.getFileLength()).orcTail(split.getOrcTail());
+      logger.error(options+ "options");
+      try {
+        logger.error(String.valueOf(inputSplit.getLocations()));
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
       try {
         reader = (org.apache.hadoop.mapred.RecordReader<Object, Object>) job.getInputFormat().getRecordReader(inputSplit, job, Reporter.NULL);
         logger.trace("hive reader created: {} for inputSplit {}", reader.getClass().getName(), inputSplit.toString());

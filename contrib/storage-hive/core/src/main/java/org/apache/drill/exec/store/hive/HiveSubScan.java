@@ -88,6 +88,11 @@ public class HiveSubScan extends AbstractBase implements SubScan {
     for (int i = 0; i < splits.size(); i++) {
       inputSplits.add(deserializeInputSplit(splits.get(i), splitClasses.get(i)));
     }
+    logger.error("Input splits: ");
+    for (List<InputSplit> inputSplit : inputSplits) {
+      logger.error(inputSplit + " here");
+    }
+
   }
 
   @JsonProperty("storagePluginName")
@@ -134,6 +139,7 @@ public class HiveSubScan extends AbstractBase implements SubScan {
     if (constructor == null) {
       throw new ReflectiveOperationException("Class " + className + " does not implement a default constructor.");
     }
+
     constructor.setAccessible(true);
     List<InputSplit> splits = new ArrayList<>();
     for (String str : base64) {
@@ -141,6 +147,7 @@ public class HiveSubScan extends AbstractBase implements SubScan {
       ByteArrayDataInput byteArrayDataInput = ByteStreams.newDataInput(Base64.decodeBase64(str));
       split.readFields(byteArrayDataInput);
       splits.add(split);
+      logger.error(split + " added. HiveSubScan")
     }
     return splits;
   }

@@ -385,9 +385,13 @@ public class HiveUtilities {
             "InputFormat class explicitly specified nor StorageHandler class");
       }
       final HiveStorageHandler storageHandler = HiveUtils.getStorageHandler(job, storageHandlerClass);
-      return (Class<? extends InputFormat<?, ?>>) storageHandler.getInputFormatClass();
+      Class<? extends InputFormat<?, ?>> dd = (Class<? extends InputFormat<?, ?>>) storageHandler.getInputFormatClass();
+      logger.error(dd + " InputFormat is detected");
+      return dd;
     } else {
-      return (Class<? extends InputFormat<?, ?>>) Class.forName(inputFormatName) ;
+      Class<? extends InputFormat<?, ?>> dd = (Class<? extends InputFormat<?, ?>>) Class.forName(inputFormatName) ;
+      logger.error(dd + " InputFormat is detected");
+      return dd;
     }
   }
 

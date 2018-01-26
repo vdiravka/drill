@@ -35,6 +35,7 @@ import org.apache.drill.exec.store.hive.HiveTableWrapper;
 import org.apache.drill.exec.store.hive.HiveUtilities;
 import org.apache.drill.exec.store.hive.HiveReadEntry;
 import org.apache.drill.exec.store.hive.HiveScan;
+import org.apache.drill.exec.store.hive.readers.HiveAbstractReader;
 import org.apache.drill.exec.vector.ValueVector;
 import org.apache.hadoop.hive.metastore.api.Partition;
 
@@ -51,6 +52,7 @@ import com.google.common.collect.Lists;
 
 // Partition descriptor for hive tables
 public class HivePartitionDescriptor extends AbstractPartitionDescriptor {
+  protected static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(HivePartitionDescriptor.class);
 
   private final Map<String, Integer> partitionMap = new HashMap<>();
   private final int numPartitionLevels;
@@ -108,6 +110,7 @@ public class HivePartitionDescriptor extends AbstractPartitionDescriptor {
             defaultPartitionValue);
 
         if (value != null) {
+          logger.error("populate vector")
           HiveUtilities.populateVector(vectors[partitionColumnIndex], managedBuffer, value, record, record + 1);
         }
       }

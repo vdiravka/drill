@@ -36,9 +36,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class ReadersInitializer {
+  protected static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(ReadersInitializer.class);
 
   /**
-   * List of all available readers classes for a different Hive nativ formats:
+   * List of all available readers classes for a different Hive native formats:
    * ORC, AVRO, RCFFile, Text and Parquet.
    */
   private static final Map<String, Class<? extends HiveAbstractReader>> READER_MAP = new HashMap<>();
@@ -64,21 +65,24 @@ public class ReadersInitializer {
     if (config.getInputSplits().isEmpty()) {
       return new EmptyReadersInitializer(context, config, readerClass);
     } else {
+      logger.error("default reader initializer");
       return new DefaultReadersInitializer(context, config, readerClass);
     }
   }
 
   /**
    * Will try to find reader class based on Hive table input format.
-   * If reader class was not find, will use default reader class.
+   * If reader class was not found, will use default reader class.
    *
    * @param config Hive table config
    * @return reader class
    */
   private static Class<? extends HiveAbstractReader> getReaderClass(HiveSubScan config) {
     final String formatName = config.getTable().getSd().getInputFormat();
+    logger.error(formatName);
     Class<? extends HiveAbstractReader> readerClass = HiveDefaultReader.class;
     if (READER_MAP.containsKey(formatName)) {
+      logger.error("reader is found");
       readerClass = READER_MAP.get(formatName);
     }
     return readerClass;
