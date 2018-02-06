@@ -57,6 +57,7 @@ import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.StorageDescriptor;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.hadoop.hive.ql.exec.Utilities;
+import org.apache.hadoop.hive.ql.io.AcidUtils;
 import org.apache.hadoop.hive.ql.io.IOConstants;
 import org.apache.hadoop.hive.ql.metadata.HiveStorageHandler;
 import org.apache.hadoop.hive.ql.metadata.HiveUtils;
@@ -511,49 +512,50 @@ public class HiveUtilities {
   }
 
   /**
-   * This method checks whether the schema evolution properties are set in job conf for the input format. If they
-   * aren't set, method sets the column names and types from table/partition properties or storage descriptor.
+   * This method checks whether the table is transactional and set necessary properties in {@link JobConf}.
+   * If schema evolution properties aren't set in job conf for the input format, method sets the column names
+   * and types from table/partition properties or storage descriptor.
+   *
    * @param job the job to update
    * @param properties table or partition properties
-   * @param isAcidTable true if the table is transactional, false otherwise
    * @param sd storage descriptor
    */
-  public static void setColumnTypes(JobConf job, Properties properties, boolean isAcidTable, StorageDescriptor sd) {
+  public static void verifyAndAddTransactionalProperties(JobConf job, Properties properties, StorageDescriptor sd) {
 
-    // No work is needed, if schema evolution is used
-    if (Utilities.isSchemaEvolutionEnabled(job, isAcidTable) && job.get(IOConstants.SCHEMA_EVOLUTION_COLUMNS) != null &&
-        job.get(IOConstants.SCHEMA_EVOLUTION_COLUMNS_TYPES) != null) {
-      return;
-    }
+    if (AcidUtils.isTablePropertyTransactional(properties)) {
+      AcidUtils.setTransactionalTableScan(job, true);
 
-    String colNames;
-    String colTypes;
+      // No work is needed, if schema evolution is used
+      if (Utilities.isSchemaEvolutionEnabled(job, true) && job.get(IOConstants.SCHEMA_EVOLUTION_COLUMNS) != null &&
+          job.get(IOConstants.SCHEMA_EVOLUTION_COLUMNS_TYPES) != null) {
+        return;
+      }
 
-    // Try to get get column names and types from table or partition properties. If they are absent there, get columns
-    // data from storage descriptor of the table
-    if (properties.containsKey(serdeConstants.LIST_COLUMNS) && properties.containsKey(serdeConstants.LIST_COLUMN_TYPES)) {
-      colNames = job.get(serdeConstants.LIST_COLUMNS);
-      colTypes = job.get(serdeConstants.LIST_COLUMN_TYPES);
-    } else {
-      StringBuilder colNamesBuilder = new StringBuilder();
-      StringBuilder colTypesBuilder = new StringBuilder();
-      boolean isFirst = true;
-      for(FieldSchema col: sd.getCols()) {
-        if (isFirst) {
-          isFirst = false;
-        } else {
+      String colNames;
+      String colTypes;
+
+      // Try to get get column names and types from table or partition properties. If they are absent there, get columns
+      // data from storage descriptor of the table
+      if (properties.containsKey(serdeConstants.LIST_COLUMNS) && properties.containsKey(serdeConstants.LIST_COLUMN_TYPES)) {
+        colNames = job.get(serdeConstants.LIST_COLUMNS);
+        colTypes = job.get(serdeConstants.LIST_COLUMN_TYPES);
+      } else {
+        final StringBuilder colNamesBuilder = new StringBuilder();
+        final StringBuilder colTypesBuilder = new StringBuilder();
+
+        for(FieldSchema col: sd.getCols()) {
+          colNamesBuilder.append(col.getName());
+          colTypesBuilder.append(col.getType());
           colNamesBuilder.append(',');
           colTypesBuilder.append(',');
         }
-        colNamesBuilder.append(col.getName());
-        colTypesBuilder.append(col.getType());
+        colNames = colNamesBuilder.substring(0, colNamesBuilder.length() - 1);
+        colTypes = colTypesBuilder.substring(0, colTypesBuilder.length() - 1);
       }
-      colNames = colNamesBuilder.toString();
-      colTypes = colTypesBuilder.toString();
-    }
 
-    job.set(IOConstants.SCHEMA_EVOLUTION_COLUMNS, colNames);
-    job.set(IOConstants.SCHEMA_EVOLUTION_COLUMNS_TYPES, colTypes);
+      job.set(IOConstants.SCHEMA_EVOLUTION_COLUMNS, colNames);
+      job.set(IOConstants.SCHEMA_EVOLUTION_COLUMNS_TYPES, colTypes);
+    }
   }
 }
 
