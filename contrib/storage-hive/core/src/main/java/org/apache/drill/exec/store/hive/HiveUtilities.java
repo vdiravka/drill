@@ -17,8 +17,10 @@
  */
 package org.apache.drill.exec.store.hive;
 
+import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
+import com.google.common.collect.Lists;
 import io.netty.buffer.DrillBuf;
 import org.apache.drill.common.exceptions.DrillRuntimeException;
 import org.apache.drill.common.exceptions.ExecutionSetupException;
@@ -520,9 +522,9 @@ public class HiveUtilities {
    * @param properties table or partition properties
    * @param sd storage descriptor
    */
-  public static void verifyAndAddTransactionalProperties(JobConf job, Properties properties, StorageDescriptor sd) {
+  public static void verifyAndAddTransactionalProperties(JobConf job, StorageDescriptor sd) {
 
-    if (AcidUtils.isTablePropertyTransactional(properties)) {
+    if (AcidUtils.isTablePropertyTransactional(job)) {
       AcidUtils.setTransactionalTableScan(job, true);
 
       // No work is needed, if schema evolution is used
@@ -536,21 +538,18 @@ public class HiveUtilities {
 
       // Try to get get column names and types from table or partition properties. If they are absent there, get columns
       // data from storage descriptor of the table
-      if (properties.containsKey(serdeConstants.LIST_COLUMNS) && properties.containsKey(serdeConstants.LIST_COLUMN_TYPES)) {
-        colNames = job.get(serdeConstants.LIST_COLUMNS);
-        colTypes = job.get(serdeConstants.LIST_COLUMN_TYPES);
-      } else {
-        final StringBuilder colNamesBuilder = new StringBuilder();
-        final StringBuilder colTypesBuilder = new StringBuilder();
+      colNames = job.get(serdeConstants.LIST_COLUMNS);
+      colTypes = job.get(serdeConstants.LIST_COLUMN_TYPES);
 
-        for(FieldSchema col: sd.getCols()) {
-          colNamesBuilder.append(col.getName());
-          colTypesBuilder.append(col.getType());
-          colNamesBuilder.append(',');
-          colTypesBuilder.append(',');
+      if (colNames == null || colTypes == null) {
+        List<String> colNamesList = Lists.newArrayList();
+        List<String> colTypesList = Lists.newArrayList();
+        for (FieldSchema col: sd.getCols()) {
+          colNamesList.add(col.getName());
+          colTypesList.add(col.getType());
         }
-        colNames = colNamesBuilder.substring(0, colNamesBuilder.length() - 1);
-        colTypes = colTypesBuilder.substring(0, colTypesBuilder.length() - 1);
+        colNames = Joiner.on(",").join(colNamesList);
+        colTypes = Joiner.on(",").join(colTypesList);
       }
 
       job.set(IOConstants.SCHEMA_EVOLUTION_COLUMNS, colNames);
