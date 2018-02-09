@@ -944,10 +944,6 @@
             <artifactId>log4j</artifactId>
           </exclusion>
           <exclusion>
-            <groupId>com.codahale.metrics</groupId>
-            <artifactId>metrics-core</artifactId>
-          </exclusion>
-          <exclusion>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-log4j12</artifactId>
           </exclusion>
@@ -1019,6 +1015,11 @@
             <groupId>org.slf4j</groupId>
           </exclusion>
         </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>io.dropwizard.metrics</groupId>
+        <artifactId>metrics-core</artifactId>
+        <version>4.0.2</version>
       </dependency>
       <dependency>
         <groupId>org.codehaus.janino</groupId>
@@ -1765,6 +1766,7 @@
           <dependency>
             <groupId>org.apache.calcite</groupId>
             <artifactId>calcite-core</artifactId>
+            <version>${calcite.version}</version>
             <exclusions>
               <exclusion>
                 <groupId>org.apache.calcite.avatica</groupId>
