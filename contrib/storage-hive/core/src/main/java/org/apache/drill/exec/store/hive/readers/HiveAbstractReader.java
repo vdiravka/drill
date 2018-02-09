@@ -50,7 +50,7 @@ import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.conf.HiveConf.ConfVars;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.hadoop.hive.serde2.ColumnProjectionUtils;
-import org.apache.hadoop.hive.serde2.SerDe;
+import org.apache.hadoop.hive.serde2.Deserializer;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspectorConverters;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspectorConverters.Converter;
@@ -86,7 +86,7 @@ public abstract class HiveAbstractReader extends AbstractRecordReader {
   protected List<Object> selectedPartitionValues = Lists.newArrayList();
 
   // SerDe of the reading partition (or table if the table is non-partitioned)
-  protected SerDe partitionSerDe;
+  protected Deserializer partitionSerDe;
 
   // ObjectInspector to read data from partitionSerDe (for a non-partitioned table this is same as the table
   // ObjectInspector).
@@ -143,7 +143,7 @@ public abstract class HiveAbstractReader extends AbstractRecordReader {
               HiveUtilities.getPartitionMetadata(partition, table);
       HiveUtilities.addConfToJob(job, partitionProperties);
 
-      final SerDe tableSerDe = createSerDe(job, table.getSd().getSerdeInfo().getSerializationLib(), tableProperties);
+      final Deserializer tableSerDe = createSerDe(job, table.getSd().getSerdeInfo().getSerializationLib(), tableProperties);
       final StructObjectInspector tableOI = getStructOI(tableSerDe);
 
       if (partition != null) {
@@ -202,7 +202,20 @@ public abstract class HiveAbstractReader extends AbstractRecordReader {
           }
         }
       }
-      ColumnProjectionUtils.appendReadColumns(job, columnIds, selectedColumnNames);
+      ColumnProjectionUtils.appendReadColumns(job, columnIds);
+
+      // TODO: Use below overloaded method instead of above simpler version of it, once Hive client dependencies
+      // (from all profiles) will be updated to 2.3 version or above
+//      ColumnProjectionUtils.appendReadColumns(job, columnIds, selectedColumnNames,
+//          Lists.newArrayList(Iterables.transform(getColumns(), new Function<SchemaPath, String>()
+//      {
+//        @Nullable
+//        @Override
+//        public String apply(@Nullable SchemaPath path)
+//        {
+//          return path.getRootSegmentPath();
+//        }
+//      })));
 
       for (String columnName : selectedColumnNames) {
         StructField fieldRef = finalOI.getStructFieldRef(columnName);
@@ -270,17 +283,18 @@ public abstract class HiveAbstractReader extends AbstractRecordReader {
   }
 
   /**
-   * Utility method which creates a SerDe object for given SerDe class name and properties.
+   * Utility method which creates a SerDe object for given Deserializer class name and properties.
+   * TODO: Replace Deserializer interface with AbstractSerDe, once all Hive clients is upgraded to 2.3 version
    */
-  private static SerDe createSerDe(final JobConf job, final String sLib, final Properties properties) throws Exception {
-    final Class<? extends SerDe> c = Class.forName(sLib).asSubclass(SerDe.class);
-    final SerDe serde = c.getConstructor().newInstance();
+  private static Deserializer createSerDe(final JobConf job, final String sLib, final Properties properties) throws Exception {
+    final Class<? extends Deserializer> c = Class.forName(sLib).asSubclass(Deserializer.class);
+    final Deserializer serde = c.getConstructor().newInstance();
     serde.initialize(job, properties);
 
     return serde;
   }
 
-  private static StructObjectInspector getStructOI(final SerDe serDe) throws Exception {
+  private static StructObjectInspector getStructOI(final Deserializer serDe) throws Exception {
     ObjectInspector oi = serDe.getObjectInspector();
     if (oi.getCategory() != ObjectInspector.Category.STRUCT) {
       throw new UnsupportedOperationException(String.format("%s category not supported", oi.getCategory()));

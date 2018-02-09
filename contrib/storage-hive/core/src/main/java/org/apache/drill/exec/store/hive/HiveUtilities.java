@@ -17,6 +17,7 @@
  */
 package org.apache.drill.exec.store.hive;
 
+import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
@@ -76,6 +77,7 @@ import org.apache.hadoop.mapred.JobConf;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 
+import javax.annotation.Nullable;
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.Timestamp;
@@ -519,7 +521,6 @@ public class HiveUtilities {
    * and types from table/partition properties or storage descriptor.
    *
    * @param job the job to update
-   * @param properties table or partition properties
    * @param sd storage descriptor
    */
   public static void verifyAndAddTransactionalProperties(JobConf job, StorageDescriptor sd) {
@@ -542,14 +543,25 @@ public class HiveUtilities {
       colTypes = job.get(serdeConstants.LIST_COLUMN_TYPES);
 
       if (colNames == null || colTypes == null) {
-        List<String> colNamesList = Lists.newArrayList();
-        List<String> colTypesList = Lists.newArrayList();
-        for (FieldSchema col: sd.getCols()) {
-          colNamesList.add(col.getName());
-          colTypesList.add(col.getType());
-        }
-        colNames = Joiner.on(",").join(colNamesList);
-        colTypes = Joiner.on(",").join(colTypesList);
+        colNames = Joiner.on(",").join(Lists.transform(sd.getCols(), new Function<FieldSchema, String>()
+        {
+          @Nullable
+          @Override
+          public String apply(@Nullable FieldSchema input)
+          {
+            return input.getName();
+          }
+        }));
+
+        colTypes = Joiner.on(",").join(Lists.transform(sd.getCols(), new Function<FieldSchema, String>()
+        {
+          @Nullable
+          @Override
+          public String apply(@Nullable FieldSchema input)
+          {
+            return input.getType();
+          }
+        }));
       }
 
       job.set(IOConstants.SCHEMA_EVOLUTION_COLUMNS, colNames);
