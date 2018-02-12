@@ -44,11 +44,11 @@
         </exclusion>
       </exclusions>
     </dependency>
-    <dependency>
-      <groupId>org.apache.parquet</groupId>
-      <artifactId>parquet-column</artifactId>
-      <version>${parquet.version}</version>
-    </dependency>
+    <!--<dependency>-->
+      <!--<groupId>org.apache.parquet</groupId>-->
+      <!--<artifactId>parquet-column</artifactId>-->
+      <!--<version>${parquet.version}</version>-->
+    <!--</dependency>-->
     <dependency>
       <groupId>com.tdunning</groupId>
       <artifactId>json</artifactId>
@@ -72,6 +72,11 @@
                 <includes>
                   <include>org.apache.hive:hive-exec</include>
                   <include>org.apache.parquet:parquet-column</include>
+                  <include>org.apache.parquet:parquet-common</include>
+                  <include>org.apache.parquet:parquet-hadoop</include>
+                  <include>org.apache.parquet:parquet-jackson</include>
+                  <include>org.apache.parquet:parquet-format</include>
+                  <include>org.apache.parquet:parquet-encoding</include>
                   <include>commons-codec:commons-codec</include>
                   <include>org.apache.calcite:calcite-core</include>
                   <include>org.apache.calcite:calcite-avatica</include>
@@ -104,17 +109,17 @@
                   <pattern>com.fasterxml.jackson.</pattern>
                   <shadedPattern>hive.com.fasterxml.jackson.</shadedPattern>
                 </relocation>
-                <relocation>
-                  <pattern>org.apache.parquet.</pattern>
-                  <shadedPattern>hive.org.apache.parquet.</shadedPattern>
-                </relocation>
+                <!--<relocation>-->
+                  <!--<pattern>org.apache.parquet.</pattern>-->
+                  <!--<shadedPattern>hive.org.apache.parquet.</shadedPattern>-->
+                <!--</relocation>-->
               </relocations>
               <filters>
                 <filter>
                   <artifact>org.apache.hive:hive-exec</artifact>
                   <excludes>
                     <exclude>org/json/*</exclude>
-                    <exclude>org/apache/parquet/schema/*</exclude>
+                    <exclude>org/apache/parquet/**</exclude>
                   </excludes>
                 </filter>
               </filters>
