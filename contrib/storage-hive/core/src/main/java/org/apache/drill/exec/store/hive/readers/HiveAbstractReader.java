@@ -86,9 +86,9 @@ public abstract class HiveAbstractReader extends AbstractRecordReader {
   protected List<Object> selectedPartitionValues = Lists.newArrayList();
 
   // SerDe of the reading partition (or table if the table is non-partitioned)
-  protected Deserializer partitionSerDe;
+  protected Deserializer partitionDeserializer;
 
-  // ObjectInspector to read data from partitionSerDe (for a non-partitioned table this is same as the table
+  // ObjectInspector to read data from partitionDeserializer (for a non-partitioned table this is same as the table
   // ObjectInspector).
   protected StructObjectInspector partitionOI;
 
@@ -143,12 +143,12 @@ public abstract class HiveAbstractReader extends AbstractRecordReader {
               HiveUtilities.getPartitionMetadata(partition, table);
       HiveUtilities.addConfToJob(job, partitionProperties);
 
-      final Deserializer tableSerDe = createSerDe(job, table.getSd().getSerdeInfo().getSerializationLib(), tableProperties);
-      final StructObjectInspector tableOI = getStructOI(tableSerDe);
+      final Deserializer tableDeserializer = createDeserializer(job, table.getSd().getSerdeInfo().getSerializationLib(), tableProperties);
+      final StructObjectInspector tableOI = getStructOI(tableDeserializer);
 
       if (partition != null) {
-        partitionSerDe = createSerDe(job, partition.getSd().getSerdeInfo().getSerializationLib(), partitionProperties);
-        partitionOI = getStructOI(partitionSerDe);
+        partitionDeserializer = createDeserializer(job, partition.getSd().getSerdeInfo().getSerializationLib(), partitionProperties);
+        partitionOI = getStructOI(partitionDeserializer);
 
         finalOI = (StructObjectInspector)ObjectInspectorConverters.getConvertedOI(partitionOI, tableOI);
         partTblObjectInspectorConverter = ObjectInspectorConverters.getConverter(partitionOI, finalOI);
@@ -156,7 +156,7 @@ public abstract class HiveAbstractReader extends AbstractRecordReader {
         HiveUtilities.verifyAndAddTransactionalProperties(job, table.getSd());
       } else {
         // For non-partitioned tables, there is no need to create converter as there are no schema changes expected.
-        partitionSerDe = tableSerDe;
+        partitionDeserializer = tableDeserializer;
         partitionOI = tableOI;
         partTblObjectInspectorConverter = null;
         finalOI = tableOI;
@@ -167,7 +167,7 @@ public abstract class HiveAbstractReader extends AbstractRecordReader {
         for (StructField field: finalOI.getAllStructFieldRefs()) {
           logger.trace("field in finalOI: {}", field.getClass().getName());
         }
-        logger.trace("partitionSerDe class is {} {}", partitionSerDe.getClass().getName());
+        logger.trace("partitionDeserializer class is {} {}", partitionDeserializer.getClass().getName());
       }
       // Get list of partition column names
       final List<String> partitionNames = Lists.newArrayList();
@@ -286,7 +286,7 @@ public abstract class HiveAbstractReader extends AbstractRecordReader {
    * Utility method which creates a SerDe object for given Deserializer class name and properties.
    * TODO: Replace Deserializer interface with AbstractSerDe, once all Hive clients is upgraded to 2.3 version
    */
-  private static Deserializer createSerDe(final JobConf job, final String sLib, final Properties properties) throws Exception {
+  private static Deserializer createDeserializer(final JobConf job, final String sLib, final Properties properties) throws Exception {
     final Class<? extends Deserializer> c = Class.forName(sLib).asSubclass(Deserializer.class);
     final Deserializer serde = c.getConstructor().newInstance();
     serde.initialize(job, properties);

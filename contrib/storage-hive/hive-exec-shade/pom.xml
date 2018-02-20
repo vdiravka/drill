@@ -65,72 +65,61 @@
     <dependency>
       <groupId>org.apache.parquet</groupId>
       <artifactId>parquet-column</artifactId>
-      <version>${parquet.version}</version>
     </dependency>
   </dependencies>
 
   <build>
     <plugins>
       <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
-        <version>3.1.0</version>
-        <executions>
-          <execution>
-            <phase>package</phase>
-            <goals>
-              <goal>shade</goal>
-            </goals>
-            <configuration>
-              <artifactSet>
-                <includes>
-                  <include>org.apache.hive:hive-exec</include>
-                  <include>org.apache.parquet:parquet-column</include>
-                  <include>commons-codec:commons-codec</include>
-                  <include>com.fasterxml.jackson.core:jackson-databind</include>
-                  <include>com.fasterxml.jackson.core:jackson-annotations</include>
-                  <include>com.fasterxml.jackson.core:jackson-core</include>
-                </includes>
-              </artifactSet>
-              <createDependencyReducedPom>false</createDependencyReducedPom>
-              <promoteTransitiveDependencies>true</promoteTransitiveDependencies>
-              <relocations>
-                <relocation>
-                  <pattern>com.google.</pattern>
-                  <shadedPattern>hive.com.google.</shadedPattern>
-                </relocation>
-                <relocation>
-                  <pattern>org.apache.commons.codec.</pattern>
-                  <shadedPattern>hive.org.apache.commons.codec.</shadedPattern>
-                </relocation>
-                <relocation>
-                  <pattern>net.hydromatic.</pattern>
-                  <shadedPattern>hive.net.hydromatic.</shadedPattern>
-                </relocation>
-                <relocation>
-                  <pattern>org.eigenbase.</pattern>
-                  <shadedPattern>hive.org.eigenbase.</shadedPattern>
-                </relocation>
-                <relocation>
-                  <pattern>com.fasterxml.jackson.</pattern>
-                  <shadedPattern>hive.com.fasterxml.jackson.</shadedPattern>
-                </relocation>
-                <relocation>
-                  <pattern>org.apache.parquet.</pattern>
-                  <shadedPattern>hive.org.apache.parquet.</shadedPattern>
-                </relocation>
-              </relocations>
-              <filters>
-                <filter>
-                  <artifact>org.apache.hive:hive-exec</artifact>
-                  <excludes>
-                    <exclude>org/apache/parquet/schema/*</exclude>
-                  </excludes>
-                </filter>
-              </filters>
-            </configuration>
-          </execution>
-        </executions>
+        <configuration>
+          <artifactSet>
+            <includes>
+              <include>org.apache.hive:hive-exec</include>
+              <include>org.apache.parquet:parquet-column</include>
+              <include>commons-codec:commons-codec</include>
+              <include>com.fasterxml.jackson.core:jackson-databind</include>
+              <include>com.fasterxml.jackson.core:jackson-annotations</include>
+              <include>com.fasterxml.jackson.core:jackson-core</include>
+            </includes>
+          </artifactSet>
+          <createDependencyReducedPom>false</createDependencyReducedPom>
+          <promoteTransitiveDependencies>true</promoteTransitiveDependencies>
+          <relocations>
+            <relocation>
+              <pattern>com.google.</pattern>
+              <shadedPattern>hive.com.google.</shadedPattern>
+            </relocation>
+            <relocation>
+              <pattern>org.apache.commons.codec.</pattern>
+              <shadedPattern>hive.org.apache.commons.codec.</shadedPattern>
+            </relocation>
+            <relocation>
+              <pattern>net.hydromatic.</pattern>
+              <shadedPattern>hive.net.hydromatic.</shadedPattern>
+            </relocation>
+            <relocation>
+              <pattern>org.eigenbase.</pattern>
+              <shadedPattern>hive.org.eigenbase.</shadedPattern>
+            </relocation>
+            <relocation>
+              <pattern>com.fasterxml.jackson.</pattern>
+              <shadedPattern>hive.com.fasterxml.jackson.</shadedPattern>
+            </relocation>
+            <relocation>
+              <pattern>org.apache.parquet.</pattern>
+              <shadedPattern>hive.org.apache.parquet.</shadedPattern>
+            </relocation>
+          </relocations>
+          <filters>
+            <filter>
+              <artifact>org.apache.hive:hive-exec</artifact>
+              <excludes>
+                <exclude>org/apache/parquet/schema/*</exclude>
+              </excludes>
+            </filter>
+          </filters>
+        </configuration>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
