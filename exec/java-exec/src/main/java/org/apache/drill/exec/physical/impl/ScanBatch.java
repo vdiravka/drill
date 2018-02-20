@@ -238,6 +238,7 @@ public class ScanBatch implements CloseableRecordBatch {
       return false;
     }
     currentReader = readers.next();
+    logger.error(currentReader.toString());
     implicitValues = implicitColumns.hasNext() ? implicitColumns.next() : null;
     currentReader.setup(oContext, mutator);
     currentReaderClassName = currentReader.getClass().getSimpleName();
