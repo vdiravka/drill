@@ -22,8 +22,12 @@ import org.apache.drill.categories.OperatorTest;
 import org.apache.drill.categories.UnlikelyTest;
 import org.apache.drill.exec.ExecConstants;
 import org.apache.drill.test.BaseTestQuery;
+import org.apache.drill.test.ClientFixture;
+import org.apache.drill.test.ClusterFixture;
+import org.apache.drill.test.ClusterFixtureBuilder;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import java.io.BufferedWriter;
@@ -206,5 +210,32 @@ public class TestHashJoinAdvanced extends JoinTestBase {
 
     final Pattern sortHashJoinPattern = Pattern.compile(".*Sort.*HashJoin", Pattern.DOTALL);
     testPlanMatchingPatterns(query, new Pattern[]{sortHashJoinPattern}, null);
+  }
+
+  @Test
+  @Ignore
+  public void myTest() throws Exception {
+    ClusterFixtureBuilder builder = ClusterFixture.builder(dirTestWatcher)
+        // Easy way to run single threaded for easy debugging
+        .maxParallelization(1)
+        // Set some session options
+        .sessionOption(ExecConstants.ENABLE_VERBOSE_ERRORS_KEY, true);
+
+    try (ClusterFixture cluster = builder.build();
+         ClientFixture client = cluster.clientFixture()) {
+      cluster.defineWorkspace("dfs", "root", "/", "parquet");
+      String sql = "select `A`.O_ORDERKEY from dfs.root.`/home/vitalii/drill-test-framework/framework/resources/Datasources/partition_pruning/dfs/orders` as `B` join\n" +
+          "dfs.root.`/home/vitalii/drill-test-framework/framework/resources/Datasources/partition_pruning/dfs/orders` " +
+          "as `A` on A.dir0 = B.dir0 where B.dir0 = 1994 limit 5";
+//      QuerySummary results = client.queryBuilder().sql(sql).run();
+//      assertEquals( 2, results.recordCount() );
+      client.queryBuilder().sql(sql).printCsv();
+      String plan = "explain plan without implementation for select `A`.O_ORDERKEY from dfs.root.`/home/vitalii/drill-test-framework/framework/resources/Datasources/partition_pruning/dfs/orders` as `B` join\n" +
+          "dfs.root.`/home/vitalii/drill-test-framework/framework/resources/Datasources/partition_pruning/dfs/orders` " +
+          "as `A` on A.dir0 = B.dir0 where B.dir0 = 1994 limit 5";
+//      QuerySummary results = client.queryBuilder().sql(sql).run();
+//      assertEquals( 2, results.recordCount() );
+      client.queryBuilder().sql(plan).printCsv();
+    }
   }
 }

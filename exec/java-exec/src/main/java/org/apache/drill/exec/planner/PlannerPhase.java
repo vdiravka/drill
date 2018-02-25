@@ -22,6 +22,10 @@ import com.google.common.collect.ImmutableSet.Builder;
 import com.google.common.collect.Lists;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.rel.core.RelFactories;
+import org.apache.calcite.rel.rules.FilterJoinRule;
+import org.apache.calcite.rel.rules.FilterProjectTransposeRule;
+import org.apache.calcite.rel.rules.FilterSetOpTransposeRule;
+import org.apache.calcite.rel.rules.JoinPushTransitivePredicatesRule;
 import org.apache.calcite.rel.rules.JoinToMultiJoinRule;
 import org.apache.calcite.rel.rules.LoptOptimizeJoinRule;
 import org.apache.calcite.tools.RuleSet;
@@ -88,7 +92,7 @@ import java.util.List;
 public enum PlannerPhase {
   //private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(DrillRuleSets.class);
 
-  LOGICAL_PRUNE_AND_JOIN("Loigcal Planning (with join and partition pruning)") {
+  LOGICAL_PRUNE_AND_JOIN("Logical Planning (with join and partition pruning)") {
     public RuleSet getRules(OptimizerRulesContext context, Collection<StoragePlugin> plugins) {
       return PlannerPhase.mergedRuleSets(
           getDrillBasicRules(context),
@@ -176,6 +180,12 @@ public enum PlannerPhase {
       return PlannerPhase.mergedRuleSets(
           PlannerPhase.getPhysicalRules(context),
           getStorageRules(context, plugins, this));
+    }
+  },
+
+  JOIN_TRANSITIVE_CLOSURE("Join transitive closure") {
+    public RuleSet getRules(OptimizerRulesContext context, Collection<StoragePlugin> plugins) {
+      return getJoinTransitiveClosureRules(context);
     }
   };
 
@@ -388,12 +398,28 @@ public enum PlannerPhase {
 
   }
 
-  // Ruleset for join permutation, used only in VolcanoPlanner.
+  /**
+   * RuleSet for join permutation, used only in VolcanoPlanner.
+   * @param optimizerRulesContext shared state used during planning
+   * @return set of planning rules
+   */
   static RuleSet getJoinPermRules(OptimizerRulesContext optimizerRulesContext) {
     return RuleSets.ofList(ImmutableSet.<RelOptRule> builder().add(
         RuleInstance.JOIN_PUSH_THROUGH_JOIN_RULE_RIGHT,
         RuleInstance.JOIN_PUSH_THROUGH_JOIN_RULE_LEFT
         ).build());
+  }
+
+  /**
+   * RuleSet for join transitive closure, used only in HepPlanner.
+   * @param optimizerRulesContext shared state used during planning
+   * @return set of planning rules
+   */
+  static RuleSet getJoinTransitiveClosureRules(OptimizerRulesContext optimizerRulesContext) {
+    return RuleSets.ofList(ImmutableSet.<RelOptRule> builder().add(
+        DrillFilterJoinRules.DRILL_FILTER_ON_JOIN,
+        RuleInstance.JOIN_PUSH_TRANSITIVE_PREDICATES_RULE
+    ).build());
   }
 
   static final RuleSet DRILL_PHYSICAL_DISK = RuleSets.ofList(ImmutableSet.of(
