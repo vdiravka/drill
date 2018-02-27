@@ -39,6 +39,7 @@ import org.apache.calcite.plan.volcano.VolcanoPlanner;
 import org.apache.calcite.prepare.CalciteCatalogReader;
 import org.apache.calcite.prepare.Prepare;
 import org.apache.calcite.rel.RelCollationTraitDef;
+import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelRoot;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
@@ -75,11 +76,14 @@ import org.apache.drill.exec.ExecConstants;
 import org.apache.drill.exec.expr.fn.FunctionImplementationRegistry;
 import org.apache.drill.exec.ops.QueryContext;
 import org.apache.drill.exec.ops.UdfUtilities;
+import org.apache.drill.exec.planner.PlannerPhase;
+import org.apache.drill.exec.planner.PlannerType;
 import org.apache.drill.exec.planner.cost.DrillCostBase;
 import org.apache.drill.exec.planner.logical.DrillConstExecutor;
 import org.apache.drill.exec.planner.logical.DrillRelFactories;
 import org.apache.drill.exec.planner.physical.DrillDistributionTraitDef;
 import org.apache.drill.exec.planner.physical.PlannerSettings;
+import org.apache.drill.exec.planner.sql.handlers.DefaultSqlHandler;
 import org.apache.drill.exec.rpc.user.UserSession;
 
 import com.google.common.base.Joiner;
@@ -322,7 +326,7 @@ public class SqlConverter {
     }
   }
 
-  public RelRoot toRel(final SqlNode validatedNode) {
+  public RelRoot toRel(final SqlNode validatedNode, DefaultSqlHandler sqlHandler) {
     if (planner == null) {
       planner = new VolcanoPlanner(costFactory, settings);
       planner.setExecutor(new DrillConstExecutor(functions, util, settings));
@@ -347,8 +351,15 @@ public class SqlConverter {
     Hook.REL_BUILDER_SIMPLIFY.add(Hook.property(false));
 
     //To avoid unexpected column errors set a value of top to false
-    final RelRoot rel = sqlToRelConverter.convertQuery(validatedNode, false, false);
-    final RelRoot rel2 = rel.withRel(sqlToRelConverter.flattenTypes(rel.rel, true));
+    final RelRoot rel = sqlToRelConverter.convertQuery(validatedNode, false, !isInnerQuery);
+
+    final RelNode withTransitivePredicatesIntermediateNode;
+    if (sqlHandler == null) {
+      withTransitivePredicatesIntermediateNode = rel.rel;
+    } else {
+      withTransitivePredicatesIntermediateNode = sqlHandler.transform(PlannerType.HEP, PlannerPhase.JOIN_TRANSITIVE_CLOSURE, rel.rel);
+    }
+    final RelRoot rel2 = rel.withRel(sqlToRelConverter.flattenTypes(withTransitivePredicatesIntermediateNode, true));
     final RelRoot rel3 = rel2.withRel(RelDecorrelator.decorrelateQuery(rel2.rel));
     return rel3;
 
@@ -406,7 +417,7 @@ public class SqlConverter {
       converter.disallowTemporaryTables();
       final SqlNode parsedNode = converter.parse(queryString);
       final SqlNode validatedNode = converter.validate(parsedNode);
-      return converter.toRel(validatedNode);
+      return converter.toRel(validatedNode, null);
     }
 
   }

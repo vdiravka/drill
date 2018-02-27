@@ -241,19 +241,19 @@ public class DefaultSqlHandler extends AbstractSqlHandler {
         final RelNode intermediateNode2;
 
         // HEP Join Push Transitive Predicates
-        final RelNode withTransitivePredicatesIntermediateNode =
-            transform(PlannerType.HEP_BOTTOM_UP, PlannerPhase.JOIN_TRANSITIVE_CLOSURE, pruned);
+//        final RelNode withTransitivePredicatesIntermediateNode =
+//            transform(PlannerType.HEP_BOTTOM_UP, PlannerPhase.JOIN_TRANSITIVE_CLOSURE, pruned);
 
         if (context.getPlannerSettings().isHepPartitionPruningEnabled()) {
 
           // hep is enabled and hep pruning is enabled.
           final RelNode intermediateNode =
-              transform(PlannerType.VOLCANO, PlannerPhase.LOGICAL, withTransitivePredicatesIntermediateNode, logicalTraits);
+              transform(PlannerType.VOLCANO, PlannerPhase.LOGICAL, pruned, logicalTraits);
           intermediateNode2 = transform(PlannerType.HEP_BOTTOM_UP, PlannerPhase.PARTITION_PRUNING, intermediateNode);
 
         } else {
           // Only hep is enabled
-          intermediateNode2 = transform(PlannerType.VOLCANO, PlannerPhase.LOGICAL_PRUNE, withTransitivePredicatesIntermediateNode, logicalTraits);
+          intermediateNode2 = transform(PlannerType.VOLCANO, PlannerPhase.LOGICAL_PRUNE, pruned, logicalTraits);
         }
 
         // Do Join Planning.
@@ -331,7 +331,7 @@ public class DefaultSqlHandler extends AbstractSqlHandler {
    *          The origianl RelNode
    * @return The transformed relnode.
    */
-  private RelNode transform(PlannerType plannerType, PlannerPhase phase, RelNode input) {
+  public RelNode transform(PlannerType plannerType, PlannerPhase phase, RelNode input) {
     return transform(plannerType, phase, input, input.getTraitSet());
   }
 
@@ -647,7 +647,7 @@ public class DefaultSqlHandler extends AbstractSqlHandler {
   }
 
   private RelNode convertToRel(SqlNode node) throws RelConversionException {
-    final RelNode convertedNode = config.getConverter().toRel(node).rel;
+    final RelNode convertedNode = config.getConverter().toRel(node, this).rel;
     log("INITIAL", convertedNode, logger, null);
     return transform(PlannerType.HEP, PlannerPhase.WINDOW_REWRITE, convertedNode);
   }

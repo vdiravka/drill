@@ -25,6 +25,8 @@ import org.apache.drill.test.BaseTestQuery;
 import org.apache.drill.test.ClientFixture;
 import org.apache.drill.test.ClusterFixture;
 import org.apache.drill.test.ClusterFixtureBuilder;
+import org.apache.drill.test.LogFixture;
+import org.apache.log4j.Level;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -238,4 +240,56 @@ public class TestHashJoinAdvanced extends JoinTestBase {
       client.queryBuilder().sql(plan).printCsv();
     }
   }
+
+  @Test
+//  @Ignore
+  public void myTest2() throws Exception {
+    ClusterFixtureBuilder builder = ClusterFixture.builder(dirTestWatcher)
+        // Easy way to run single threaded for easy debugging
+        .maxParallelization(1)
+        // Set some session options
+        .sessionOption(ExecConstants.ENABLE_VERBOSE_ERRORS_KEY, true);
+
+    LogFixture.LogFixtureBuilder logBuilder = LogFixture.builder()
+        .toConsole()
+        .logger("org.apache.drill", ch.qos.logback.classic.Level.DEBUG);
+//        .disable(); // Silence all other loggers
+//        .logger(ExternalSortBatch.class, Level.DEBUG);
+
+
+    try (ClusterFixture cluster = builder.build();
+         ClientFixture client = cluster.clientFixture();
+         LogFixture logs = logBuilder.build()) {
+      cluster.defineWorkspace("dfs", "root", "/", "parquet");
+//      String sql = "select `A`.O_ORDERKEY from dfs.root.`/home/vitalii/drill-test-framework/framework/resources/Datasources/partition_pruning/dfs/orders` as `B` join\n" +
+//          "dfs.root.`/home/vitalii/drill-test-framework/framework/resources/Datasources/partition_pruning/dfs/orders` " +
+//          "as `A` on A.dir0 = B.dir0 where B.dir0 = 1994 limit 5";
+////      QuerySummary results = client.queryBuilder().sql(sql).run();
+////      assertEquals( 2, results.recordCount() );
+//      client.queryBuilder().sql(sql).printCsv();
+      String plan = "explain plan without implementation for select col_int, col_chr, col_bigint\n" +
+          "from dfs.root.`/home/vitalii/drill-test-framework/framework/resources/Datasources/join/tbl_bigint_l` t1\n" +
+          "where col_int \n" +
+          "IN (\n" +
+          "           SELECT col_int\n" +
+          "           FROM dfs.root.`/home/vitalii/drill-test-framework/framework/resources/Datasources/join/tbl_bigint_r` t2 \n" +
+          "           WHERE t1.col_int = t2.col_int OR (t1.col_int IS NULL AND t2.col_int IS NULL)\n" +
+          "    )";
+//      QuerySummary results = client.queryBuilder().sql(sql).run();
+//      assertEquals( 2, results.recordCount() );
+      client.queryBuilder().sql(plan).printCsv();
+    }
+  }
+
+//  @Test
+//  public void myTest() {
+//    LogFixture.LogFixtureBuilder logBuilder = LogFixture.builder()
+//        .toConsole()
+//        .disable() // Silence all other loggers
+//        .logger(ExternalSortBatch.class, Level.DEBUG);
+//    try (LogFixture logs = logBuilder.build()) {
+//      // Test code here
+//    }
+//  }
+
 }

@@ -185,7 +185,10 @@ public enum PlannerPhase {
 
   JOIN_TRANSITIVE_CLOSURE("Join transitive closure") {
     public RuleSet getRules(OptimizerRulesContext context, Collection<StoragePlugin> plugins) {
-      return getJoinTransitiveClosureRules(context);
+      return PlannerPhase.mergedRuleSets(
+//          getJoinPermRules(context),
+          getJoinTransitiveClosureRules(context)
+          );
     }
   };
 
@@ -418,6 +421,10 @@ public enum PlannerPhase {
   static RuleSet getJoinTransitiveClosureRules(OptimizerRulesContext optimizerRulesContext) {
     return RuleSets.ofList(ImmutableSet.<RelOptRule> builder().add(
         DrillFilterJoinRules.DRILL_FILTER_ON_JOIN,
+//        DrillFilterJoinRules.DRILL_JOIN,
+//        RuleInstance.filterProjectTransposeRule,
+//        RuleInstance.filterSetOpTransposeRule,
+//        RuleInstance.joinToCorrelateRule,
         RuleInstance.JOIN_PUSH_TRANSITIVE_PREDICATES_RULE
     ).build());
   }

@@ -18,7 +18,10 @@ package org.apache.drill.exec.planner;
 
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.volcano.AbstractConverter;
+import org.apache.calcite.rel.core.Filter;
 import org.apache.calcite.rel.core.Join;
+import org.apache.calcite.rel.core.Project;
+import org.apache.calcite.rel.core.RelFactories;
 import org.apache.calcite.rel.logical.LogicalAggregate;
 import org.apache.calcite.rel.logical.LogicalCalc;
 import org.apache.calcite.rel.logical.LogicalJoin;
@@ -27,16 +30,19 @@ import org.apache.calcite.rel.logical.LogicalUnion;
 import org.apache.calcite.rel.rules.AggregateExpandDistinctAggregatesRule;
 import org.apache.calcite.rel.rules.AggregateRemoveRule;
 import org.apache.calcite.rel.rules.FilterMergeRule;
+import org.apache.calcite.rel.rules.FilterProjectTransposeRule;
 import org.apache.calcite.rel.rules.FilterSetOpTransposeRule;
 import org.apache.calcite.rel.rules.JoinPushExpressionsRule;
 import org.apache.calcite.rel.rules.JoinPushThroughJoinRule;
 import org.apache.calcite.rel.rules.JoinPushTransitivePredicatesRule;
+import org.apache.calcite.rel.rules.JoinToCorrelateRule;
 import org.apache.calcite.rel.rules.ProjectRemoveRule;
 import org.apache.calcite.rel.rules.ProjectToWindowRule;
 import org.apache.calcite.rel.rules.ProjectWindowTransposeRule;
 import org.apache.calcite.rel.rules.ReduceExpressionsRule;
 import org.apache.calcite.rel.rules.SortRemoveRule;
 import org.apache.calcite.rel.rules.UnionToDistinctRule;
+import org.apache.drill.exec.planner.logical.DrillJoinPushTransitivePredicatesRule;
 import org.apache.drill.exec.planner.logical.DrillRelFactories;
 
 /**
@@ -108,6 +114,16 @@ public interface RuleInstance {
    * {@link org.apache.calcite.rel.core.Join} and creates
    * {@link org.apache.calcite.rel.core.Filter}s if those predicates can be pushed
    * to its inputs. */
-  JoinPushTransitivePredicatesRule JOIN_PUSH_TRANSITIVE_PREDICATES_RULE =
-      new JoinPushTransitivePredicatesRule(Join.class, DrillRelFactories.LOGICAL_BUILDER);
+//  JoinPushTransitivePredicatesRule JOIN_PUSH_TRANSITIVE_PREDICATES_RULE =
+//      new JoinPushTransitivePredicatesRule(Join.class, DrillRelFactories.LOGICAL_BUILDER);
+
+  DrillJoinPushTransitivePredicatesRule JOIN_PUSH_TRANSITIVE_PREDICATES_RULE =
+      new DrillJoinPushTransitivePredicatesRule(Join.class, DrillRelFactories.LOGICAL_BUILDER);
+
+
+  FilterProjectTransposeRule filterProjectTransposeRule = new FilterProjectTransposeRule(Filter.class, Project.class, true, true,
+                                 RelFactories.LOGICAL_BUILDER);
+  FilterSetOpTransposeRule filterSetOpTransposeRule = new FilterSetOpTransposeRule(DrillRelFactories.LOGICAL_BUILDER);
+
+  JoinToCorrelateRule joinToCorrelateRule = new JoinToCorrelateRule(DrillRelFactories.LOGICAL_BUILDER);
 }
