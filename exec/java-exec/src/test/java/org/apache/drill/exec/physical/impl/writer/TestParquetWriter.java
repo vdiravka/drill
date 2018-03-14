@@ -797,6 +797,23 @@ public class TestParquetWriter extends BaseTestQuery {
     }
   }
 
+  @Test
+  public void testSparkParquetBinaryAsTimeStamp_DictChange() throws Exception {
+    try {
+      testBuilder()
+              .sqlQuery("select distinct run_date from cp.`parquet/spark-generated-int96-timestamp.snappy.parquet`")
+              .optionSettingQueriesForTestQuery(
+                      "alter session set `%s` = true", ExecConstants.PARQUET_READER_INT96_AS_TIMESTAMP)
+              .ordered()
+              .csvBaselineFile("testframework/testParquetReader/testInt96DictChange/q2.tsv")
+              .baselineTypes(TypeProtos.MinorType.TIMESTAMP)
+              .baselineColumns("run_date")
+              .build().run();
+    } finally {
+      resetSessionOption(ExecConstants.PARQUET_READER_INT96_AS_TIMESTAMP);
+    }
+  }
+
   /*
      Test the conversion from int96 to impala timestamp
    */
