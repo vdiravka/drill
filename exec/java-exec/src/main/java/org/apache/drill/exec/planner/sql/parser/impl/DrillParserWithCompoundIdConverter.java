@@ -57,6 +57,8 @@ public class DrillParserWithCompoundIdConverter extends DrillParserImpl {
   @Override
   public SqlNode parseSqlStmtEof() throws Exception {
     SqlNode originalSqlNode = super.parseSqlStmtEof();
-    return originalSqlNode.accept(createConverter());
+    // TODO: When calcite will support recognizing map and array complex types
+    // need to return for using original SqlNode from calcite without converting
+    return originalSqlNode;
   }
 }
