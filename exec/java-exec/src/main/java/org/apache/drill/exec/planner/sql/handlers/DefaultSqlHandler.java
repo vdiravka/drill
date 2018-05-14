@@ -149,6 +149,11 @@ public class DefaultSqlHandler extends AbstractSqlHandler {
     }
   }
 
+  protected void log(final String description, final RelNode node, final Logger logger) {
+    final String plan = RelOptUtil.toString(node, SqlExplainLevel.EXPPLAN_ATTRIBUTES);
+    logger.error(String.format("%s:\n%s", description,  plan));
+  }
+
   protected void logAndSetTextPlan(final String description, final Prel prel, final Logger logger) {
     final String plan = PrelSequencer.printWithIds(prel, SqlExplainLevel.ALL_ATTRIBUTES);
     if (textPlan != null) {
@@ -237,12 +242,12 @@ public class DefaultSqlHandler extends AbstractSqlHandler {
       // HEP for rules, which are failed at the LOGICAL_PLANNING stage for Volcano planner
       final RelNode setOpTransposeNode = transform(PlannerType.HEP, PlannerPhase.PRE_LOGICAL_PLANNING, relNode);
 
-      // HEP Join Push Transitive Predicates
-      final RelNode transitiveClosureNode =
-          transform(PlannerType.HEP, PlannerPhase.TRANSITIVE_CLOSURE, setOpTransposeNode);
+//      log("before transitive", setOpTransposeNode, logger);
 
-      // HEP Directory pruning .
-      final RelNode pruned = transform(PlannerType.HEP_BOTTOM_UP, PlannerPhase.DIRECTORY_PRUNING, transitiveClosureNode);
+
+
+      // HEP Directory pruning.
+      final RelNode pruned = transform(PlannerType.HEP_BOTTOM_UP, PlannerPhase.DIRECTORY_PRUNING, setOpTransposeNode);
       final RelTraitSet logicalTraits = pruned.getTraitSet().plus(DrillRel.DRILL_LOGICAL);
 
       final RelNode convertedRelNode;
@@ -256,7 +261,14 @@ public class DefaultSqlHandler extends AbstractSqlHandler {
 
           // hep is enabled and hep pruning is enabled.
           final RelNode intermediateNode = transform(PlannerType.VOLCANO, PlannerPhase.LOGICAL, pruned, logicalTraits);
-          intermediateNode2 = transform(PlannerType.HEP_BOTTOM_UP, PlannerPhase.PARTITION_PRUNING, intermediateNode);
+//          log("after logical", intermediateNode, logger);
+
+          // HEP Join Push Transitive Predicates
+          final RelNode transitiveClosureNode =
+              transform(PlannerType.HEP, PlannerPhase.TRANSITIVE_CLOSURE, intermediateNode);
+
+//          log("after transitive", transitiveClosureNode, logger);
+          intermediateNode2 = transform(PlannerType.HEP_BOTTOM_UP, PlannerPhase.PARTITION_PRUNING, transitiveClosureNode);
 
         } else {
           // Only hep is enabled
@@ -269,6 +281,8 @@ public class DefaultSqlHandler extends AbstractSqlHandler {
 
       // Convert SUM to $SUM0
       final RelNode convertedRelNodeWithSum0 = transform(PlannerType.HEP_BOTTOM_UP, PlannerPhase.SUM_CONVERSION, convertedRelNode);
+
+//      log("after all rules", convertedRelNodeWithSum0, logger);
 
       final DrillRel drillRel = (DrillRel) convertedRelNodeWithSum0;
 

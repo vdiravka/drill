@@ -62,6 +62,9 @@ public interface RuleInstance {
   FilterMergeRule FILTER_MERGE_RULE =
       new FilterMergeRule(DrillRelFactories.LOGICAL_BUILDER);
 
+  FilterMergeRule DRILL_FILTER_MERGE_RULE =
+      new FilterMergeRule(DrillRelBuilder.proto(DrillRelFactories.DRILL_LOGICAL_FILTER_FACTORY));
+
   AggregateRemoveRule AGGREGATE_REMOVE_RULE =
       new AggregateRemoveRule(LogicalAggregate.class, DrillRelFactories.LOGICAL_BUILDER);
 
@@ -110,12 +113,16 @@ public interface RuleInstance {
   AbstractConverter.ExpandConversionRule EXPAND_CONVERSION_RULE =
       new AbstractConverter.ExpandConversionRule(DrillRelFactories.LOGICAL_BUILDER);
 
+  JoinPushTransitivePredicatesRule JOIN_PUSH_TRANSITIVE_PREDICATES_RULE =
+      new JoinPushTransitivePredicatesRule(Join.class, DrillRelFactories.LOGICAL_BUILDER);
+
   /**
    * Instance of the rule that infers predicates from on a
    * {@link org.apache.calcite.rel.core.Join} and creates
    * {@link org.apache.calcite.rel.core.Filter}s if those predicates can be pushed
    * to its inputs.
    */
-  JoinPushTransitivePredicatesRule JOIN_PUSH_TRANSITIVE_PREDICATES_RULE =
-      new JoinPushTransitivePredicatesRule(Join.class, DrillRelFactories.LOGICAL_BUILDER);
+  JoinPushTransitivePredicatesRule DRILL_JOIN_PUSH_TRANSITIVE_PREDICATES_RULE =
+      new JoinPushTransitivePredicatesRule(Join.class, DrillRelBuilder.proto(
+          DrillRelFactories.DRILL_LOGICAL_JOIN_FACTORY, DrillRelFactories.DRILL_LOGICAL_FILTER_FACTORY));
 }

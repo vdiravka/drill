@@ -21,7 +21,6 @@ import com.google.common.collect.Lists;
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.rel.core.Join;
 import org.apache.calcite.rel.core.JoinRelType;
-import org.apache.calcite.rel.core.RelFactories;
 import org.apache.calcite.rel.rules.FilterJoinRule;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.rex.RexNode;
@@ -61,18 +60,19 @@ public class DrillFilterJoinRules {
 
 
   /** Rule that pushes predicates from a Filter into the Join below them. */
-  public static final FilterJoinRule DRILL_FILTER_ON_JOIN =
+  public static final FilterJoinRule FILTER_INTO_JOIN =
+      new FilterJoinRule.FilterIntoJoinRule(true, DrillRelFactories.LOGICAL_BUILDER, EQUAL_IS_DISTINCT_FROM);
+
+  /** The same as above, but with Drill's operators. */
+  public static final FilterJoinRule DRILL_FILTER_INTO_JOIN =
       new FilterJoinRule.FilterIntoJoinRule(true,
-          DrillRelBuilder.proto(RelFactories.DEFAULT_FILTER_FACTORY,
-              RelFactories.DEFAULT_PROJECT_FACTORY),
+          DrillRelBuilder.proto(DrillRelFactories.DRILL_LOGICAL_PROJECT_FACTORY,
+              DrillRelFactories.DRILL_LOGICAL_FILTER_FACTORY),
           EQUAL_IS_DISTINCT_FROM);
 
 
   /** Rule that pushes predicates in a Join into the inputs to the join. */
-  public static final FilterJoinRule DRILL_JOIN =
-      new FilterJoinRule.JoinConditionPushRule(
-          DrillRelBuilder.proto(RelFactories.DEFAULT_FILTER_FACTORY,
-              RelFactories.DEFAULT_PROJECT_FACTORY),
-          EQUAL_IS_DISTINCT_FROM);
+  public static final FilterJoinRule JOIN_CONDITION_PUSH =
+      new FilterJoinRule.JoinConditionPushRule(DrillRelFactories.LOGICAL_BUILDER, EQUAL_IS_DISTINCT_FROM);
 
 }
