@@ -28,6 +28,7 @@ import org.apache.calcite.rel.logical.LogicalUnion;
 import org.apache.calcite.rel.rules.AggregateExpandDistinctAggregatesRule;
 import org.apache.calcite.rel.rules.AggregateRemoveRule;
 import org.apache.calcite.rel.rules.FilterMergeRule;
+import org.apache.calcite.rel.rules.FilterRemoveIsNotDistinctFromRule;
 import org.apache.calcite.rel.rules.FilterSetOpTransposeRule;
 import org.apache.calcite.rel.rules.JoinPushExpressionsRule;
 import org.apache.calcite.rel.rules.JoinPushThroughJoinRule;
@@ -125,4 +126,7 @@ public interface RuleInstance {
   JoinPushTransitivePredicatesRule DRILL_JOIN_PUSH_TRANSITIVE_PREDICATES_RULE =
       new JoinPushTransitivePredicatesRule(Join.class, DrillRelBuilder.proto(
           DrillRelFactories.DRILL_LOGICAL_JOIN_FACTORY, DrillRelFactories.DRILL_LOGICAL_FILTER_FACTORY));
+
+  FilterRemoveIsNotDistinctFromRule REMOVE_IS_NOT_DISTINCT_FROM_RULE =
+      new FilterRemoveIsNotDistinctFromRule(DrillRelFactories.LOGICAL_BUILDER);
 }

@@ -35,15 +35,15 @@ public class DrillFilterJoinRules {
    * Example:  INNER JOIN,   L.C1 = R.C2 and L.C3 + 100 = R.C4 + 100 will be kepted in JOIN.
    *                         L.C5 < R.C6 will be pulled up into Filter above JOIN.
    *           OUTER JOIN,   Keep any filter in JOIN.
-  */
+   */
   public static final FilterJoinRule.Predicate EQUAL_IS_DISTINCT_FROM =
       new FilterJoinRule.Predicate() {
         public boolean apply(Join join, JoinRelType joinType, RexNode exp) {
           if (joinType != JoinRelType.INNER) {
             return true;  // In OUTER join, we could not pull-up the filter.
-                          // All we can do is keep the filter with JOIN, and
-                          // then decide whether the filter could be pushed down
-                          // into LEFT/RIGHT.
+            // All we can do is keep the filter with JOIN, and
+            // then decide whether the filter could be pushed down
+            // into LEFT/RIGHT.
           }
 
           List<RexNode> tmpLeftKeys = Lists.newArrayList();
@@ -58,6 +58,41 @@ public class DrillFilterJoinRules {
         }
       };
 
+  /** Predicate that always returns true for any filter in OUTER join, and only true
+   * for EQUAL or IS_DISTINCT_FROM over RexInputRef in INNER join. With this predicate,
+   * the filter expression that return true will be kept in the JOIN OP.
+   * Example:  INNER JOIN,   L.C1 = R.C2 and L.C3 + 100 = R.C4 + 100 will be kepted in JOIN.
+   *                         L.C5 < R.C6 will be pulled up into Filter above JOIN.
+   *           OUTER JOIN,   Keep any filter in JOIN.
+   */
+  public static final FilterJoinRule.Predicate EQUAL_IS_DISTINCT_FROM_EQUI =
+      new FilterJoinRule.Predicate() {
+        public boolean apply(Join join, JoinRelType joinType, RexNode exp) {
+          if (joinType != JoinRelType.INNER) {
+            return true;  // In OUTER join, we could not pull-up the filter.
+            // All we can do is keep the filter with JOIN, and
+            // then decide whether the filter could be pushed down
+            // into LEFT/RIGHT.
+          }
+
+          List<Integer> tmpLeftKeys = Lists.newArrayList();
+          List<Integer> tmpRightKeys = Lists.newArrayList();
+          List<Boolean> filterNulls = Lists.newArrayList();
+
+          RexNode remaining = RelOptUtil.splitJoinCondition(join.getLeft(), join.getRight(), exp, tmpLeftKeys, tmpRightKeys, filterNulls);
+
+          List<RexNode> tmpLeftKeysOld = Lists.newArrayList();
+          List<RexNode> tmpRightKeysOld = Lists.newArrayList();
+          List<RelDataTypeField> sysFields = Lists.newArrayList();
+          List<Integer> filterNullsOld = Lists.newArrayList();
+
+          RexNode remainingOLd = RelOptUtil.splitJoinCondition(sysFields, join.getLeft(), join.getRight(),
+              exp, tmpLeftKeysOld, tmpRightKeysOld, filterNullsOld, null);
+
+          return remaining.isAlwaysTrue();
+        }
+      };
+
 
   /** Rule that pushes predicates from a Filter into the Join below them. */
   public static final FilterJoinRule FILTER_INTO_JOIN =
@@ -67,12 +102,16 @@ public class DrillFilterJoinRules {
   public static final FilterJoinRule DRILL_FILTER_INTO_JOIN =
       new FilterJoinRule.FilterIntoJoinRule(true,
           DrillRelBuilder.proto(DrillRelFactories.DRILL_LOGICAL_PROJECT_FACTORY,
-              DrillRelFactories.DRILL_LOGICAL_FILTER_FACTORY),
-          EQUAL_IS_DISTINCT_FROM);
+              DrillRelFactories.DRILL_LOGICAL_FILTER_FACTORY), EQUAL_IS_DISTINCT_FROM_EQUI);
 
 
   /** Rule that pushes predicates in a Join into the inputs to the join. */
   public static final FilterJoinRule JOIN_CONDITION_PUSH =
       new FilterJoinRule.JoinConditionPushRule(DrillRelFactories.LOGICAL_BUILDER, EQUAL_IS_DISTINCT_FROM);
+
+  /** Rule that pushes predicates in a Join into the inputs to the join. */
+  public static final FilterJoinRule DRILL_JOIN_CONDITION_PUSH =
+      new FilterJoinRule.JoinConditionPushRule(DrillRelBuilder.proto(DrillRelFactories.DRILL_LOGICAL_PROJECT_FACTORY,
+          DrillRelFactories.DRILL_LOGICAL_FILTER_FACTORY), EQUAL_IS_DISTINCT_FROM);
 
 }

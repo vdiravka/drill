@@ -242,7 +242,7 @@ public class DefaultSqlHandler extends AbstractSqlHandler {
       // HEP for rules, which are failed at the LOGICAL_PLANNING stage for Volcano planner
       final RelNode setOpTransposeNode = transform(PlannerType.HEP, PlannerPhase.PRE_LOGICAL_PLANNING, relNode);
 
-//      log("before transitive", setOpTransposeNode, logger);
+//      log("before logical", setOpTransposeNode, logger);
 
 
 
@@ -260,14 +260,14 @@ public class DefaultSqlHandler extends AbstractSqlHandler {
         if (context.getPlannerSettings().isHepPartitionPruningEnabled()) {
 
           // hep is enabled and hep pruning is enabled.
-          final RelNode intermediateNode = transform(PlannerType.VOLCANO, PlannerPhase.LOGICAL, pruned, logicalTraits);
-//          log("after logical", intermediateNode, logger);
+          final RelNode initialLogicalNode = transform(PlannerType.VOLCANO, PlannerPhase.LOGICAL, pruned, logicalTraits);
+//          log("after logical", initialLogicalNode, logger);
 
           // HEP Join Push Transitive Predicates
           final RelNode transitiveClosureNode =
-              transform(PlannerType.HEP, PlannerPhase.TRANSITIVE_CLOSURE, intermediateNode);
+              transform(PlannerType.HEP, PlannerPhase.TRANSITIVE_CLOSURE, initialLogicalNode);
+//          log("after Transitive Closure", transitiveClosureNode, logger);
 
-//          log("after transitive", transitiveClosureNode, logger);
           intermediateNode2 = transform(PlannerType.HEP_BOTTOM_UP, PlannerPhase.PARTITION_PRUNING, transitiveClosureNode);
 
         } else {

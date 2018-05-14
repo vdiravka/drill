@@ -20,6 +20,7 @@ package org.apache.drill.exec.planner.logical;
 import java.util.List;
 
 import org.apache.calcite.rel.InvalidRelException;
+import org.apache.calcite.rel.core.Join;
 import org.apache.calcite.rel.core.JoinRelType;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.plan.Convention;
@@ -27,33 +28,34 @@ import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.plan.RelTraitSet;
-import org.apache.calcite.rel.logical.LogicalJoin;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexUtil;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
+import org.apache.calcite.tools.RelBuilderFactory;
 import org.apache.calcite.util.trace.CalciteTrace;
 
 import com.google.common.collect.Lists;
+import org.apache.drill.exec.planner.DrillRelBuilder;
 import org.slf4j.Logger;
 
 /**
  * Rule that converts a {@link org.apache.calcite.rel.logical.LogicalJoin} to a {@link DrillJoinRel}, which is implemented by Drill "join" operation.
  */
 public class DrillJoinRule extends RelOptRule {
-  public static final RelOptRule INSTANCE = new DrillJoinRule();
+  public static final RelOptRule INSTANCE = new DrillJoinRule(DrillRelFactories.LOGICAL_BUILDER);
+  public static final RelOptRule DRILL_INSTANCE = new DrillJoinRule(DrillRelBuilder.proto(
+      DrillRelFactories.DRILL_LOGICAL_FILTER_FACTORY, DrillRelFactories.DRILL_LOGICAL_JOIN_FACTORY));
   protected static final Logger tracer = CalciteTrace.getPlannerTracer();
 
-  private DrillJoinRule() {
-    super(RelOptHelper.any(LogicalJoin.class, Convention.NONE),
-        DrillRelFactories.LOGICAL_BUILDER,
-        "DrillJoinRule");
+  private DrillJoinRule(RelBuilderFactory relBuilderFactory) {
+    super(RelOptHelper.any(Join.class, Convention.NONE), relBuilderFactory,"DrillJoinRule");
   }
 
   @Override
   public void onMatch(RelOptRuleCall call) {
-    final LogicalJoin join = call.rel(0);
+    final Join join = call.rel(0);
     final RelNode left = join.getLeft();
     final RelNode right = join.getRight();
     final RelTraitSet traits = join.getTraitSet().plus(DrillRel.DRILL_LOGICAL);
