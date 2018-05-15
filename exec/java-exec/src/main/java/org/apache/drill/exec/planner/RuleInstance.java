@@ -128,5 +128,5 @@ public interface RuleInstance {
           DrillRelFactories.DRILL_LOGICAL_JOIN_FACTORY, DrillRelFactories.DRILL_LOGICAL_FILTER_FACTORY));
 
   FilterRemoveIsNotDistinctFromRule REMOVE_IS_NOT_DISTINCT_FROM_RULE =
-      new FilterRemoveIsNotDistinctFromRule(DrillRelFactories.LOGICAL_BUILDER);
+      new FilterRemoveIsNotDistinctFromRule(DrillRelBuilder.proto(DrillRelFactories.DRILL_LOGICAL_FILTER_FACTORY));
 }

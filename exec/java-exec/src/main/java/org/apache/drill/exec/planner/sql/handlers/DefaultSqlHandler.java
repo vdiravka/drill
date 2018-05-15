@@ -239,6 +239,7 @@ public class DefaultSqlHandler extends AbstractSqlHandler {
 
     try {
 
+//      log("before pre-logical", relNode, logger);
       // HEP for rules, which are failed at the LOGICAL_PLANNING stage for Volcano planner
       final RelNode setOpTransposeNode = transform(PlannerType.HEP, PlannerPhase.PRE_LOGICAL_PLANNING, relNode);
 
