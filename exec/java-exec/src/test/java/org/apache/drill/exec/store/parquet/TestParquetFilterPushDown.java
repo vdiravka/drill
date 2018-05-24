@@ -451,7 +451,7 @@ public class TestParquetFilterPushDown extends PlanTestBase {
     // FilterPushDown should be able to remove the rowgroup with a = 1 from the scan operator.
     final String sql = "select * from dfs.`parquet/multirowgroup.parquet` where a > 1";
     final String[] expectedPlan = {"numRowGroups=1"};
-    PlanTestBase.testPlanMatchingPatterns(sql, expectedPlan);
+    PlanTestBase.testPlanMatchingPatterns(sql, expectedPlan, null);
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -464,7 +464,7 @@ public class TestParquetFilterPushDown extends PlanTestBase {
     String numFilesPattern = "numFiles=" + expectedNumFiles;
     String usedMetaPattern = "usedMetadataFile=" + usedMetadataFile;
 
-    testPlanMatchingPatterns(query, new String[]{numFilesPattern, usedMetaPattern});
+    testPlanMatchingPatterns(query, new String[]{numFilesPattern, usedMetaPattern}, null);
   }
 
   private void testParquetRowGroupFilterEval(final ParquetMetadata footer, final String exprStr, boolean canDropExpected) throws Exception{
