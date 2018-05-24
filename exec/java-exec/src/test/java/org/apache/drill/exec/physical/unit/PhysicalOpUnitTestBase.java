@@ -40,7 +40,6 @@ import org.apache.drill.exec.server.QueryProfileStoreContext;
 import org.apache.drill.exec.store.dfs.DrillFileSystem;
 import org.apache.drill.exec.store.easy.json.JSONRecordReader;
 import org.apache.drill.exec.work.batch.IncomingBuffers;
-import org.apache.drill.test.BaseDirTestWatcher;
 import org.apache.drill.test.DrillTestWrapper;
 import org.apache.drill.common.config.DrillConfig;
 import org.apache.drill.common.exceptions.ExecutionSetupException;
@@ -65,7 +64,6 @@ import org.apache.drill.exec.rpc.NamedThreadFactory;
 import org.apache.drill.test.OperatorFixture;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Rule;
 import org.mockito.Mockito;
 
 import java.io.IOException;
@@ -92,9 +90,6 @@ public class PhysicalOpUnitTestBase extends ExecTest {
   protected ExecutorService scanExecutor;
   protected ExecutorService scanDecodeExecutor;
 
-  @Rule
-  public final BaseDirTestWatcher dirTestWatcher = new BaseDirTestWatcher();
-
   private final DrillConfig drillConf = DrillConfig.create();
   private final ScanResult classpathScan = ClassPathScanner.fromPrescan(drillConf);
   private final OperatorCreatorRegistry opCreatorReg = new OperatorCreatorRegistry(classpathScan);
@@ -108,7 +103,7 @@ public class PhysicalOpUnitTestBase extends ExecTest {
     Mockito.when(drillbitContext.getScanExecutor()).thenReturn(scanExecutor);
     Mockito.when(drillbitContext.getScanDecodeExecutor()).thenReturn(scanDecodeExecutor);
 
-    final OperatorFixture.Builder builder = new OperatorFixture.Builder(dirTestWatcher);
+    final OperatorFixture.Builder builder = new OperatorFixture.Builder();
     builder.configBuilder().configProps(drillConf);
     operatorFixture = builder
       .setScanExecutor(scanExecutor)

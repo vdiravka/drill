@@ -45,9 +45,7 @@ public class HashJoinPOP extends AbstractJoinPop {
     @Override
     public PhysicalOperator getNewWithChildren(List<PhysicalOperator> children) {
         Preconditions.checkArgument(children.size() == 2);
-        HashJoinPOP newHashJoin = new HashJoinPOP(children.get(0), children.get(1), conditions, joinType);
-        newHashJoin.setMaxAllocation(getMaxAllocation());
-        return newHashJoin;
+        return new HashJoinPOP(children.get(0), children.get(1), conditions, joinType);
     }
 
     public HashJoinPOP flipIfRight() {
@@ -65,15 +63,5 @@ public class HashJoinPOP extends AbstractJoinPop {
     @Override
     public int getOperatorType() {
         return CoreOperatorType.HASH_JOIN_VALUE;
-    }
-
-    @Override
-    public void setMaxAllocation(long maxAllocation) {
-        this.maxAllocation = maxAllocation;
-    }
-
-    @Override
-    public boolean isBufferedOperator() {
-        return true;
     }
 }
