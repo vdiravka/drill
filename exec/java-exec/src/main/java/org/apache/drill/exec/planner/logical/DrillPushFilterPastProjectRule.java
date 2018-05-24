@@ -21,15 +21,12 @@ import com.google.common.collect.Lists;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelOptUtil;
-import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.Filter;
 import org.apache.calcite.rel.core.Project;
 import org.apache.calcite.rel.logical.LogicalFilter;
 import org.apache.calcite.rel.logical.LogicalProject;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexUtil;
-import org.apache.calcite.tools.RelBuilder;
-import org.apache.calcite.tools.RelBuilderFactory;
 import org.apache.calcite.util.Pair;
 import org.apache.drill.exec.planner.common.DrillRelOptUtil;
 
@@ -39,7 +36,7 @@ import java.util.List;
 
 public class DrillPushFilterPastProjectRule extends RelOptRule {
 
-  public final static RelOptRule INSTANCE = new DrillPushFilterPastProjectRule(DrillRelFactories.LOGICAL_BUILDER);
+  public final static RelOptRule INSTANCE = new DrillPushFilterPastProjectRule();
 
   private static final Collection<String> BANNED_OPERATORS;
 
@@ -49,8 +46,12 @@ public class DrillPushFilterPastProjectRule extends RelOptRule {
     BANNED_OPERATORS.add("item");
   }
 
-  private DrillPushFilterPastProjectRule(RelBuilderFactory relBuilderFactory) {
-    super(operand(LogicalFilter.class, operand(LogicalProject.class, any())), relBuilderFactory,null);
+  private DrillPushFilterPastProjectRule() {
+    super(
+        operand(
+            LogicalFilter.class,
+            operand(LogicalProject.class, any())),
+        DrillRelFactories.LOGICAL_BUILDER, null);
   }
 
   //~ Methods ----------------------------------------------------------------
@@ -59,7 +60,6 @@ public class DrillPushFilterPastProjectRule extends RelOptRule {
   public void onMatch(RelOptRuleCall call) {
     Filter filterRel = call.rel(0);
     Project projRel = call.rel(1);
-    RelBuilder builder = call.builder();
 
     // get a conjunctions of the filter condition. For each conjunction, if it refers to ITEM or FLATTEN expression
     // then we could not pushed down. Otherwise, it's qualified to be pushed down.
@@ -87,14 +87,11 @@ public class DrillPushFilterPastProjectRule extends RelOptRule {
     RexNode newCondition =
         RelOptUtil.pushPastProject(qualifedPred, projRel);
 
-    RelNode newFilterRel =
-        builder
-            .push(projRel.getInput())
-            .filter(newCondition)
-            .build();
+    Filter newFilterRel = LogicalFilter.create(projRel.getInput(), newCondition);
 
-    RelNode newProjRel =
-        builder
+    Project newProjRel =
+        (Project) relBuilderFactory
+            .create(newFilterRel.getCluster(), null)
             .push(newFilterRel)
             .projectNamed(Pair.left(projRel.getNamedProjects()), Pair.right(projRel.getNamedProjects()), true)
             .build();
@@ -111,11 +108,7 @@ public class DrillPushFilterPastProjectRule extends RelOptRule {
       //    Project
       //     \
       //      Filter  -- qualified filters
-      RelNode filterNotPushed =
-          builder
-              .push(newProjRel)
-              .filter(unqualifiedPred)
-              .build();
+      Filter filterNotPushed = LogicalFilter.create(newProjRel, unqualifiedPred);
       call.transformTo(filterNotPushed);
     }
   }

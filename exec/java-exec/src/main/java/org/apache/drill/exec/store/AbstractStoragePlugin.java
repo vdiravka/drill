@@ -91,11 +91,11 @@ public abstract class AbstractStoragePlugin implements StoragePlugin {
     switch (phase) {
     case LOGICAL_PRUNE_AND_JOIN:
     case LOGICAL_PRUNE:
-    case PARTITION_PRUNING:
+    case LOGICAL:
       return getLogicalOptimizerRules(optimizerContext);
     case PHYSICAL:
       return getPhysicalOptimizerRules(optimizerContext);
-    case LOGICAL:
+    case PARTITION_PRUNING:
     case JOIN_PLANNING:
     default:
       return ImmutableSet.of();
