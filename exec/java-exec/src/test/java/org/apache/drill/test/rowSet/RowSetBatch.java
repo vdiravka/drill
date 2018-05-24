@@ -105,7 +105,4 @@ public class RowSetBatch implements RecordBatch {
   public Iterator<VectorWrapper<?>> iterator() {
     return rowSet.container().iterator();
   }
-
-  @Override
-  public VectorContainer getContainer() { return rowSet.container(); }
 }

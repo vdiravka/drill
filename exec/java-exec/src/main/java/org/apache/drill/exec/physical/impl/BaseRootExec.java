@@ -139,7 +139,12 @@ public abstract class BaseRootExec implements RootExec {
 
     // close all operators.
     if (operators != null) {
-      final DeferredException df = new DeferredException();
+      final DeferredException df = new DeferredException(new Supplier<Exception>() {
+        @Override
+        public Exception get() {
+          return new RuntimeException("Error closing operators");
+        }
+      });
 
       for (final CloseableRecordBatch crb : operators) {
         df.suppressingClose(crb);
