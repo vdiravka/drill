@@ -21,10 +21,8 @@ import static org.junit.Assert.assertEquals;
 
 import org.apache.drill.exec.ExecConstants;
 import org.apache.drill.exec.server.options.OptionManager;
-import org.apache.drill.test.BaseDirTestWatcher;
 import org.apache.drill.test.DrillTest;
 import org.apache.drill.test.OperatorFixture;
-import org.junit.Rule;
 import org.junit.Test;
 
 public class TestQueryMemoryAlloc extends DrillTest {
@@ -32,12 +30,9 @@ public class TestQueryMemoryAlloc extends DrillTest {
   public static final long ONE_MB = 1024 * 1024;
   public static final long ONE_GB = 1024L * ONE_MB;
 
-  @Rule
-  public final BaseDirTestWatcher dirTestWatcher = new BaseDirTestWatcher();
-
   @Test
   public void testDefaultOptions() throws Exception {
-    OperatorFixture.Builder builder = OperatorFixture.builder(dirTestWatcher);
+    OperatorFixture.Builder builder = OperatorFixture.builder();
     builder.systemOption(ExecConstants.PERCENT_MEMORY_PER_QUERY_KEY, 0.05);
     builder.systemOption(ExecConstants.MAX_QUERY_MEMORY_PER_NODE_KEY, 2 * ONE_GB);
 
@@ -65,7 +60,7 @@ public class TestQueryMemoryAlloc extends DrillTest {
 
   @Test
   public void testCustomFloor() throws Exception {
-    OperatorFixture.Builder builder = OperatorFixture.builder(dirTestWatcher);
+    OperatorFixture.Builder builder = OperatorFixture.builder();
     builder.systemOption(ExecConstants.PERCENT_MEMORY_PER_QUERY_KEY, 0.05);
     builder.systemOption(ExecConstants.MAX_QUERY_MEMORY_PER_NODE_KEY, 3 * ONE_GB);
 
@@ -93,7 +88,7 @@ public class TestQueryMemoryAlloc extends DrillTest {
 
   @Test
   public void testCustomPercent() throws Exception {
-    OperatorFixture.Builder builder = OperatorFixture.builder(dirTestWatcher);
+    OperatorFixture.Builder builder = OperatorFixture.builder();
     builder.systemOption(ExecConstants.PERCENT_MEMORY_PER_QUERY_KEY, 0.10);
     builder.systemOption(ExecConstants.MAX_QUERY_MEMORY_PER_NODE_KEY, 2 * ONE_GB);
 
@@ -131,7 +126,7 @@ public class TestQueryMemoryAlloc extends DrillTest {
 
   @Test
   public void testOpMemory() throws Exception {
-    OperatorFixture.Builder builder = OperatorFixture.builder(dirTestWatcher);
+    OperatorFixture.Builder builder = OperatorFixture.builder();
     builder.systemOption(ExecConstants.CPU_LOAD_AVERAGE_KEY, 0.7);
     builder.systemOption(ExecConstants.MAX_WIDTH_PER_NODE_KEY, 10);
     builder.systemOption(ExecConstants.MIN_MEMORY_PER_BUFFERED_OP_KEY, 40 * ONE_MB);
