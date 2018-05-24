@@ -182,9 +182,6 @@ public class MockRecordBatch implements CloseableRecordBatch {
     return container.iterator();
   }
 
-  @Override
-  public VectorContainer getContainer() { return container; }
-
   public boolean isCompleted() {
     return isDone;
   }
