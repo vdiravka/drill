@@ -98,4 +98,9 @@ public class DrillFilterJoinRules {
   public static final FilterJoinRule JOIN_PUSH_CONDITION =
       new FilterJoinRule.JoinConditionPushRule(DrillRelFactories.LOGICAL_BUILDER, EQUAL_IS_DISTINCT_FROM);
 
+  /** The same as above, but with Drill's operators. */
+  public static final FilterJoinRule DRILL_JOIN_PUSH_CONDITION =
+      new FilterJoinRule.JoinConditionPushRule(DrillRelBuilder.proto(DrillRelFactories.DRILL_LOGICAL_PROJECT_FACTORY,
+          DrillRelFactories.DRILL_LOGICAL_FILTER_FACTORY), STRICT_EQUAL_IS_DISTINCT_FROM);
+
 }
