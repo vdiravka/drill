@@ -49,7 +49,9 @@ import org.apache.drill.exec.store.dfs.FormatMatcher;
 import org.apache.drill.exec.store.dfs.FormatPlugin;
 import org.apache.drill.exec.store.dfs.FormatSelection;
 import org.apache.drill.exec.store.dfs.MagicString;
+import org.apache.drill.exec.store.dfs.MetadataContext;
 import org.apache.drill.exec.store.mock.MockStorageEngine;
+import org.apache.drill.exec.store.parquet.Metadata.ParquetTableMetadataDirs;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -90,7 +92,7 @@ public class ParquetFormatPlugin implements FormatPlugin{
       StoragePluginConfig storageConfig, ParquetFormatConfig formatConfig){
     this.context = context;
     this.config = formatConfig;
-    this.formatMatcher = new ParquetFormatMatcher(this);
+    this.formatMatcher = new ParquetFormatMatcher(this, config);
     this.storageConfig = storageConfig;
     this.fsConf = fsConf;
     this.name = name == null ? DEFAULT_NAME : name;
@@ -137,6 +139,8 @@ public class ParquetFormatPlugin implements FormatPlugin{
     options.put(FileSystem.FS_DEFAULT_NAME_KEY, ((FileSystemConfig)writer.getStorageConfig()).connection);
 
     options.put(ExecConstants.PARQUET_BLOCK_SIZE, context.getOptions().getOption(ExecConstants.PARQUET_BLOCK_SIZE).num_val.toString());
+    options.put(ExecConstants.PARQUET_WRITER_USE_SINGLE_FS_BLOCK,
+      context.getOptions().getOption(ExecConstants.PARQUET_WRITER_USE_SINGLE_FS_BLOCK).bool_val.toString());
     options.put(ExecConstants.PARQUET_PAGE_SIZE, context.getOptions().getOption(ExecConstants.PARQUET_PAGE_SIZE).num_val.toString());
     options.put(ExecConstants.PARQUET_DICT_PAGE_SIZE, context.getOptions().getOption(ExecConstants.PARQUET_DICT_PAGE_SIZE).num_val.toString());
 
@@ -164,7 +168,7 @@ public class ParquetFormatPlugin implements FormatPlugin{
   @Override
   public ParquetGroupScan getGroupScan(String userName, FileSelection selection, List<SchemaPath> columns)
       throws IOException {
-    return new ParquetGroupScan(userName, selection, this, selection.selectionRoot, columns);
+    return new ParquetGroupScan(userName, selection, this, selection.selectionRoot, selection.cacheFileRoot, columns);
   }
 
   @Override
@@ -194,8 +198,11 @@ public class ParquetFormatPlugin implements FormatPlugin{
 
   private static class ParquetFormatMatcher extends BasicFormatMatcher{
 
-    public ParquetFormatMatcher(ParquetFormatPlugin plugin) {
+    private final ParquetFormatConfig formatConfig;
+
+    public ParquetFormatMatcher(ParquetFormatPlugin plugin, ParquetFormatConfig formatConfig) {
       super(plugin, PATTERNS, MAGIC_STRINGS);
+      this.formatConfig = formatConfig;
     }
 
     @Override
@@ -207,9 +214,27 @@ public class ParquetFormatPlugin implements FormatPlugin{
     public DrillTable isReadable(DrillFileSystem fs, FileSelection selection,
         FileSystemPlugin fsPlugin, String storageEngineName, String userName)
         throws IOException {
-      // TODO: we only check the first file for directory reading.
-      if(selection.containsDirectories(fs)){
-        if(isDirReadable(fs, selection.getFirstPath(fs))){
+      if(selection.containsDirectories(fs)) {
+        Path dirMetaPath = new Path(selection.getSelectionRoot(), Metadata.METADATA_DIRECTORIES_FILENAME);
+        // check if the metadata 'directories' file exists; if it does, there is an implicit assumption that
+        // the directory is readable since the metadata 'directories' file cannot be created otherwise.  Note
+        // that isDirReadable() does a similar check with the metadata 'cache' file.
+        if (fs.exists(dirMetaPath)) {
+          // create a metadata context that will be used for the duration of the query for this table
+          MetadataContext metaContext = new MetadataContext();
+
+          ParquetTableMetadataDirs mDirs = Metadata.readMetadataDirs(fs, dirMetaPath.toString(), metaContext, formatConfig);
+          if (mDirs.getDirectories().size() > 0) {
+            FileSelection dirSelection = FileSelection.createFromDirectories(mDirs.getDirectories(), selection,
+                selection.getSelectionRoot() /* cacheFileRoot initially points to selectionRoot */);
+            dirSelection.setExpandedPartial();
+            dirSelection.setMetaContext(metaContext);
+
+            return new DynamicDrillTable(fsPlugin, storageEngineName, userName,
+                new FormatSelection(plugin.getConfig(), dirSelection));
+          }
+        }
+        if(isDirReadable(fs, selection.getFirstPath(fs))) {
           return new DynamicDrillTable(fsPlugin, storageEngineName, userName,
               new FormatSelection(plugin.getConfig(), selection));
         }

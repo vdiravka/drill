@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -28,7 +28,8 @@ import org.apache.drill.common.exceptions.UserException;
 import org.apache.drill.exec.ExecConstants;
 import org.apache.drill.exec.proto.UserBitShared.UserCredentials;
 import org.apache.drill.exec.server.options.OptionValue;
-import org.apache.drill.exec.server.options.TypeValidators;
+import org.apache.drill.exec.server.options.OptionSet;
+import org.apache.drill.exec.server.options.TypeValidators.StringValidator;
 import org.apache.drill.exec.util.ImpersonationUtil;
 import org.apache.hadoop.security.UserGroupInformation;
 
@@ -83,15 +84,15 @@ public class InboundImpersonationManager {
   /**
    * Validator for impersonation policies.
    */
-  public static class InboundImpersonationPolicyValidator extends TypeValidators.AdminOptionValidator {
+  public static class InboundImpersonationPolicyValidator extends StringValidator {
 
     public InboundImpersonationPolicyValidator(String name, String def) {
-      super(name, def);
+      super(name, def, true);
     }
 
     @Override
-    public void validate(OptionValue v) {
-      super.validate(v);
+    public void validate(final OptionValue v, final OptionSet manager) {
+      super.validate(v, manager);
 
       final List<ImpersonationPolicy> policies;
       try {

@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -37,9 +37,9 @@ import org.apache.calcite.rel.core.Project;
 import org.apache.calcite.rel.core.TableFunctionScan;
 import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rel.logical.LogicalValues;
-import org.apache.calcite.rel.metadata.CachingRelMetadataProvider;
-import org.apache.calcite.rel.metadata.ChainedRelMetadataProvider;
+import org.apache.calcite.rel.metadata.JaninoRelMetadataProvider;
 import org.apache.calcite.rel.metadata.RelMetadataProvider;
+import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexNode;
@@ -209,12 +209,15 @@ public class DefaultSqlHandler extends AbstractSqlHandler {
     if (context.getOptions().getOption(ExecConstants.EARLY_LIMIT0_OPT) &&
         context.getPlannerSettings().isTypeInferenceEnabled() &&
         FindLimit0Visitor.containsLimit0(relNode)) {
-      // disable distributed mode
-      context.getPlannerSettings().forceSingleMode();
       // if the schema is known, return the schema directly
       final DrillRel shorterPlan;
       if ((shorterPlan = FindLimit0Visitor.getDirectScanRelIfFullySchemaed(relNode)) != null) {
         return shorterPlan;
+      }
+
+      if (FindHardDistributionScans.canForceSingleMode(relNode)) {
+        // disable distributed mode
+        context.getPlannerSettings().forceSingleMode();
       }
     }
 
@@ -256,7 +259,8 @@ public class DefaultSqlHandler extends AbstractSqlHandler {
       } else {
 
         // If the query contains a limit 0 clause, disable distributed mode since it is overkill for determining schema.
-        if (FindLimit0Visitor.containsLimit0(convertedRelNodeWithSum0)) {
+        if (FindLimit0Visitor.containsLimit0(convertedRelNodeWithSum0) &&
+            FindHardDistributionScans.canForceSingleMode(convertedRelNodeWithSum0)) {
           context.getPlannerSettings().forceSingleMode();
         }
 
@@ -265,7 +269,7 @@ public class DefaultSqlHandler extends AbstractSqlHandler {
     } catch (RelOptPlanner.CannotPlanException ex) {
       logger.error(ex.getMessage());
 
-      if(JoinUtils.checkCartesianJoin(relNode, new ArrayList<Integer>(), new ArrayList<Integer>())) {
+      if(JoinUtils.checkCartesianJoin(relNode, new ArrayList<Integer>(), new ArrayList<Integer>(), new ArrayList<Boolean>())) {
         throw new UnsupportedRelOperatorException("This query cannot be planned possibly due to either a cartesian join or an inequality join");
       } else {
         throw ex;
@@ -374,14 +378,11 @@ public class DefaultSqlHandler extends AbstractSqlHandler {
 
       final HepPlanner planner = new HepPlanner(hepPgmBldr.build(), context.getPlannerSettings());
 
-      final List<RelMetadataProvider> list = Lists.newArrayList();
-      list.add(DrillDefaultRelMetadataProvider.INSTANCE);
-      planner.registerMetadataProviders(list);
-      final RelMetadataProvider cachingMetaDataProvider = new CachingRelMetadataProvider(
-          ChainedRelMetadataProvider.of(list), planner);
+      JaninoRelMetadataProvider relMetadataProvider = JaninoRelMetadataProvider.of(DrillDefaultRelMetadataProvider.INSTANCE);
+      RelMetadataQuery.THREAD_PROVIDERS.set(relMetadataProvider);
 
       // Modify RelMetaProvider for every RelNode in the SQL operator Rel tree.
-      input.accept(new MetaDataProviderModifier(cachingMetaDataProvider));
+      input.accept(new MetaDataProviderModifier(relMetadataProvider));
       planner.setRoot(input);
       if (!input.getTraitSet().equals(targetTraits)) {
         planner.changeTraits(input, toTraits);
@@ -424,7 +425,7 @@ public class DefaultSqlHandler extends AbstractSqlHandler {
     } catch (RelOptPlanner.CannotPlanException ex) {
       logger.error(ex.getMessage());
 
-      if(JoinUtils.checkCartesianJoin(drel, new ArrayList<Integer>(), new ArrayList<Integer>())) {
+      if(JoinUtils.checkCartesianJoin(drel, new ArrayList<Integer>(), new ArrayList<Integer>(), new ArrayList<Boolean>())) {
         throw new UnsupportedRelOperatorException("This query cannot be planned possibly due to either a cartesian join or an inequality join");
       } else {
         throw ex;
@@ -447,7 +448,7 @@ public class DefaultSqlHandler extends AbstractSqlHandler {
       } catch (RelOptPlanner.CannotPlanException ex) {
         logger.error(ex.getMessage());
 
-        if(JoinUtils.checkCartesianJoin(drel, new ArrayList<Integer>(), new ArrayList<Integer>())) {
+        if(JoinUtils.checkCartesianJoin(drel, new ArrayList<Integer>(), new ArrayList<Integer>(), new ArrayList<Boolean>())) {
           throw new UnsupportedRelOperatorException("This query cannot be planned possibly due to either a cartesian join or an inequality join");
         } else {
           throw ex;
@@ -480,6 +481,12 @@ public class DefaultSqlHandler extends AbstractSqlHandler {
     if (context.getPlannerSettings().isHashJoinSwapEnabled()) {
       phyRelNode = SwapHashJoinVisitor.swapHashJoin(phyRelNode, new Double(context.getPlannerSettings()
           .getHashJoinSwapMarginFactor()));
+    }
+
+    /* Parquet row group filter pushdown in planning time */
+
+    if (context.getPlannerSettings().isParquetRowGroupFilterPushdownPlanningEnabled()) {
+      phyRelNode = (Prel) transform(PlannerType.HEP_BOTTOM_UP, PlannerPhase.PHYSICAL_PARTITION_PRUNING, phyRelNode);
     }
 
     /*
@@ -651,7 +658,10 @@ public class DefaultSqlHandler extends AbstractSqlHandler {
       projections.add(b.makeInputRef(rel, i));
     }
 
-    final List<String> fieldNames2 = SqlValidatorUtil.uniquify(validatedRowType.getFieldNames(), SqlValidatorUtil.F_SUGGESTER2);
+    final List<String> fieldNames2 = SqlValidatorUtil.uniquify(
+        validatedRowType.getFieldNames(),
+        SqlValidatorUtil.F_SUGGESTER2,
+        rel.getCluster().getTypeFactory().getTypeSystem().isSchemaCaseSensitive());
 
     RelDataType newRowType = RexUtil.createStructType(rel.getCluster().getTypeFactory(), projections, fieldNames2);
 

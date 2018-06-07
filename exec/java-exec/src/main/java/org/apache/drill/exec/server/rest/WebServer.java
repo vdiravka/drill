@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -23,8 +23,11 @@ import com.codahale.metrics.servlets.ThreadDumpServlet;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.drill.common.config.DrillConfig;
 import org.apache.drill.exec.ExecConstants;
+import org.apache.drill.exec.rpc.security.plain.PlainFactory;
+import org.apache.drill.exec.server.BootStrapContext;
 import org.apache.drill.exec.server.rest.auth.DrillRestLoginService;
 import org.apache.drill.exec.work.WorkManager;
 import org.bouncycastle.asn1.x500.X500NameBuilder;
@@ -53,13 +56,16 @@ import org.eclipse.jetty.server.handler.ErrorHandler;
 import org.eclipse.jetty.server.session.HashSessionManager;
 import org.eclipse.jetty.server.session.SessionHandler;
 import org.eclipse.jetty.servlet.DefaultServlet;
+import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
+import org.eclipse.jetty.servlets.CrossOriginFilter;
 import org.eclipse.jetty.util.resource.Resource;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.glassfish.jersey.servlet.ServletContainer;
 import org.joda.time.DateTime;
 
+import javax.servlet.DispatcherType;
 import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpSessionEvent;
 import javax.servlet.http.HttpSessionListener;
@@ -71,6 +77,7 @@ import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.Collections;
 import java.util.Date;
+import java.util.EnumSet;
 import java.util.Set;
 
 import static org.apache.drill.exec.server.rest.auth.DrillUserPrincipal.ADMIN_ROLE;
@@ -83,19 +90,25 @@ public class WebServer implements AutoCloseable {
   private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(WebServer.class);
 
   private final DrillConfig config;
+
   private final MetricRegistry metrics;
+
   private final WorkManager workManager;
+
   private final Server embeddedJetty;
+
+  private final BootStrapContext context;
 
   /**
    * Create Jetty based web server.
-   * @param config DrillConfig instance.
-   * @param metrics Metrics registry.
+   *
+   * @param context Bootstrap context.
    * @param workManager WorkManager instance.
    */
-  public WebServer(final DrillConfig config, final MetricRegistry metrics, final WorkManager workManager) {
-    this.config = config;
-    this.metrics = metrics;
+  public WebServer(final BootStrapContext context, final WorkManager workManager) {
+    this.context = context;
+    this.config = context.getConfig();
+    this.metrics = context.getMetrics();
     this.workManager = workManager;
 
     if (config.getBoolean(ExecConstants.HTTP_ENABLE)) {
@@ -106,6 +119,7 @@ public class WebServer implements AutoCloseable {
   }
 
   private static final String BASE_STATIC_PATH = "/rest/static/";
+
   private static final String DRILL_ICON_RESOURCE_RELATIVE_PATH = "img/drill.ico";
 
   /**
@@ -114,6 +128,12 @@ public class WebServer implements AutoCloseable {
    */
   public void start() throws Exception {
     if (embeddedJetty == null) {
+      return;
+    }
+    final boolean authEnabled = config.getBoolean(ExecConstants.USER_AUTHENTICATION_ENABLED);
+    if (authEnabled && !context.getAuthProvider().containsFactory(PlainFactory.SIMPLE_NAME)) {
+      logger.warn("Not starting web server. Currently Drill supports web authentication only through " +
+          "username/password. But PLAIN mechanism is not configured.");
       return;
     }
 
@@ -133,14 +153,12 @@ public class WebServer implements AutoCloseable {
     final ServletContextHandler servletContextHandler = new ServletContextHandler(ServletContextHandler.SESSIONS);
     servletContextHandler.setErrorHandler(errorHandler);
     servletContextHandler.setContextPath("/");
-    embeddedJetty.setHandler(servletContextHandler);
 
     final ServletHolder servletHolder = new ServletHolder(new ServletContainer(new DrillRestServer(workManager)));
     servletHolder.setInitOrder(1);
     servletContextHandler.addServlet(servletHolder, "/*");
 
-    servletContextHandler.addServlet(
-        new ServletHolder(new MetricsServlet(metrics)), "/status/metrics");
+    servletContextHandler.addServlet(new ServletHolder(new MetricsServlet(metrics)), "/status/metrics");
     servletContextHandler.addServlet(new ServletHolder(new ThreadDumpServlet()), "/status/threads");
 
     final ServletHolder staticHolder = new ServletHolder("static", DefaultServlet.class);
@@ -154,11 +172,28 @@ public class WebServer implements AutoCloseable {
     staticHolder.setInitParameter("pathInfoOnly", "true");
     servletContextHandler.addServlet(staticHolder, "/static/*");
 
-    if (config.getBoolean(ExecConstants.USER_AUTHENTICATION_ENABLED)) {
+    if (authEnabled) {
       servletContextHandler.setSecurityHandler(createSecurityHandler());
       servletContextHandler.setSessionHandler(createSessionHandler(servletContextHandler.getSecurityHandler()));
     }
 
+    if (config.getBoolean(ExecConstants.HTTP_CORS_ENABLED)) {
+      FilterHolder holder = new FilterHolder(CrossOriginFilter.class);
+      holder.setInitParameter(CrossOriginFilter.ALLOWED_ORIGINS_PARAM,
+              StringUtils.join(config.getStringList(ExecConstants.HTTP_CORS_ALLOWED_ORIGINS), ","));
+      holder.setInitParameter(CrossOriginFilter.ALLOWED_METHODS_PARAM,
+              StringUtils.join(config.getStringList(ExecConstants.HTTP_CORS_ALLOWED_METHODS), ","));
+      holder.setInitParameter(CrossOriginFilter.ALLOWED_HEADERS_PARAM,
+              StringUtils.join(config.getStringList(ExecConstants.HTTP_CORS_ALLOWED_HEADERS), ","));
+      holder.setInitParameter(CrossOriginFilter.ALLOW_CREDENTIALS_PARAM,
+              String.valueOf(config.getBoolean(ExecConstants.HTTP_CORS_CREDENTIALS)));
+
+      for (String path : new String[]{"*.json", "/storage/*/enable/*", "/status*"}) {
+        servletContextHandler.addFilter(holder, path, EnumSet.of(DispatcherType.REQUEST));
+      }
+    }
+
+    embeddedJetty.setHandler(servletContextHandler);
     embeddedJetty.start();
   }
 
@@ -171,7 +206,7 @@ public class WebServer implements AutoCloseable {
     sessionManager.addEventListener(new HttpSessionListener() {
       @Override
       public void sessionCreated(HttpSessionEvent se) {
-        // No-op
+
       }
 
       @Override
@@ -186,6 +221,15 @@ public class WebServer implements AutoCloseable {
           final SessionAuthentication sessionAuth = (SessionAuthentication) authCreds;
           securityHandler.logout(sessionAuth);
           session.removeAttribute(SessionAuthentication.__J_AUTHENTICATED);
+        }
+
+        // Clear all the resources allocated for this session
+        final WebSessionResources webSessionResources =
+            (WebSessionResources) session.getAttribute(WebSessionResources.class.getSimpleName());
+
+        if (webSessionResources != null) {
+          webSessionResources.close();
+          session.removeAttribute(WebSessionResources.class.getSimpleName());
         }
       }
     });

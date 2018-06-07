@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -40,6 +40,7 @@ import org.apache.drill.exec.expr.ExpressionTreeMaterializer;
 import org.apache.drill.exec.expr.fn.FunctionGenerationHelper;
 import org.apache.drill.exec.ops.FragmentContext;
 import org.apache.drill.exec.physical.config.WindowPOP;
+import org.apache.drill.exec.physical.impl.project.Projector;
 import org.apache.drill.exec.record.AbstractRecordBatch;
 import org.apache.drill.exec.record.BatchSchema;
 import org.apache.drill.exec.record.RecordBatch;
@@ -208,13 +209,19 @@ public class WindowFrameRecordBatch extends AbstractRecordBatch<WindowPOP> {
     final VectorAccessible last = batches.get(batches.size() - 1);
     final int lastSize = last.getRecordCount();
 
-    final boolean partitionEndReached = !framers[0].isSamePartition(currentSize - 1, current, lastSize - 1, last);
-    final boolean frameEndReached = partitionEndReached || !framers[0].isPeer(currentSize - 1, current, lastSize - 1, last);
+    boolean partitionEndReached;
+    boolean frameEndReached;
+    try {
+      partitionEndReached = !framers[0].isSamePartition(currentSize - 1, current, lastSize - 1, last);
+      frameEndReached = partitionEndReached || !framers[0].isPeer(currentSize - 1, current, lastSize - 1, last);
 
-    for (final WindowFunction function : functions) {
-      if (!function.canDoWork(batches.size(), popConfig, frameEndReached, partitionEndReached)) {
-        return false;
+      for (final WindowFunction function : functions) {
+        if (!function.canDoWork(batches.size(), popConfig, frameEndReached, partitionEndReached)) {
+          return false;
+        }
       }
+    } catch (SchemaChangeException e) {
+      throw new UnsupportedOperationException(e);
     }
 
     return true;
@@ -326,7 +333,7 @@ public class WindowFrameRecordBatch extends AbstractRecordBatch<WindowPOP> {
 
     TemplateClassDefinition<WindowFramer> definition = useCustomFrame ?
       WindowFramer.FRAME_TEMPLATE_DEFINITION : WindowFramer.NOFRAME_TEMPLATE_DEFINITION;
-    final ClassGenerator<WindowFramer> cg = CodeGenerator.getRoot(definition, context.getFunctionRegistry());
+    final ClassGenerator<WindowFramer> cg = CodeGenerator.getRoot(definition, context.getFunctionRegistry(), context.getOptions());
 
     {
       // generating framer.isSamePartition()
@@ -353,8 +360,12 @@ public class WindowFrameRecordBatch extends AbstractRecordBatch<WindowPOP> {
     }
 
     cg.getBlock("resetValues")._return(JExpr.TRUE);
+    CodeGenerator<WindowFramer> codeGen = cg.getCodeGenerator();
+    codeGen.plainJavaCapable(true);
+    // Uncomment out this line to debug the generated code.
+//    codeGen.saveCodeForDebugging(true);
 
-    return context.getImplementationClass(cg);
+    return context.getImplementationClass(codeGen);
   }
 
   /**
@@ -369,14 +380,14 @@ public class WindowFrameRecordBatch extends AbstractRecordBatch<WindowPOP> {
       }
 
       cg.setMappingSet(leftMapping);
-      ClassGenerator.HoldingContainer first = cg.addExpr(expr, false);
+      ClassGenerator.HoldingContainer first = cg.addExpr(expr, ClassGenerator.BlkCreateMode.FALSE);
       cg.setMappingSet(rightMapping);
-      ClassGenerator.HoldingContainer second = cg.addExpr(expr, false);
+      ClassGenerator.HoldingContainer second = cg.addExpr(expr, ClassGenerator.BlkCreateMode.FALSE);
 
       final LogicalExpression fh =
         FunctionGenerationHelper
           .getOrderingComparatorNullsHigh(first, second, context.getFunctionRegistry());
-      final ClassGenerator.HoldingContainer out = cg.addExpr(fh, false);
+      final ClassGenerator.HoldingContainer out = cg.addExpr(fh, ClassGenerator.BlkCreateMode.FALSE);
       cg.getEvalBlock()._if(out.getValue().ne(JExpr.lit(0)))._then()._return(JExpr.FALSE);
     }
     cg.getEvalBlock()._return(JExpr.TRUE);

@@ -19,11 +19,13 @@ package org.apache.drill.exec.fn.hive;
 
 import com.google.common.collect.Lists;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.drill.QueryTestUtil;
 import org.apache.drill.TestBuilder;
 import org.apache.drill.common.expression.SchemaPath;
 import org.apache.drill.common.types.TypeProtos;
+import org.apache.drill.exec.compile.ClassTransformer;
 import org.apache.drill.exec.hive.HiveTestBase;
-import org.apache.drill.exec.rpc.user.QueryDataBatch;
+import org.apache.drill.exec.server.options.OptionValue;
 import org.junit.Test;
 
 import java.util.List;
@@ -84,4 +86,56 @@ public class TestInbuiltHiveUDFs extends HiveTestBase {
             "first_name","Bh","last_name","Venkata","position","Store"))
         .go();
   }
+
+  @Test // DRILL-3272
+  public void testIf() throws Exception {
+    testBuilder()
+        .sqlQuery("select `if`(1999 > 2000, 'latest', 'old') Period from hive.kv limit 1")
+        .ordered()
+        .baselineColumns("Period")
+        .baselineValues("old")
+        .go();
+  }
+
+  @Test // DRILL-4618
+  public void testRand() throws Exception {
+    String query = "select 2*rand()=2*rand() col1 from (values (1))";
+    testBuilder()
+            .sqlQuery(query)
+            .unOrdered()
+            .baselineColumns("col1")
+            .baselineValues(false)
+            .go();
+  }
+
+  @Test //DRILL-4868
+  public void testEmbeddedHiveFunctionCall() throws Exception {
+    // TODO(DRILL-2326) temporary until we fix the scalar replacement bug for this case
+    final OptionValue srOption = QueryTestUtil.setupScalarReplacementOption(bits[0], ClassTransformer.ScalarReplacementOption.TRY);
+
+    try {
+      final String[] queries = {
+          "SELECT convert_from(unhex(key2), 'INT_BE') as intkey \n" +
+              "FROM cp.`functions/conv/conv.json`",
+      };
+
+      for (String query: queries) {
+        testBuilder()
+            .sqlQuery(query)
+            .ordered()
+            .baselineColumns("intkey")
+            .baselineValues(1244739896)
+            .baselineValues(new Object[] { null })
+            .baselineValues(1313814865)
+            .baselineValues(1852782897)
+            .build()
+            .run();
+      }
+
+    } finally {
+      // restore the system option
+      QueryTestUtil.restoreScalarReplacementOption(bits[0], srOption);
+    }
+  }
+
 }

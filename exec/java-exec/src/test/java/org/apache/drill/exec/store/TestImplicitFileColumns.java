@@ -20,6 +20,7 @@ package org.apache.drill.exec.store;
 import com.google.common.base.Charsets;
 import com.google.common.io.Files;
 import org.apache.drill.BaseTestQuery;
+import org.apache.drill.common.util.TestTools;
 import org.apache.drill.exec.util.JsonStringArrayList;
 import org.apache.drill.exec.util.Text;
 import org.apache.hadoop.fs.Path;
@@ -62,7 +63,7 @@ public class TestImplicitFileColumns extends BaseTestQuery {
   @Test
   public void testImplicitColumns() throws Exception {
     testBuilder()
-        .sqlQuery("select *, filename, suffix, fqn, filepath from dfs.`" + testFolder.getRoot().getPath() + "` order by filename")
+        .sqlQuery("select *, filename, suffix, fqn, filepath from dfs.`%s` order by filename", testFolder.getRoot().getPath())
         .ordered()
         .baselineColumns("columns", "dir0", "filename", "suffix", "fqn", "filepath")
         .baselineValues(mainColumnValues, null, mainFile.getName(), CSV, new Path(mainFile.getPath()).toString(), new Path(mainFile.getParent()).toString())
@@ -83,7 +84,7 @@ public class TestImplicitFileColumns extends BaseTestQuery {
   @Test
   public void testImplicitColumnAlone() throws Exception {
     testBuilder()
-        .sqlQuery("select filename from dfs.`" + nestedFolder.getPath() + "`")
+        .sqlQuery("select filename from dfs.`%s`", nestedFolder.getPath())
         .unOrdered()
         .baselineColumns("filename")
         .baselineValues(nestedFile.getName())
@@ -93,10 +94,30 @@ public class TestImplicitFileColumns extends BaseTestQuery {
   @Test
   public void testImplicitColumnWithTableColumns() throws Exception {
     testBuilder()
-        .sqlQuery("select columns, filename from dfs.`" + nestedFolder.getPath() + "`")
+        .sqlQuery("select columns, filename from dfs.`%s`", nestedFolder.getPath())
         .unOrdered()
         .baselineColumns("columns", "filename")
         .baselineValues(nestedColumnValues, nestedFile.getName())
+        .go();
+  }
+
+  @Test
+  public void testCountStarWithImplicitColumnsInWhereClause() throws Exception {
+    testBuilder()
+        .sqlQuery("select count(*) as cnt from dfs.`%s` where filename = '%s'", nestedFolder.getPath(), nestedFile.getName())
+        .unOrdered()
+        .baselineColumns("cnt")
+        .baselineValues(1L)
+        .go();
+  }
+
+  @Test
+  public void testImplicitAndPartitionColumnsInSelectClause() throws Exception {
+    testBuilder()
+        .sqlQuery("select dir0, filename from dfs.`%s` order by filename", testFolder.getRoot().getPath()).ordered()
+        .baselineColumns("dir0", "filename")
+        .baselineValues(null, mainFile.getName())
+        .baselineValues(NESTED, nestedFile.getName())
         .go();
   }
 
@@ -108,6 +129,22 @@ public class TestImplicitFileColumns extends BaseTestQuery {
         .baselineColumns("filename", "suffix")
         .baselineValues("region.parquet", "parquet")
         .go();
+  }
+
+  @Test // DRILL-4733
+  public void testMultilevelParquetWithSchemaChange() throws Exception {
+    try {
+      test("alter session set `planner.enable_decimal_data_type` = true");
+      testBuilder()
+          .sqlQuery(String.format("select max(dir0) as max_dir from dfs_test.`%s/src/test/resources/multilevel/parquetWithSchemaChange`",
+              TestTools.getWorkingPath()))
+          .unOrdered()
+          .baselineColumns("max_dir")
+          .baselineValues("voter50")
+          .go();
+    } finally {
+      test("alter session set `planner.enable_decimal_data_type` = false");
+    }
   }
 
 }

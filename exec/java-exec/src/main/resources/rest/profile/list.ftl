@@ -17,6 +17,15 @@
   <a href="/queries">back</a><br/>
   <div class="page-header">
   </div>
+  <#if (model.getErrors()?size > 0) >
+    <div id="message" class="alert alert-danger alert-dismissable">
+        <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+        <strong>Failed to get profiles:</strong><br>
+        <#list model.getErrors() as error>
+          ${error}<br>
+        </#list>
+    </div>
+  </#if>
   <#if (model.getRunningQueries()?size > 0) >
     <h3>Running Queries</h3>
     <div class="table-responsive">
@@ -27,6 +36,7 @@
            <td>User</td>
            <td>Query</td>
            <td>State</td>
+           <td>Elapsed</td>
            <td>Foreman</td>
         </thead>
         <tbody>
@@ -53,7 +63,9 @@
               </a>
             </td> 
             <td>
-              <div style="height:100%;width:100%">${query.getState()}</div>          
+              <div style="height:100%;width:100%">${query.getState()}</div>
+            <td>
+              <div style="height:100%;width:100%">${query.getDuration()}</div>
             <td>
                 <div style="height:100%;width:100%">
                   ${query.getForeman()}
@@ -82,6 +94,7 @@
          <!-- <td>Query Id</td> -->
          <td>Query</td>
          <td>State</td>
+         <td>Duration</td>
          <td>Foreman</td>
       </thead>
       <tbody>
@@ -110,6 +123,9 @@
           </td>      
           <td>
               <div style="height:100%;width:100%">${query.getState()}</div>
+          </td>
+          <td>
+              <div style="height:100%;width:100%">${query.getDuration()}</div>
           </td>
           <td>
               <div style="height:100%;width:100%">

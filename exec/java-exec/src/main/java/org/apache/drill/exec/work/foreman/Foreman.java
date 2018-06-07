@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -61,17 +61,19 @@ import org.apache.drill.exec.proto.BitControl.InitializeFragments;
 import org.apache.drill.exec.proto.BitControl.PlanFragment;
 import org.apache.drill.exec.proto.CoordinationProtos.DrillbitEndpoint;
 import org.apache.drill.exec.proto.ExecProtos.FragmentHandle;
+import org.apache.drill.exec.proto.ExecProtos.ServerPreparedStatementState;
 import org.apache.drill.exec.proto.GeneralRPCProtos.Ack;
 import org.apache.drill.exec.proto.UserBitShared.QueryId;
 import org.apache.drill.exec.proto.UserBitShared.QueryResult;
 import org.apache.drill.exec.proto.UserBitShared.QueryResult.QueryState;
+import org.apache.drill.exec.proto.UserProtos.PreparedStatementHandle;
 import org.apache.drill.exec.proto.UserProtos.RunQuery;
 import org.apache.drill.exec.proto.helper.QueryIdHelper;
 import org.apache.drill.exec.rpc.BaseRpcOutcomeListener;
 import org.apache.drill.exec.rpc.RpcException;
 import org.apache.drill.exec.rpc.control.ControlTunnel;
 import org.apache.drill.exec.rpc.control.Controller;
-import org.apache.drill.exec.rpc.user.UserServer.UserClientConnection;
+import org.apache.drill.exec.rpc.UserClientConnection;
 import org.apache.drill.exec.server.DrillbitContext;
 import org.apache.drill.exec.server.options.OptionManager;
 import org.apache.drill.exec.testing.ControlsInjector;
@@ -92,6 +94,7 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
+import com.google.protobuf.InvalidProtocolBufferException;
 
 /**
  * Foreman manages all the fragments (local and remote) for a single query where this
@@ -114,6 +117,8 @@ public class Foreman implements Runnable {
   private static final org.slf4j.Logger queryLogger = org.slf4j.LoggerFactory.getLogger("query.logger");
   private static final ControlsInjector injector = ControlsInjectorFactory.getInjector(Foreman.class);
 
+  public enum ProfileOption { SYNC, ASYNC, NONE };
+
   private static final ObjectMapper MAPPER = new ObjectMapper();
   private static final long RPC_WAIT_IN_MSECS_PER_FRAGMENT = 5000;
 
@@ -131,6 +136,7 @@ public class Foreman implements Runnable {
   private final UserClientConnection initiatingClient; // used to send responses
   private volatile QueryState state;
   private boolean resume = false;
+  private final ProfileOption profileOption;
 
   private volatile DistributedLease lease; // used to limit the number of concurrent queries
 
@@ -162,7 +168,7 @@ public class Foreman implements Runnable {
     this.drillbitContext = drillbitContext;
 
     initiatingClient = connection;
-    this.closeFuture = initiatingClient.getChannel().closeFuture();
+    closeFuture = initiatingClient.getChannelClosureFuture();
     closeFuture.addListener(closeListener);
 
     queryContext = new QueryContext(connection.getSession(), drillbitContext, queryId);
@@ -175,6 +181,19 @@ public class Foreman implements Runnable {
     final QueryState initialState = queuingEnabled ? QueryState.ENQUEUED : QueryState.STARTING;
     recordNewState(initialState);
     enqueuedQueries.inc();
+
+    profileOption = setProfileOption(queryContext.getOptions());
+  }
+
+  private ProfileOption setProfileOption(OptionManager options) {
+    if (! options.getOption(ExecConstants.ENABLE_QUERY_PROFILE_VALIDATOR)) {
+      return ProfileOption.NONE;
+    }
+    if (options.getOption(ExecConstants.QUERY_PROFILE_DEBUG_VALIDATOR)) {
+      return ProfileOption.SYNC;
+    } else {
+      return ProfileOption.ASYNC;
+    }
   }
 
   private class ConnectionClosedListener implements GenericFutureListener<Future<Void>> {
@@ -254,10 +273,17 @@ public class Foreman implements Runnable {
         parseAndRunPhysicalPlan(queryRequest.getPlan());
         break;
       case SQL:
-        runSQL(queryRequest.getPlan());
+        final String sql = queryRequest.getPlan();
+        // log query id and query text before starting any real work. Also, put
+        // them together such that it is easy to search based on query id
+        logger.info("Query text for query id {}: {}", this.queryIdString, sql);
+        runSQL(sql);
         break;
       case EXECUTION:
         runFragment(queryRequest.getFragmentsList());
+        break;
+      case PREPARED_STATEMENT:
+        runPreparedStatement(queryRequest.getPreparedStatementHandle());
         break;
       default:
         throw new IllegalStateException();
@@ -408,9 +434,14 @@ public class Foreman implements Runnable {
   private void runPhysicalPlan(final PhysicalPlan plan) throws ExecutionSetupException {
     validatePlan(plan);
     MemoryAllocationUtilities.setupSortMemoryAllocations(plan, queryContext);
+    //Marking endTime of Planning
+    queryManager.markPlanningEndTime();
+
     if (queuingEnabled) {
       acquireQuerySemaphore(plan);
       moveToState(QueryState.STARTING, null);
+      //Marking endTime of Waiting in Queue
+      queryManager.markQueueWaitEndTime();
     }
 
     final QueryWorkUnit work = getQueryWorkUnit(plan);
@@ -484,7 +515,32 @@ public class Foreman implements Runnable {
     logger.debug("Fragments running.");
   }
 
+  /**
+   * Helper method to execute the query in prepared statement. Current implementation takes the query from opaque
+   * object of the <code>preparedStatement</code> and submits as a new query.
+   *
+   * @param preparedStatementHandle
+   * @throws ExecutionSetupException
+   */
+  private void runPreparedStatement(final PreparedStatementHandle preparedStatementHandle)
+      throws ExecutionSetupException {
+    final ServerPreparedStatementState serverState;
 
+    try {
+      serverState =
+          ServerPreparedStatementState.PARSER.parseFrom(preparedStatementHandle.getServerInfo());
+    } catch (final InvalidProtocolBufferException ex) {
+      throw UserException.parseError(ex)
+          .message("Failed to parse the prepared statement handle. " +
+              "Make sure the handle is same as one returned from create prepared statement call.")
+          .build(logger);
+    }
+
+    queryText = serverState.getSqlQuery();
+    logger.info("Prepared statement query for QueryId {} : {}", queryId, queryText);
+    runSQL(queryText);
+
+  }
 
   private static void validatePlan(final PhysicalPlan plan) throws ForemanSetupException {
     if (plan.getProperties().resultMode != ResultMode.EXEC) {
@@ -521,7 +577,6 @@ public class Foreman implements Runnable {
     final String queueName;
 
     try {
-      @SuppressWarnings("resource")
       final ClusterCoordinator clusterCoordinator = drillbitContext.getClusterCoordinator();
       final DistributedSemaphore distributedSemaphore;
 
@@ -734,13 +789,14 @@ public class Foreman implements Runnable {
             new Date(System.currentTimeMillis()),
             state,
             queryContext.getSession().getCredentials().getUserName(),
-            initiatingClient.getChannel().remoteAddress());
+            initiatingClient.getRemoteAddress());
         queryLogger.info(MAPPER.writeValueAsString(q));
       } catch (Exception e) {
         logger.error("Failure while recording query information to query log.", e);
       }
     }
 
+    @SuppressWarnings("resource")
     @Override
     public void close() {
       Preconditions.checkState(!isClosed);
@@ -794,8 +850,12 @@ public class Foreman implements Runnable {
         uex = null;
       }
 
-      // we store the final result here so we can capture any error/errorId in the profile for later debugging.
-      queryManager.writeFinalProfile(uex);
+      // Debug option: write query profile before sending final results so that
+      // the client can be certain the profile exists.
+
+      if (profileOption == ProfileOption.SYNC) {
+        queryManager.writeFinalProfile(uex);
+      }
 
       /*
        * If sending the result fails, we don't really have any way to modify the result we tried to send;
@@ -805,10 +865,26 @@ public class Foreman implements Runnable {
        */
       try {
         // send whatever result we ended up with
-        initiatingClient.sendResult(responseListener, resultBuilder.build(), true);
+        initiatingClient.sendResult(responseListener, resultBuilder.build());
       } catch(final Exception e) {
         addException(e);
         logger.warn("Exception sending result to client", resultException);
+      }
+
+      // Store the final result here so we can capture any error/errorId in the
+      // profile for later debugging.
+      // Normal behavior is to write the query profile AFTER sending results to the user.
+      // The observed
+      // user behavior is a possible time-lag between query return and appearance
+      // of the query profile in persistent storage. Also, the query might
+      // succeed, but the profile never appear if the profile write fails. This
+      // behavior is acceptable for an eventually-consistent distributed system.
+      // The key benefit is that the client does not wait for the persistent
+      // storage write; query completion occurs in parallel with profile
+      // persistence.
+
+      if (profileOption == ProfileOption.ASYNC) {
+        queryManager.writeFinalProfile(uex);
       }
 
       // Remove the Foreman from the running query list.
@@ -970,10 +1046,6 @@ public class Foreman implements Runnable {
   }
 
   private void runSQL(final String sql) throws ExecutionSetupException {
-    // log query id and query text before starting any real work. Also, put
-    // them together such that it is easy to search based on query id
-    logger.info("Query text for query id {}: {}", this.queryIdString, sql);
-
     final Pointer<String> textPlan = new Pointer<>();
     final PhysicalPlan plan = DrillSqlWorker.getPlan(queryContext, sql, textPlan);
     queryManager.setPlanText(textPlan.value);
@@ -1150,6 +1222,13 @@ public class Foreman implements Runnable {
   }
 
   /**
+   * @return sql query text of the query request
+   */
+  public String getQueryText() {
+    return queryText;
+  }
+
+  /**
    * Used by {@link FragmentSubmitListener} to track the number of submission failures.
    */
   private static class FragmentSubmitFailures {
@@ -1157,7 +1236,7 @@ public class Foreman implements Runnable {
       final DrillbitEndpoint drillbitEndpoint;
       final RpcException rpcException;
 
-      SubmissionException(@SuppressWarnings("unused") final DrillbitEndpoint drillbitEndpoint,
+      SubmissionException(final DrillbitEndpoint drillbitEndpoint,
           final RpcException rpcException) {
         this.drillbitEndpoint = drillbitEndpoint;
         this.rpcException = rpcException;

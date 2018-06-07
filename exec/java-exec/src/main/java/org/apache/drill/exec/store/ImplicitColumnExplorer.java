@@ -39,7 +39,7 @@ public class ImplicitColumnExplorer {
 
   private final String partitionDesignator;
   private final List<SchemaPath> columns;
-  private final boolean selectAllColumns;
+  private final boolean isStarQuery;
   private final List<Integer> selectedPartitionColumns;
   private final List<SchemaPath> tableColumns;
   private final Map<String, ImplicitFileColumns> allImplicitColumns;
@@ -52,12 +52,21 @@ public class ImplicitColumnExplorer {
    * Also populates map with implicit columns names as keys and their values
    */
   public ImplicitColumnExplorer(FragmentContext context, List<SchemaPath> columns) {
-    this.partitionDesignator = context.getOptions().getOption(ExecConstants.FILESYSTEM_PARTITION_COLUMN_LABEL).string_val;
+    this(context.getOptions(), columns);
+  }
+
+  /**
+   * Helper class that encapsulates logic for sorting out columns
+   * between actual table columns, partition columns and implicit file columns.
+   * Also populates map with implicit columns names as keys and their values
+   */
+  public ImplicitColumnExplorer(OptionManager optionManager, List<SchemaPath> columns) {
+    this.partitionDesignator = optionManager.getOption(ExecConstants.FILESYSTEM_PARTITION_COLUMN_LABEL).string_val;
     this.columns = columns;
-    this.selectAllColumns = columns != null && AbstractRecordReader.isStarQuery(columns);
+    this.isStarQuery = columns != null && AbstractRecordReader.isStarQuery(columns);
     this.selectedPartitionColumns = Lists.newArrayList();
     this.tableColumns = Lists.newArrayList();
-    this.allImplicitColumns = initImplicitFileColumns(context.getOptions());
+    this.allImplicitColumns = initImplicitFileColumns(optionManager);
     this.selectedImplicitColumns = CaseInsensitiveMap.newHashMap();
 
     init();
@@ -84,15 +93,25 @@ public class ImplicitColumnExplorer {
    * @return map with columns names as keys and their values
    */
   public Map<String, String> populateImplicitColumns(FileWork work, String selectionRoot) {
+    return populateImplicitColumns(work.getPath(), selectionRoot);
+  }
+
+  /**
+   * Compares selection root and actual file path to determine partition columns values.
+   * Adds implicit file columns according to columns list.
+   *
+   * @return map with columns names as keys and their values
+   */
+  public Map<String, String> populateImplicitColumns(String filePath, String selectionRoot) {
     Map<String, String> implicitValues = Maps.newLinkedHashMap();
     if (selectionRoot != null) {
       String[] r = Path.getPathWithoutSchemeAndAuthority(new Path(selectionRoot)).toString().split("/");
-      Path path = Path.getPathWithoutSchemeAndAuthority(new Path(work.getPath()));
+      Path path = Path.getPathWithoutSchemeAndAuthority(new Path(filePath));
       String[] p = path.toString().split("/");
       if (p.length > r.length) {
         String[] q = ArrayUtils.subarray(p, r.length, p.length - 1);
         for (int a = 0; a < q.length; a++) {
-          if (selectAllColumns || selectedPartitionColumns.contains(a)) {
+          if (isStarQuery || selectedPartitionColumns.contains(a)) {
             implicitValues.put(partitionDesignator + a, q[a]);
           }
         }
@@ -105,8 +124,8 @@ public class ImplicitColumnExplorer {
     return implicitValues;
   }
 
-  public boolean isSelectAllColumns() {
-    return selectAllColumns;
+  public boolean isStarQuery() {
+    return isStarQuery;
   }
 
   public List<SchemaPath> getTableColumns() {
@@ -114,13 +133,13 @@ public class ImplicitColumnExplorer {
   }
 
   /**
-   * If it is not select all query, sorts out columns into three categories:
+   * If it is not star query, sorts out columns into three categories:
    * 1. table columns
    * 2. partition columns
    * 3. implicit file columns
    */
   private void init() {
-    if (selectAllColumns) {
+    if (isStarQuery) {
       selectedImplicitColumns.putAll(allImplicitColumns);
     } else {
       Pattern pattern = Pattern.compile(String.format("%s[0-9]+", partitionDesignator));
@@ -134,12 +153,6 @@ public class ImplicitColumnExplorer {
         } else {
           tableColumns.add(column);
         }
-      }
-
-      // We must make sure to pass a table column(not to be confused with partition column) to the underlying record
-      // reader.
-      if (tableColumns.size() == 0) {
-        tableColumns.add(AbstractRecordReader.STAR_COLUMN);
       }
     }
   }
