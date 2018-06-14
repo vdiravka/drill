@@ -27,7 +27,6 @@ import org.apache.drill.common.expression.LogicalExpression;
 import org.apache.drill.common.expression.SchemaPath;
 import org.apache.drill.common.types.TypeProtos;
 import org.apache.drill.common.types.Types;
-import org.apache.drill.exec.ExecConstants;
 import org.apache.drill.exec.exception.ClassTransformationException;
 import org.apache.drill.exec.exception.OutOfMemoryException;
 import org.apache.drill.exec.exception.SchemaChangeException;
@@ -41,7 +40,6 @@ import org.apache.drill.exec.record.AbstractBinaryRecordBatch;
 import org.apache.drill.exec.record.BatchSchema;
 import org.apache.drill.exec.record.MaterializedField;
 import org.apache.drill.exec.record.RecordBatch;
-import org.apache.drill.exec.record.RecordBatchMemoryManager;
 import org.apache.drill.exec.record.TransferPair;
 import org.apache.drill.exec.record.TypedFieldId;
 import org.apache.drill.exec.record.VectorAccessibleUtilities;
@@ -70,10 +68,6 @@ public class UnionAllRecordBatch extends AbstractBinaryRecordBatch<UnionAll> {
 
   public UnionAllRecordBatch(UnionAll config, List<RecordBatch> children, FragmentContext context) throws OutOfMemoryException {
     super(config, context, true, children.get(0), children.get(1));
-
-    // get the output batch size from config.
-    int configuredBatchSize = (int) context.getOptions().getOption(ExecConstants.OUTPUT_BATCH_SIZE_VALIDATOR);
-    batchMemoryManager = new RecordBatchMemoryManager(numInputs, configuredBatchSize);
   }
 
   @Override
@@ -112,9 +106,9 @@ public class UnionAllRecordBatch extends AbstractBinaryRecordBatch<UnionAll> {
           return IterOutcome.NONE;
         }
 
-        Pair<IterOutcome, BatchStatusWrappper> nextBatch = unionInputIterator.next();
+        Pair<IterOutcome, RecordBatch> nextBatch = unionInputIterator.next();
         IterOutcome upstream = nextBatch.left;
-        BatchStatusWrappper batchStatus = nextBatch.right;
+        RecordBatch incoming = nextBatch.right;
 
         switch (upstream) {
         case NONE:
@@ -122,14 +116,14 @@ public class UnionAllRecordBatch extends AbstractBinaryRecordBatch<UnionAll> {
         case STOP:
           return upstream;
         case OK_NEW_SCHEMA:
-          return doWork(batchStatus, true);
+          return doWork(nextBatch.right, true);
         case OK:
           // skip batches with same schema as the previous one yet having 0 row.
-          if (batchStatus.batch.getRecordCount() == 0) {
-            VectorAccessibleUtilities.clear(batchStatus.batch);
+          if (incoming.getRecordCount() == 0) {
+            VectorAccessibleUtilities.clear(incoming);
             continue;
           }
-          return doWork(batchStatus, false);
+          return doWork(nextBatch.right, false);
         default:
           throw new IllegalStateException(String.format("Unknown state %s.", upstream));
         }
@@ -148,25 +142,18 @@ public class UnionAllRecordBatch extends AbstractBinaryRecordBatch<UnionAll> {
 
 
   @SuppressWarnings("resource")
-  private IterOutcome doWork(BatchStatusWrappper batchStatus, boolean newSchema) throws ClassTransformationException, IOException, SchemaChangeException {
-    Preconditions.checkArgument(batchStatus.batch.getSchema().getFieldCount() == container.getSchema().getFieldCount(),
+  private IterOutcome doWork(RecordBatch inputBatch, boolean newSchema) throws ClassTransformationException, IOException, SchemaChangeException {
+    Preconditions.checkArgument(inputBatch.getSchema().getFieldCount() == container.getSchema().getFieldCount(),
         "Input batch and output batch have different field counthas!");
 
     if (newSchema) {
-      createUnionAller(batchStatus.batch);
+      createUnionAller(inputBatch);
     }
 
-    // Get number of records to include in the batch.
-    final int recordsToProcess = Math.min(batchMemoryManager.getOutputRowCount(), batchStatus.getRemainingRecords());
-
     container.zeroVectors();
-    batchMemoryManager.allocateVectors(allocationVectors, recordsToProcess);
-    recordCount = unionall.unionRecords(batchStatus.recordsProcessed, recordsToProcess, 0);
+    VectorUtil.allocateVectors(allocationVectors, inputBatch.getRecordCount());
+    recordCount = unionall.unionRecords(0, inputBatch.getRecordCount(), 0);
     VectorUtil.setValueCount(allocationVectors, recordCount);
-
-    // save number of records processed so far in batch status.
-    batchStatus.recordsProcessed += recordCount;
-    batchMemoryManager.updateOutgoingStats(recordCount);
 
     if (callBack.getSchemaChangedAndReset()) {
       return IterOutcome.OK_NEW_SCHEMA;
@@ -181,7 +168,6 @@ public class UnionAllRecordBatch extends AbstractBinaryRecordBatch<UnionAll> {
 
     final ClassGenerator<UnionAller> cg = CodeGenerator.getRoot(UnionAller.TEMPLATE_DEFINITION, context.getOptions());
     cg.getCodeGenerator().plainJavaCapable(true);
-    // cg.getCodeGenerator().saveCodeForDebugging(true);
 
     int index = 0;
     for(VectorWrapper<?> vw : inputBatch) {
@@ -317,25 +303,16 @@ public class UnionAllRecordBatch extends AbstractBinaryRecordBatch<UnionAll> {
     final RecordBatch batch;
     final int inputIndex;
     final IterOutcome outcome;
-    int recordsProcessed;
-    int totalRecordsToProcess;
 
     BatchStatusWrappper(boolean prefetched, IterOutcome outcome, RecordBatch batch, int inputIndex) {
       this.prefetched = prefetched;
       this.outcome = outcome;
       this.batch = batch;
       this.inputIndex = inputIndex;
-      this.totalRecordsToProcess = batch.getRecordCount();
-      this.recordsProcessed = 0;
     }
-
-    public int getRemainingRecords() {
-      return (totalRecordsToProcess - recordsProcessed);
-    }
-
   }
 
-  private class UnionInputIterator implements Iterator<Pair<IterOutcome, BatchStatusWrappper>> {
+  private class UnionInputIterator implements Iterator<Pair<IterOutcome, RecordBatch>> {
     private Stack<BatchStatusWrappper> batchStatusStack = new Stack<>();
 
     UnionInputIterator(IterOutcome leftOutCome, RecordBatch left, IterOutcome rightOutCome, RecordBatch right) {
@@ -354,35 +331,23 @@ public class UnionAllRecordBatch extends AbstractBinaryRecordBatch<UnionAll> {
     }
 
     @Override
-    public Pair<IterOutcome, BatchStatusWrappper> next() {
+    public Pair<IterOutcome, RecordBatch> next() {
       while (!batchStatusStack.isEmpty()) {
         BatchStatusWrappper topStatus = batchStatusStack.peek();
 
         if (topStatus.prefetched) {
           topStatus.prefetched = false;
-          batchMemoryManager.update(topStatus.batch, topStatus.inputIndex);
-          return Pair.of(topStatus.outcome, topStatus);
+          return Pair.of(topStatus.outcome, topStatus.batch);
         } else {
-
-          // If we have more records to process, just return the top batch.
-          if (topStatus.getRemainingRecords() > 0) {
-            return Pair.of(IterOutcome.OK, topStatus);
-          }
-
           IterOutcome outcome = UnionAllRecordBatch.this.next(topStatus.inputIndex, topStatus.batch);
-
           switch (outcome) {
           case OK:
           case OK_NEW_SCHEMA:
-            // since we just read a new batch, update memory manager and initialize batch stats.
-            topStatus.recordsProcessed = 0;
-            topStatus.totalRecordsToProcess = topStatus.batch.getRecordCount();
-            batchMemoryManager.update(topStatus.batch, topStatus.inputIndex);
-            return Pair.of(outcome, topStatus);
+            return Pair.of(outcome, topStatus.batch);
           case OUT_OF_MEMORY:
           case STOP:
             batchStatusStack.pop();
-            return Pair.of(outcome, topStatus);
+            return Pair.of(outcome, topStatus.batch);
           case NONE:
             batchStatusStack.pop();
             if (batchStatusStack.isEmpty()) {
@@ -402,13 +367,6 @@ public class UnionAllRecordBatch extends AbstractBinaryRecordBatch<UnionAll> {
     public void remove() {
       throw new UnsupportedOperationException();
     }
-
-  }
-
-  @Override
-  public void close() {
-    super.close();
-    updateBatchMemoryManagerStats();
   }
 
 }

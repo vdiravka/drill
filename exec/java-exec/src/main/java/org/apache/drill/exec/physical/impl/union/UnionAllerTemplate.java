@@ -42,7 +42,7 @@ public abstract class UnionAllerTemplate implements UnionAller {
     }
 
     for (TransferPair t : transfers) {
-      t.splitAndTransfer(startIndex, recordCount);
+      t.transfer();
     }
     return recordCount;
   }
