@@ -130,12 +130,7 @@ public class ConfigBuilder {
       configProps = createDefaultProperties();
     }
 
-    if (value instanceof Collection) {
-      configProps.put(key, value);
-    } else {
-      configProps.put(key, value.toString());
-    }
-
+    configProps.put(key, value.toString());
     return this;
   }
 

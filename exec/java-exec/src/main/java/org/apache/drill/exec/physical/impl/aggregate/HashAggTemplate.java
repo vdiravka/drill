@@ -459,6 +459,7 @@ public abstract class HashAggTemplate implements HashAggregator {
     for (int i = 0; i < numPartitions; i++ ) {
       try {
         this.htables[i] = baseHashTable.createAndSetupHashTable(groupByOutFieldIds);
+        this.htables[i].setMaxVarcharSize(maxColumnWidth);
       } catch (ClassTransformationException e) {
         throw UserException.unsupportedError(e)
             .message("Code generation error - likely an error in the code.")
