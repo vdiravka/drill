@@ -20,26 +20,42 @@ package org.apache.drill.exec.record;
 public class JoinBatchMemoryManager extends RecordBatchMemoryManager {
   private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(JoinBatchMemoryManager.class);
 
-  private int rowWidth[];
-  private RecordBatch recordBatch[];
+  private int leftRowWidth;
+
+  private int rightRowWidth;
+
+  private RecordBatch leftIncoming;
+
+  private RecordBatch rightIncoming;
 
   private static final int numInputs = 2;
+
   public static final int LEFT_INDEX = 0;
+
   public static final int RIGHT_INDEX = 1;
 
   public JoinBatchMemoryManager(int outputBatchSize, RecordBatch leftBatch, RecordBatch rightBatch) {
     super(numInputs, outputBatchSize);
-    recordBatch = new RecordBatch[numInputs];
-    recordBatch[LEFT_INDEX] = leftBatch;
-    recordBatch[RIGHT_INDEX] = rightBatch;
-    rowWidth = new int[numInputs];
+    this.leftIncoming = leftBatch;
+    this.rightIncoming = rightBatch;
   }
 
-  private int updateInternal(int inputIndex, int outputPosition,  boolean useAggregate) {
-    updateIncomingStats(inputIndex);
-    rowWidth[inputIndex] = useAggregate ? (int) getAvgInputRowWidth(inputIndex) : getRecordBatchSizer(inputIndex).getRowAllocSize();
+  @Override
+  public int update(int inputIndex, int outputPosition) {
+    switch (inputIndex) {
+      case LEFT_INDEX:
+        setRecordBatchSizer(inputIndex, new RecordBatchSizer(leftIncoming));
+        leftRowWidth = getRecordBatchSizer(inputIndex).getRowAllocSize();
+        break;
+      case RIGHT_INDEX:
+        setRecordBatchSizer(inputIndex, new RecordBatchSizer(rightIncoming));
+        rightRowWidth = getRecordBatchSizer(inputIndex).getRowAllocSize();
+      default:
+        break;
+    }
 
-    final int newOutgoingRowWidth = rowWidth[LEFT_INDEX] + rowWidth[RIGHT_INDEX];
+    updateIncomingStats(inputIndex);
+    final int newOutgoingRowWidth = leftRowWidth + rightRowWidth;
 
     // If outgoing row width is 0, just return. This is possible for empty batches or
     // when first set of batches come with OK_NEW_SCHEMA and no data.
@@ -69,24 +85,13 @@ public class JoinBatchMemoryManager extends RecordBatchMemoryManager {
   }
 
   @Override
-  public int update(int inputIndex, int outputPosition, boolean useAggregate) {
-    setRecordBatchSizer(inputIndex, new RecordBatchSizer(recordBatch[inputIndex]));
-    return updateInternal(inputIndex, outputPosition, useAggregate);
-  }
+  public RecordBatchSizer.ColumnSize getColumnSize(String name) {
+    RecordBatchSizer leftSizer = getRecordBatchSizer(LEFT_INDEX);
+    RecordBatchSizer rightSizer = getRecordBatchSizer(RIGHT_INDEX);
 
-  @Override
-  public int update(int inputIndex, int outputPosition) {
-    return update(inputIndex, outputPosition, false);
-  }
-
-  @Override
-  public int update(RecordBatch batch, int inputIndex, int outputPosition, boolean useAggregate) {
-    setRecordBatchSizer(inputIndex, new RecordBatchSizer(batch));
-    return updateInternal(inputIndex, outputPosition, useAggregate);
-  }
-
-  @Override
-  public int update(RecordBatch batch, int inputIndex, int outputPosition) {
-    return update(batch, inputIndex, outputPosition, false);
+    if (leftSizer != null && leftSizer.getColumn(name) != null) {
+      return leftSizer.getColumn(name);
+    }
+    return rightSizer == null ? null : rightSizer.getColumn(name);
   }
 }
