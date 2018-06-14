@@ -487,10 +487,6 @@ public class ScanBatch implements CloseableRecordBatch {
                       this.getClass().getCanonicalName()));
   }
 
-  @Override
-  public VectorContainer getContainer() {
-    return container;
-  }
   /**
    * Verify list of implicit column values is valid input:
    *   - Either implicit column list is empty;

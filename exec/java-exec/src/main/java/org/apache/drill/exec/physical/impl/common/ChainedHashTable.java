@@ -116,7 +116,7 @@ public class ChainedHashTable {
   private final FragmentContext context;
   private final BufferAllocator allocator;
   private RecordBatch incomingBuild;
-  private RecordBatch incomingProbe;
+  private final RecordBatch incomingProbe;
   private final RecordBatch outgoing;
 
   public ChainedHashTable(HashTableConfig htConfig, FragmentContext context, BufferAllocator allocator,
@@ -130,12 +130,11 @@ public class ChainedHashTable {
     this.outgoing = outgoing;
   }
 
-  public void updateIncoming(RecordBatch incomingBuild, RecordBatch incomingProbe) {
+  public void updateIncoming(RecordBatch incomingBuild) {
     this.incomingBuild = incomingBuild;
-    this.incomingProbe = incomingProbe;
   }
 
-  public HashTable createAndSetupHashTable(TypedFieldId[] outKeyFieldIds) throws ClassTransformationException,
+  public HashTable createAndSetupHashTable(TypedFieldId[] outKeyFieldIds, int numPartitions) throws ClassTransformationException,
       IOException, SchemaChangeException {
     CodeGenerator<HashTable> top = CodeGenerator.get(HashTable.TEMPLATE_DEFINITION, context.getOptions());
     top.plainJavaCapable(true);
@@ -226,13 +225,14 @@ public class ChainedHashTable {
     setupGetHash(cg /* use top level code generator for getHash */, GetHashIncomingProbeMapping, incomingProbe, keyExprsProbe, true);
 
     HashTable ht = context.getImplementationClass(top);
-    ht.setup(htConfig, allocator, incomingBuild.getContainer(), incomingProbe, outgoing, htContainerOrig);
+    ht.setup(htConfig, allocator, incomingBuild, incomingProbe, outgoing, htContainerOrig);
 
     return ht;
   }
 
   private void setupIsKeyMatchInternal(ClassGenerator<HashTable> cg, MappingSet incomingMapping, MappingSet htableMapping,
-      LogicalExpression[] keyExprs, List<Comparator> comparators, TypedFieldId[] htKeyFieldIds) {
+      LogicalExpression[] keyExprs, List<Comparator> comparators, TypedFieldId[] htKeyFieldIds)
+      throws SchemaChangeException {
     cg.setMappingSet(incomingMapping);
 
     if (keyExprs == null || keyExprs.length == 0) {
@@ -276,7 +276,7 @@ public class ChainedHashTable {
   }
 
   private void setupSetValue(ClassGenerator<HashTable> cg, LogicalExpression[] keyExprs,
-                             TypedFieldId[] htKeyFieldIds) {
+                             TypedFieldId[] htKeyFieldIds) throws SchemaChangeException {
 
     cg.setMappingSet(SetValueMapping);
 
