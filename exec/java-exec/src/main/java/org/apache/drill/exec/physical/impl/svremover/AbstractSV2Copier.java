@@ -34,6 +34,7 @@ public abstract class AbstractSV2Copier extends AbstractCopier {
     this.sv2 = incoming.getSelectionVector2();
 
     final int count = outgoing.getNumberOfColumns();
+
     vvIn = new ValueVector[count];
 
     {
