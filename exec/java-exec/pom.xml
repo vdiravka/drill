@@ -732,7 +732,7 @@
       <plugin> <!-- generate the parser (Parser.jj is itself generated wit fmpp above) -->
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>javacc-maven-plugin</artifactId>
-        <version>2.4</version>
+        <version>2.6</version>
         <executions>
           <execution>
             <id>javacc</id>
@@ -758,7 +758,8 @@
       <plugin> <!-- source file must end up in the jar for janino parsing -->
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>build-helper-maven-plugin</artifactId>
-        <version>1.9.1</version>
+        <!--replace to pluginManagement-->
+        <version>3.0.0</version>
         <executions>
           <execution>
             <id>add-sources-as-resources</id>

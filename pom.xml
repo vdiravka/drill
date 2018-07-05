@@ -55,7 +55,7 @@
     <mapr.release.version>5.2.1-mapr</mapr.release.version>
     <ojai.version>1.1</ojai.version>
     <kerby.version>1.0.0-RC2</kerby.version>
-    <findbugs.version>3.0.0</findbugs.version>
+    <findbugs.version>3.0.5</findbugs.version>
     <netty.tcnative.classifier/>
     <commons.io.version>2.4</commons.io.version>
     <junit.version>4.11</junit.version>
@@ -384,6 +384,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>
+        <!--<version>3.0.0</version>-->
         <version>2.12.1</version>
         <dependencies>
           <dependency>
@@ -516,7 +517,7 @@
       <plugin>
         <groupId>pl.project13.maven</groupId>
         <artifactId>git-commit-id-plugin</artifactId>
-        <version>2.1.9</version>
+        <version>2.2.4</version>
         <executions>
           <execution>
             <id>for-jars</id>
@@ -666,12 +667,12 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-resources-plugin</artifactId>
-          <version>2.6</version>
+          <version>3.1.0</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-compiler-plugin</artifactId>
-          <version>3.2</version>
+          <version>3.7.0</version>
         </plugin>
         <plugin>
           <artifactId>maven-enforcer-plugin</artifactId>
@@ -700,7 +701,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
-          <version>2.17</version>
+          <version>2.22.0</version>
           <executions>
             <execution>
               <id>default-test</id>
@@ -741,7 +742,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-release-plugin</artifactId>
-          <version>2.5.2</version>
+          <version>2.5.3</version>
           <configuration>
             <useReleaseProfile>false</useReleaseProfile>
             <pushChanges>false</pushChanges>
@@ -757,7 +758,7 @@
         <plugin>
           <groupId>org.codehaus.mojo</groupId>
           <artifactId>xml-maven-plugin</artifactId>
-          <version>1.0</version>
+          <version>1.0.2</version>
         </plugin>
 
         <!--This plugin's configuration is used to store Eclipse m2e settings
@@ -843,7 +844,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-shade-plugin</artifactId>
-          <version>3.1.0</version>
+          <version>3.1.1</version>
           <executions>
             <execution>
               <phase>package</phase>
@@ -1634,7 +1635,7 @@
           <plugin>
             <groupId>net.ju-n.maven.plugins</groupId>
             <artifactId>checksum-maven-plugin</artifactId>
-            <version>1.2</version>
+            <version>1.6</version>
             <executions>
               <execution>
                 <goals>
@@ -3324,7 +3325,7 @@
           <plugin>
             <groupId>org.codehaus.mojo</groupId>
             <artifactId>findbugs-maven-plugin</artifactId>
-            <version>3.0.0</version>
+            <version>3.0.5</version>
             <configuration>
               <!--
                Enables analysis which takes more memory but finds more bugs.
@@ -3357,7 +3358,7 @@
           <plugin>
             <groupId>org.codehaus.mojo</groupId>
             <artifactId>xml-maven-plugin</artifactId>
-            <version>1.0</version>
+            <version>1.0.2</version>
             <executions>
               <execution>
                 <phase>verify</phase>

@@ -62,7 +62,7 @@
         <plugins>
           <plugin>
             <artifactId>maven-clean-plugin</artifactId>
-            <version>3.0.0</version>
+            <version>3.1.0</version>
             <configuration>
               <filesets>
                 <fileset>
@@ -86,7 +86,7 @@
           <plugin>
             <groupId>com.dyuproject.protostuff</groupId>
             <artifactId>protostuff-maven-plugin</artifactId>
-            <version>1.0.8</version>
+            <version>1.0.12</version>
             <configuration>
               <protoModules>
                 <protoModule>
@@ -136,7 +136,7 @@
           <plugin>
             <groupId>com.github.igor-petruk.protobuf</groupId>
             <artifactId>protobuf-maven-plugin</artifactId>
-            <version>0.6.3</version>
+            <version>0.6.5</version>
             <executions>
               <execution>
                 <goals>
