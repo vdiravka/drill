@@ -137,7 +137,7 @@ public class TestGracefulShutdown extends BaseTestQuery {
         if (listener.isDone()) {
           break;
         }
-        Thread.sleep(100L);
+        Thread.sleep(Long.MAX_VALUE);
       }
 
       if (waitAndAssertDrillbitCount(cluster, zkRefresh)) {
