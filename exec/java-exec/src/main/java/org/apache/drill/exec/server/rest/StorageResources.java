@@ -34,6 +34,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
@@ -62,6 +63,9 @@ public class StorageResources {
   @Inject StoragePluginRegistry storage;
   @Inject ObjectMapper mapper;
   @Inject SecurityContext sc;
+
+  public static final String JSON_FILE_NAME = "json";
+  public static final String HOCON_FILE_NAME = "conf";
 
   private static final Comparator<PluginConfigWrapper> PLUGIN_COMPARATOR = new Comparator<PluginConfigWrapper>() {
     @Override
@@ -142,6 +146,19 @@ public class StorageResources {
   public Response exportPlugin(@PathParam("name") String name) {
     Response.ResponseBuilder response = Response.ok(getStoragePluginJSON(name));
     response.header("Content-Disposition", String.format("attachment;filename=\"%s.json\"", name));
+    return response.build();
+  }
+
+  @GET
+  @Path("/storage/export_all")
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response exportAllPlugin(@QueryParam("fileType") String fileType) {
+    Response.ResponseBuilder response = Response.ok();
+    if (JSON_FILE_NAME.equals(fileType) || HOCON_FILE_NAME.equals(fileType)) {
+      List<PluginConfigWrapper> list = getStoragePluginsJSON();
+      response.entity(list.toArray());
+      response.header("Content-Disposition", String.format("attachment;filename=\"storage_plugins.%s\"", fileType));
+    }
     return response.build();
   }
 

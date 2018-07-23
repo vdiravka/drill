@@ -37,7 +37,7 @@
               <td style="border:none;">
                 <a class="btn btn-primary" href="/storage/${plugin.getName()}">Update</a>
                 <a class="btn btn-default" onclick="doEnable('${plugin.getName()}', false)">Disable</a>
-                <a class="btn btn-default" href="/storage/${plugin.getName()}/export"">Export</a>
+                <a class="btn btn-default" href="/storage/${plugin.getName()}/export">Export</a>
               </td>
             </tr>
           </#if>
@@ -77,6 +77,25 @@
       </div>
       <button type="submit" class="btn btn-default" onclick="doSubmit()">Create</button>
     </form>
+  </div>
+  <div class="page-header">
+  </div>
+  <div>
+    <h4>Export Storage Plugins</h4>
+    <label for="fileType">File type</label>
+    <div class="radio">
+      <label>
+        <input type="radio" name="fileType" id="json" value="json" checked>
+        JSON
+      </label>
+    </div>
+    <div class="radio">
+      <label>
+        <input type="radio" name="fileType" id="hocon" value="conf">
+        HOCON
+      </label>
+    </div>
+    <a class="btn btn-default" href="/storage/export_all/"">Export all</a>
   </div>
   <script>
     function doSubmit() {
