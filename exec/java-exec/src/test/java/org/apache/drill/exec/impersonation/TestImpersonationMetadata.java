@@ -271,7 +271,8 @@ public class TestImpersonationMetadata extends BaseTestImpersonation {
   @Test
   public void testCreateViewInWSWithNoPermissionsForQueryUser() throws Exception {
     // Workspace dir owned by "processUser", workspace group is "group0" and "user2" is not part of "group0"
-    final String viewSchema = MINI_DFS_STORAGE_PLUGIN_NAME + ".drill_test_grp_0_755";
+    final String tableWS = "drill_test_grp_0_755";
+    final String viewSchema = MINI_DFS_STORAGE_PLUGIN_NAME + "." + tableWS;
     final String viewName = "view1";
 
     updateClient(user2);
@@ -280,7 +281,7 @@ public class TestImpersonationMetadata extends BaseTestImpersonation {
 
     final String query = "CREATE VIEW " + viewName + " AS SELECT " +
         "c_custkey, c_nationkey FROM cp.`tpch/customer.parquet` ORDER BY c_custkey;";
-    final String expErrorMsg = "PERMISSION ERROR: Permission denied: user=drillTestUser2, access=WRITE, inode=\"/drill_test_grp_0_755/";
+    final String expErrorMsg = "PERMISSION ERROR: Permission denied: user=drillTestUser2, access=WRITE, inode=\"/" + tableWS;
     errorMsgTestHelper(query, expErrorMsg);
 
     // SHOW TABLES is expected to return no records as view creation fails above.
@@ -352,6 +353,9 @@ public class TestImpersonationMetadata extends BaseTestImpersonation {
     thrown.expect(UserRemoteException.class);
     thrown.expectMessage(containsString("Permission denied: user=drillTestUser2, " +
         "access=WRITE, inode=\"/drill_test_grp_0_755/"));
+
+//    containsString("SYSTEM ERROR: RemoteException: Permission denied: user=drillTestUser2, " +
+//        "access=WRITE, inode=\"/" + tableWS));
 
     test("CREATE TABLE %s AS SELECT c_custkey, c_nationkey " +
         "FROM cp.`tpch/customer.parquet` ORDER BY c_custkey", tableName);
