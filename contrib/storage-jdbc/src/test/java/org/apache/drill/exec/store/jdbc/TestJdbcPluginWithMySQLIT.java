@@ -26,6 +26,7 @@ import org.junit.experimental.categories.Category;
 
 /**
  * JDBC storage plugin tests against MySQL.
+ * Note: it requires libaio.so library
  */
 @Category(JdbcStorageTest.class)
 public class TestJdbcPluginWithMySQLIT extends PlanTestBase {
