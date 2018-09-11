@@ -45,5 +45,6 @@ jobs:
 #        key: v1-dependencies-{{ checksum "pom.xml" }}
 
     # run tests!
-    - run: mvn clean install
+#    - run: mvn clean install
+    - run: mvn install -Drat.skip=false -Dlicense.skip=false -DexcludedGroups="org.apache.drill.categories.SlowTest,org.apache.drill.categories.UnlikelyTest,org.apache.drill.categories.SecurityTest" -DforkCount=1 -DmemoryMb=2560 -DdirectMemoryMb=4608 -Ptravis
 
