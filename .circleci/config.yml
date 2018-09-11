@@ -1,0 +1,56 @@
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+version: 2
+general:
+jobs:
+  build:
+    machine:
+      enabled: true
+      image: circleci/classic:latest
+    parallelism: 1
+
+
+    working_directory: ~/drill
+
+    steps:
+    - checkout
+
+    - run:
+        name: Update maven version
+        command:
+          curl -fsSL https://git.io/vpDIf | bash -s -- 3.5.4
+    - run:
+        name: Update packages list
+        command:
+          sudo apt-get update
+    - run:
+        name: Install libaio1.so library for MySQL integration tests
+        command:
+          sudo apt-get install libaio1 libaio-dev
+    - run:
+        name: Build Drill
+        command:
+#          mvn install -Drat.skip=false -Dlicense.skip=false -DmemoryMb=1560 -DdirectMemoryMb=4608
+#          mvn install -Drat.skip=false -Dlicense.skip=false -DmemoryMb=2024 -DdirectMemoryMb=4124
+#          mvn install -Drat.skip=false -Dlicense.skip=false -DmemoryMb=2536  # sun.misc.Unsafe...
+#          mvn install -Drat.skip=false -Dlicense.skip=false -DmemoryMb=2536 -DdirectMemoryMb=4608  # test timed out after 200000 milliseconds, sun.misc.Unsafe.park(Native Method)
+#          mvn install -Drat.skip=false -Dlicense.skip=false -DmemoryMb=2236 -DdirectMemoryMb=5008 # Caused by: org.apache.drill.exec.rpc.ChannelClosedException org.junit.runners.model.TestTimedOutException: test timed out after 200000 milliseconds, sun.misc.Unsafe.park(Native Method)
+#          mvn install -Drat.skip=false -Dlicense.skip=false -DmemoryMb=2136 -DdirectMemoryMb=5508 # Caused by: java.lang.IllegalArgumentException: Attempted to send a message when connection is no longer valid. sun.misc.Unsafe.park(Native Method)
+#          mvn install -Drat.skip=false -Dlicense.skip=false -DmemoryMb=1500 -DdirectMemoryMb=6000 # OutOfMemoryError Too long with no output (exceeded 10m0s)
+#          mvn install -Drat.skip=false -Dlicense.skip=false -DmemoryMb=1200 -DdirectMemoryMb=6000 #74 2.Caused By (java.lang.OutOfMemoryError) GC overhead limit exceeded
+        # with one container from now
+#         mvn install -Drat.skip=false -Dlicense.skip=false -DmemoryMb=1700 -DdirectMemoryMb=5800 #75 Native memory allocation (mmap) failed
+          mvn install -Drat.skip=false -Dlicense.skip=false -DmemoryMb=1600 -DdirectMemoryMb=6000
