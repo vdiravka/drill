@@ -76,9 +76,9 @@ public class TestKafkaSuit {
         ZkUtils zkUtils = new ZkUtils(zkClient, new ZkConnection(embeddedKafkaCluster.getZkServer().getConnectionString()), false);
         AdminUtils.createTopic(zkUtils, TestQueryConstants.JSON_TOPIC, 1, 1, topicProps, RackAwareMode.Disabled$.MODULE$);
 
-        org.apache.kafka.common.requests.MetadataResponse.TopicMetadata fetchTopicMetadataFromZk = AdminUtils
-            .fetchTopicMetadataFromZk(TestQueryConstants.JSON_TOPIC, zkUtils);
-        logger.info("Topic Metadata: " + fetchTopicMetadataFromZk);
+//        org.apache.kafka.common.requests.MetadataResponse.TopicMetadata fetchTopicMetadataFromZk = AdminUtils
+//            .fetchTopicMetadataFromZk(TestQueryConstants.JSON_TOPIC, zkUtils);
+//        logger.info("Topic Metadata: " + fetchTopicMetadataFromZk);
 
         KafkaMessageGenerator generator = new KafkaMessageGenerator(embeddedKafkaCluster.getKafkaBrokerList(),
             StringSerializer.class);
@@ -117,9 +117,9 @@ public class TestKafkaSuit {
     AdminUtils.createTopic(zkUtils, topicName, partitions, 1,
         topicProps, RackAwareMode.Disabled$.MODULE$);
 
-    org.apache.kafka.common.requests.MetadataResponse.TopicMetadata fetchTopicMetadataFromZk =
-        AdminUtils.fetchTopicMetadataFromZk(topicName, zkUtils);
-    logger.info("Topic Metadata: " + fetchTopicMetadataFromZk);
+//    org.apache.kafka.common.requests.MetadataResponse.TopicMetadata fetchTopicMetadataFromZk =
+//        AdminUtils.fetchTopicMetadataFromZk(topicName, zkUtils);
+//    logger.info("Topic Metadata: " + fetchTopicMetadataFromZk);
   }
 
 }

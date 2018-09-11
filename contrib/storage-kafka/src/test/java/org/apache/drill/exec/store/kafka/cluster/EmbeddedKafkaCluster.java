@@ -113,7 +113,7 @@ public class EmbeddedKafkaCluster implements TestQueryConstants {
 
   public void shutDownBroker(int brokerId) {
     for (KafkaServerStartable broker : brokers) {
-      if (Integer.valueOf(broker.serverConfig().getString(KafkaConfig.BrokerIdProp())) == brokerId) {
+      if (Integer.valueOf(broker.staticServerConfig().getString(KafkaConfig.BrokerIdProp())) == brokerId) {
         broker.shutdown();
         return;
       }
@@ -141,7 +141,7 @@ public class EmbeddedKafkaCluster implements TestQueryConstants {
   public String getKafkaBrokerList() {
     StringBuilder sb = new StringBuilder();
     for (KafkaServerStartable broker : brokers) {
-      KafkaConfig serverConfig = broker.serverConfig();
+      KafkaConfig serverConfig = broker.staticServerConfig();
       sb.append(serverConfig.hostName() + ":" + serverConfig.port());
       sb.append(",");
     }
