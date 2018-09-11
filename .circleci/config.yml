@@ -15,6 +15,7 @@ jobs:
     # specify the version you desire here
     - image: maven:3.5.2-jdk-8
       cmd: ["/bin/bash"]
+    parallelism: 4
 
     # Specify service dependencies here if necessary
     # CircleCI maintains a library of pre-built images
@@ -45,6 +46,6 @@ jobs:
 #        key: v1-dependencies-{{ checksum "pom.xml" }}
 
     # run tests!
-#    - run: mvn clean install
-    - run: mvn install -Drat.skip=false -Dlicense.skip=false -DexcludedGroups="org.apache.drill.categories.SlowTest,org.apache.drill.categories.UnlikelyTest,org.apache.drill.categories.SecurityTest" -DforkCount=1 -DmemoryMb=2560 -DdirectMemoryMb=4608 -Ptravis
+    - run: mvn install
+#travis    - run: mvn install -Drat.skip=false -Dlicense.skip=false -DexcludedGroups="org.apache.drill.categories.SlowTest,org.apache.drill.categories.UnlikelyTest,org.apache.drill.categories.SecurityTest" -DforkCount=1 -DmemoryMb=2560 -DdirectMemoryMb=4608 -Ptravis
 
