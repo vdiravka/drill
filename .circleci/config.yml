@@ -24,7 +24,7 @@ jobs:
   build:
     machine:
       enabled: true
-      image: circleci/classic:latest
+      image: circleci/openjdk:8-jdk-browsers
     # specify the version you desire here
 #    - image: maven:3.5.2-jdk-8
       cmd: ["/bin/bash"]
