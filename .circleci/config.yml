@@ -24,10 +24,10 @@ jobs:
   build:
     machine:
       enabled: true
-      image: circleci/openjdk:8-jdk-browsers
+#      image: circleci/classic:latest
     # specify the version you desire here
 #    - image: maven:3.5.2-jdk-8
-      cmd: ["/bin/bash"]
+#      cmd: ["/bin/bash"]
 #    parallelism: 4
 
     # Specify service dependencies here if necessary
@@ -35,7 +35,7 @@ jobs:
     # documented at https://circleci.com/docs/2.0/circleci-images/
     # - image: circleci/postgres:9.4
 
-    working_directory: ~/repo
+    working_directory: ~/drill
 
     environment:
       # Customize the JVM maximum heap limit
@@ -61,4 +61,18 @@ jobs:
     # run tests!
 #    - run: mvn install
 # memory limitations   - run: mvn install -Drat.skip=false -Dlicense.skip=false -DexcludedGroups="org.apache.drill.categories.SlowTest,org.apache.drill.categories.UnlikelyTest,org.apache.drill.categories.SecurityTest" -DmemoryMb=1500 -DdirectMemoryMb=2500 -Ptravis
-    - run: mvn install -Drat.skip=false -Dlicense.skip=false -DexcludedGroups="org.apache.drill.categories.SlowTest,org.apache.drill.categories.UnlikelyTest,org.apache.drill.categories.SecurityTest" -Ptravis
+
+#        docker run -d --name db company/proprietary-db:1.2.3
+    - run:
+        name: Set-up docker container
+        command:
+#          docker login -u $DOCKER_USER -p $DOCKER_PASS
+#          docker run -d --name my-maven-project maven:3.5-jdk-8
+          docker run -it --rm --name my-maven-project -v "$(pwd)":/usr/src/mymaven -w /usr/src/mymaven maven:3.5-jdk-8
+#          docker run -d --name db company/proprietary-db:1.2.3
+    - run:
+        name: Build Drill
+        command:
+          mvn install -Drat.skip=false -DexcludedGroups="org.apache.drill.categories.SlowTest,org.apache.drill.categories.UnlikelyTest,org.apache.drill.categories.SecurityTest" -Ptravis
+#          -Dlicense.skip=false
+
