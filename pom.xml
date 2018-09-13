@@ -2468,6 +2468,7 @@
             </exclusions>
           </dependency>
           <!-- Test Dependencies -->
+          <!--TODO: factored out jetty-dep from test dependencies-->
           <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-server</artifactId>
@@ -2497,6 +2498,13 @@
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-io</artifactId>
             <version>${jetty.version}</version>
+          </dependency>
+          <!--TODO: remove commons-logging test dependency and bann it once HADOOP-15749 is fixed -->
+          <dependency>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
+            <version>1.2</version>
+            <scope>test</scope>
           </dependency>
         </dependencies>
       </dependencyManagement>

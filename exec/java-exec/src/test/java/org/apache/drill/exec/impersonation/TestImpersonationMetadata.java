@@ -279,10 +279,12 @@ public class TestImpersonationMetadata extends BaseTestImpersonation {
 
     test("USE " + viewSchema);
 
-    final String query = "CREATE VIEW " + viewName + " AS SELECT " +
-        "c_custkey, c_nationkey FROM cp.`tpch/customer.parquet` ORDER BY c_custkey;";
-    final String expErrorMsg = "PERMISSION ERROR: Permission denied: user=drillTestUser2, access=WRITE, inode=\"/" + tableWS;
-    errorMsgTestHelper(query, expErrorMsg);
+    String expErrorMsg = "PERMISSION ERROR: Permission denied: user=drillTestUser2, access=WRITE, inode=\"/" + tableWS;
+    thrown.expect(UserRemoteException.class);
+    thrown.expectMessage(containsString(expErrorMsg));
+
+    test("CREATE VIEW %s AS" +
+        " SELECT  c_custkey, c_nationkey FROM cp.`tpch/customer.parquet` ORDER BY c_custkey", viewName);
 
     // SHOW TABLES is expected to return no records as view creation fails above.
     testBuilder()
@@ -352,10 +354,7 @@ public class TestImpersonationMetadata extends BaseTestImpersonation {
 
     thrown.expect(UserRemoteException.class);
     thrown.expectMessage(containsString("Permission denied: user=drillTestUser2, " +
-        "access=WRITE, inode=\"/drill_test_grp_0_755/"));
-
-//    containsString("SYSTEM ERROR: RemoteException: Permission denied: user=drillTestUser2, " +
-//        "access=WRITE, inode=\"/" + tableWS));
+        "access=WRITE, inode=\"/" + tableWS));
 
     test("CREATE TABLE %s AS SELECT c_custkey, c_nationkey " +
         "FROM cp.`tpch/customer.parquet` ORDER BY c_custkey", tableName);
