@@ -8,14 +8,16 @@ general:
     only:
 #    - master # list of branches to build
 #    - /feature-.*/ # or regexes
-    - circleCI # list of branches to build
+    - circleCI-machine # list of branches to build
 jobs:
   build:
-    docker:
+    machine:
+      enabled: true
+      image: circleci/classic:latest
     # specify the version you desire here
-    - image: maven:3.5.2-jdk-8
+#    - image: maven:3.5.2-jdk-8
       cmd: ["/bin/bash"]
-    parallelism: 4
+#    parallelism: 4
 
     # Specify service dependencies here if necessary
     # CircleCI maintains a library of pre-built images
@@ -47,5 +49,5 @@ jobs:
 
     # run tests!
 #    - run: mvn install
-    - run: mvn install -Drat.skip=false -Dlicense.skip=false -DexcludedGroups="org.apache.drill.categories.SlowTest,org.apache.drill.categories.UnlikelyTest,org.apache.drill.categories.SecurityTest" -DmemoryMb=1500 -DdirectMemoryMb=2500 -Ptravis
-
+# memory limitations   - run: mvn install -Drat.skip=false -Dlicense.skip=false -DexcludedGroups="org.apache.drill.categories.SlowTest,org.apache.drill.categories.UnlikelyTest,org.apache.drill.categories.SecurityTest" -DmemoryMb=1500 -DdirectMemoryMb=2500 -Ptravis
+    - run: mvn install -Drat.skip=false -Dlicense.skip=false -DexcludedGroups="org.apache.drill.categories.SlowTest,org.apache.drill.categories.UnlikelyTest,org.apache.drill.categories.SecurityTest" -Ptravis
