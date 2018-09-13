@@ -69,7 +69,7 @@ jobs:
 #          docker login -u $DOCKER_USER -p $DOCKER_PASS
 #          docker run -d --name my-maven-project maven:3.5-jdk-8
 # limited run         docker run -it --rm --name my-maven-project -v "$(pwd)":/usr/src/mymaven -w /usr/src/mymaven maven:3.5-jdk-8 mvn install -Drat.skip=false -DexcludedGroups="org.apache.drill.categories.SlowTest,org.apache.drill.categories.UnlikelyTest,org.apache.drill.categories.SecurityTest" -Ptravis
-          docker run -it --rm --name my-maven-project -v "$(pwd)":/usr/src/mymaven -w /usr/src/mymaven maven:3.5-jdk-8 mvn install
+          docker run -it --rm --name my-maven-project -v "$(pwd)":/usr/src/mymaven -w /usr/src/mymaven maven:3.5-jdk-8 mvn install -DmemoryMb=2048
 #          docker run -d --name db company/proprietary-db:1.2.3
 #    - run:
 #        name: Build Drill
