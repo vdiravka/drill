@@ -56,13 +56,19 @@ jobs:
 
 #        docker run -d --name db company/proprietary-db:1.2.3
     - run:
-        name: Set-up docker container
+        name: Upgrade maven, java
         command:
 #          docker login -u $DOCKER_USER -p $DOCKER_PASS
 #          docker run -d --name my-maven-project maven:3.5-jdk-8
 # limited run         docker run -it --rm --name my-maven-project -v "$(pwd)":/usr/src/mymaven -w /usr/src/mymaven maven:3.5-jdk-8 mvn install -Drat.skip=false -DexcludedGroups="org.apache.drill.categories.SlowTest,org.apache.drill.categories.UnlikelyTest,org.apache.drill.categories.SecurityTest" -Ptravis
-#          docker run -it --rm --name my-maven-project -v "$(pwd)":/usr/src/mymaven -w /usr/src/mymaven maven:3.5.4-jdk-8 mvn install -Drat.skip=false -DexcludedGroups="org.apache.drill.categories.SlowTest,org.apache.drill.categories.UnlikelyTest,org.apache.drill.categories.SecurityTest" -Ptravis -DmemoryMb=2560 -DdirectMemoryMb=5096
-          docker run -it --rm --name my-maven-project -v "$(pwd)":/usr/src/mymaven -w /usr/src/mymaven driv/docker-maven-java-oracle mvn install -Drat.skip=false -DexcludedGroups="org.apache.drill.categories.SlowTest,org.apache.drill.categories.UnlikelyTest,org.apache.drill.categories.SecurityTest" -Ptravis -DmemoryMb=2560 -DdirectMemoryMb=5096
+          sudo apt-get --only-upgrade install maven
+          sudo add-apt-repository ppa:webupd8team/java
+          sudo apt install oracle-java8-installer
+    - run:
+        name: Drill test build
+        command:
+          mvn install -Drat.skip=false -DmemoryMb=3000 -DdirectMemoryMb=5000
+#          docker run -it --rm --name my-maven-project -v "$(pwd)":/usr/src/mymaven -w /usr/src/mymaven driv/docker-maven-java-oracle mvn install -Drat.skip=false -DexcludedGroups="org.apache.drill.categories.SlowTest,org.apache.drill.categories.UnlikelyTest,org.apache.drill.categories.SecurityTest" -Ptravis -DmemoryMb=2560 -DdirectMemoryMb=5096
 #          docker run -d --name db company/proprietary-db:1.2.3
 #    - run:
 #        name: Build Drill
