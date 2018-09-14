@@ -15,11 +15,11 @@
 #
 version: 2
 general:
-  branches:
-    only:
-#    - master # list of branches to build
-#    - /feature-.*/ # or regexes
-    - circleCI-machine-parallelism # list of branches to build
+#  branches:
+#    only:
+##    - master # list of branches to build
+##    - /feature-.*/ # or regexes
+#    - circleCI-machine-parallelism # list of branches to build
 jobs:
   build:
     machine:
@@ -29,7 +29,7 @@ jobs:
     # specify the version you desire here
 #    - image: maven:3.5.2-jdk-8
 #      cmd: ["/bin/bash"]
-    parallelism: 4
+    parallelism: 2
 
     # Specify service dependencies here if necessary
     # CircleCI maintains a library of pre-built images
@@ -66,7 +66,7 @@ jobs:
 #          docker login -u $DOCKER_USER -p $DOCKER_PASS
 #          docker run -d --name my-maven-project maven:3.5-jdk-8
 # limited run         docker run -it --rm --name my-maven-project -v "$(pwd)":/usr/src/mymaven -w /usr/src/mymaven maven:3.5-jdk-8 mvn install -Drat.skip=false -DexcludedGroups="org.apache.drill.categories.SlowTest,org.apache.drill.categories.UnlikelyTest,org.apache.drill.categories.SecurityTest" -Ptravis
-          docker run -it --rm --name my-maven-project -v "$(pwd)":/usr/src/mymaven -w /usr/src/mymaven maven:3.5-jdk-8 mvn install -DmemoryMb=2560 -DdirectMemoryMb=5096
+          docker run -it --rm --name my-maven-project -v "$(pwd)":/usr/src/mymaven -w /usr/src/mymaven maven:3.5-jdk-8 mvn install -Drat.skip=false -DexcludedGroups="org.apache.drill.categories.SlowTest,org.apache.drill.categories.UnlikelyTest,org.apache.drill.categories.SecurityTest" -Ptravis -DmemoryMb=2560 -DdirectMemoryMb=5096
 #          docker run -d --name db company/proprietary-db:1.2.3
 #    - run:
 #        name: Build Drill
