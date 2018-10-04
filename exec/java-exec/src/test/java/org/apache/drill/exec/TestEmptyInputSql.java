@@ -223,12 +223,9 @@ public class TestEmptyInputSql extends BaseTestQuery {
 
   @Test
   public void testEmptyDirectoryAndFieldInQuery() throws Exception {
-    final List<Pair<SchemaPath, TypeProtos.MajorType>> expectedSchema = Lists.newArrayList();
-    final TypeProtos.MajorType majorType = TypeProtos.MajorType.newBuilder()
-        .setMinorType(TypeProtos.MinorType.INT) // field "key" is absent in schemaless table
-        .setMode(TypeProtos.DataMode.OPTIONAL)
+    final BatchSchema expectedSchema = new SchemaBuilder()
+        .addNullable("key", TypeProtos.MinorType.INT)
         .build();
-    expectedSchema.add(Pair.of(SchemaPath.getSimplePath("key"), majorType));
 
     testBuilder()
         .sqlQuery("select key from dfs.tmp.`%s`", EMPTY_DIR_NAME)
@@ -238,8 +235,38 @@ public class TestEmptyInputSql extends BaseTestQuery {
   }
 
   @Test
+  public void testRenameProjectEmptyDirectory() throws Exception {
+    final BatchSchema expectedSchema = new SchemaBuilder()
+        .addNullable("WeekId", TypeProtos.MinorType.INT)
+        .addNullable("ProductName", TypeProtos.MinorType.INT)
+        .build();
+
+    testBuilder()
+        .sqlQuery("select WeekId, Product as ProductName from (select CAST(`dir0` as INT) AS WeekId, " +
+            "Product from dfs.tmp.`%s`)", EMPTY_DIR_NAME)
+        .schemaBaseLine(expectedSchema)
+        .build()
+        .run();
+  }
+
+  @Test
+  public void testRenameProjectEmptyJson() throws Exception {
+    final BatchSchema expectedSchema = new SchemaBuilder()
+        .addNullable("WeekId", TypeProtos.MinorType.INT)
+        .addNullable("ProductName", TypeProtos.MinorType.INT)
+        .build();
+
+    testBuilder()
+        .sqlQuery("select WeekId, Product as ProductName from (select CAST(`dir0` as INT) AS WeekId, " +
+            "Product from cp.`%s`)", SINGLE_EMPTY_JSON)
+        .schemaBaseLine(expectedSchema)
+        .build()
+        .run();
+  }
+
+  @Test
   @Ignore // TODO: DRILL-XXXX: The type of ProductName filed should be VARCHAR:OPTIONAL, but not INT:OPTIONAL
-  public void testProjectAllowDupEmptyDirectory() throws Exception {
+  public void testRenameProjectWithCastEmptyDirectory() throws Exception {
     final BatchSchema expectedSchema = new SchemaBuilder()
         .addNullable("WeekId", TypeProtos.MinorType.INT)
         .addNullable("ProductName", TypeProtos.MinorType.VARCHAR, 65535)
@@ -255,7 +282,7 @@ public class TestEmptyInputSql extends BaseTestQuery {
 
   @Test
   @Ignore // TODO: DRILL-XXXX: The type of ProductName filed should be VARCHAR:OPTIONAL, not INT:OPTIONAL
-  public void testProjectAllowDupEmptyJson() throws Exception {
+  public void testRenameProjectWithCastEmptyJson() throws Exception {
     final BatchSchema expectedSchema = new SchemaBuilder()
         .addNullable("WeekId", TypeProtos.MinorType.INT)
         .addNullable("ProductName", TypeProtos.MinorType.VARCHAR, 65535)
@@ -264,6 +291,37 @@ public class TestEmptyInputSql extends BaseTestQuery {
     testBuilder()
         .sqlQuery("select WeekId, Product as ProductName from (select CAST(`dir0` as INT) AS WeekId, " +
             "CAST(Product AS VARCHAR) AS Product from cp.`%s`)", SINGLE_EMPTY_JSON)
+        .schemaBaseLine(expectedSchema)
+        .build()
+        .run();
+  }
+
+
+  @Test // TODO: test for UNION ALL
+  public void testForUnionAllEmptyDir() throws Exception {
+    String rootBoolean = "/store/json/booleanData.json";
+    final BatchSchema expectedSchema = new SchemaBuilder()
+        .addNullable("key", TypeProtos.MinorType.BIT)
+        .build();
+
+    testBuilder()
+        .sqlQuery("SELECT key FROM dfs.tmp.`%1$s` UNION ALL SELECT key FROM (SELECT key FROM " +
+            "dfs.tmp.`%1$s` UNION ALL SELECT key FROM cp.`%2$s`)", EMPTY_DIR_NAME, rootBoolean)
+        .schemaBaseLine(expectedSchema)
+        .build()
+        .run();
+  }
+
+  @Test // TODO: test for UNION ALL
+  public void testForUnionAllEmptyJson() throws Exception {
+    String rootBoolean = "/store/json/booleanData.json";
+    final BatchSchema expectedSchema = new SchemaBuilder()
+        .addNullable("key", TypeProtos.MinorType.BIT)
+        .build();
+
+    testBuilder()
+        .sqlQuery("SELECT key FROM cp.`%1$s` UNION ALL SELECT key FROM (SELECT key FROM " +
+            "cp.`%1$s` UNION ALL SELECT key FROM cp.`%2$s`)", SINGLE_EMPTY_JSON, rootBoolean)
         .schemaBaseLine(expectedSchema)
         .build()
         .run();

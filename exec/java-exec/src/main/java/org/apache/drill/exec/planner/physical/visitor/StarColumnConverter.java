@@ -225,7 +225,7 @@ public class StarColumnConverter extends BasePrelVisitor<Prel, Void, RuntimeExce
           exprs, fieldNames, null);
 
       // insert a PAS.
-      ProjectPrel proj = new ProjectPrel(prel.getCluster(), prel.getTraitSet(), prel, exprs, rowType, true);
+      ProjectPrel proj = new ProjectPrel(prel.getCluster(), prel.getTraitSet(), prel, exprs, rowType);
 
       return proj;
     } else {

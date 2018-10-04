@@ -95,7 +95,7 @@ public class SchemalessScan extends AbstractFileGroupScan implements SubScan {
 
   @Override
   public boolean canPushdownProjects(List<SchemaPath> columns) {
-    return true;
+    return false;
   }
 
   @Override
