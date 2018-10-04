@@ -92,6 +92,12 @@ public class SchemalessScan extends AbstractFileGroupScan implements SubScan {
     return ScanStats.ZERO_RECORD_TABLE;
   }
 
+
+  @Override
+  public boolean canPushdownProjects(List<SchemaPath> columns) {
+    return true;
+  }
+
   @Override
   public boolean supportsPartitionFilterPushdown() {
     return false;

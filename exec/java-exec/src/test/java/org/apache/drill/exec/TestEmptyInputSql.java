@@ -28,6 +28,7 @@ import org.apache.drill.common.expression.SchemaPath;
 import org.apache.drill.common.types.TypeProtos;
 import org.apache.drill.exec.record.BatchSchema;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -231,6 +232,38 @@ public class TestEmptyInputSql extends BaseTestQuery {
 
     testBuilder()
         .sqlQuery("select key from dfs.tmp.`%s`", EMPTY_DIR_NAME)
+        .schemaBaseLine(expectedSchema)
+        .build()
+        .run();
+  }
+
+  @Test
+  @Ignore // TODO: DRILL-XXXX: The type of ProductName filed should be VARCHAR:OPTIONAL, but not INT:OPTIONAL
+  public void testProjectAllowDupEmptyDirectory() throws Exception {
+    final BatchSchema expectedSchema = new SchemaBuilder()
+        .addNullable("WeekId", TypeProtos.MinorType.INT)
+        .addNullable("ProductName", TypeProtos.MinorType.VARCHAR, 65535)
+        .build();
+
+    testBuilder()
+        .sqlQuery("select WeekId, Product as ProductName from (select CAST(`dir0` as INT) AS WeekId, " +
+            "CAST(Product AS VARCHAR) AS Product from dfs.tmp.`%s`)", EMPTY_DIR_NAME)
+        .schemaBaseLine(expectedSchema)
+        .build()
+        .run();
+  }
+
+  @Test
+  @Ignore // TODO: DRILL-XXXX: The type of ProductName filed should be VARCHAR:OPTIONAL, not INT:OPTIONAL
+  public void testProjectAllowDupEmptyJson() throws Exception {
+    final BatchSchema expectedSchema = new SchemaBuilder()
+        .addNullable("WeekId", TypeProtos.MinorType.INT)
+        .addNullable("ProductName", TypeProtos.MinorType.VARCHAR, 65535)
+        .build();
+
+    testBuilder()
+        .sqlQuery("select WeekId, Product as ProductName from (select CAST(`dir0` as INT) AS WeekId, " +
+            "CAST(Product AS VARCHAR) AS Product from cp.`%s`)", SINGLE_EMPTY_JSON)
         .schemaBaseLine(expectedSchema)
         .build()
         .run();
