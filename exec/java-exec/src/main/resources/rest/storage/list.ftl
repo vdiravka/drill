@@ -40,15 +40,7 @@
               <td style="border:none;">
                 <a class="btn btn-primary" href="/storage/${plugin.getName()}">Update</a>
                 <a class="btn btn-default" onclick="doEnable('${plugin.getName()}', false)">Disable</a>
-                <#--<a class="btn btn-default" href="/storage/${plugin.getName()}/export">Export</a>-->
-                <a href="#" class="btn btn-default" name="${plugin.getName()}" title="File type" data-toggle="popover" data-trigger="focus" data-placement="top" data-popover-content="#enabled-plugins">Export</a>
-                <#--TODO: proper plugin.getName() jstl in pop-up windows (here only "cp" is obtained)-->
-                <#--<div id="enabled-plugins" class="hide">-->
-                  <ul id="enabled-plugins" class="nav nav-pills nav-stacked hide">
-                    <li><a class="btn btn-default" href="/storage/${plugin.getName()}/export">Export as JSON</a></li>
-                    <li><a class="btn btn-default" href="/storage/${plugin.getName()}/export">Export as HOCON</a></li>
-                  </ul>
-                <#--</div>-->
+                <a class="btn btn-default" href="#" name="${plugin.getName()}" title="File type" rel="plugin-popover" data-trigger="focus" data-placement="right" data-popover-content=".list-popover">Export</a>
               </td>
             </tr>
           </#if>
@@ -73,15 +65,9 @@
               <td style="border:none;">
                 <a class="btn btn-primary" href="/storage/${plugin.getName()}">Update</a>
                 <a class="btn btn-primary" onclick="doEnable('${plugin.getName()}', true)">Enable</a>
-                <a href="#" class="btn btn-default" name="${plugin.getName()}" title="File type" data-toggle="popover" data-trigger="focus" data-placement="top" data-popover-content="#disabled-plugins">Export</a>
+                <a class="btn btn-default" href="#" name="${plugin.getName()}" title="File type" rel="plugin-popover" data-trigger="focus" data-placement="right" data-popover-content=".list-popover">Export</a>
               </td>
             </tr>
-            <div id="disabled-plugins" class="hide">
-              <ul class="nav nav-pills nav-stacked">
-                <li><a class="btn btn-default" href="/storage/${plugin.getName()}/export">Export as JSON</a></li>
-                <li><a class="btn btn-default" href="/storage/${plugin.getName()}/export">Export as HOCON</a></li>
-              </ul>
-            </div>
           </#if>
         </#list>
       </tbody>
@@ -102,36 +88,37 @@
   </div>
   <div>
     <h4>Export Storage Plugins</h4>
-    <label for="fileType">File type</label>
-    <div class="radio">
-      <label>
-        <input type="radio" name="fileType" id="json" value="json" checked>
-        JSON
-      </label>
-    </div>
-    <div class="radio">
-      <label>
-        <input type="radio" name="fileType" id="hocon" value="conf">
-        HOCON
-      </label>
-    </div>
-    <a class="btn btn-default" href="/storage/export_all/"">Export all</a>
-  </div>
-
-  <!-- Content for Export #1 -->
-  <#--<div id="popover-content" class="hide">-->
-    <#--<ul class="nav nav-pills nav-stacked">-->
-      <#--<li><a class="btn btn-default" href="/storage/${plugin.getName()}/export">Export as JSON</a></li>-->
-      <#--&lt;#&ndash;<li><a class="btn btn-default" href="/storage/${plugin.getName()}/export">Export as HOCON</a></li>&ndash;&gt;-->
-      <#--<li><a class="btn btn-default" href="#">Export as JSON</a></li>-->
-      <#--<li><a class="btn btn-default" href="/lol/">Export as HOCON</a></li>-->
-    <#--</ul>-->
+    <#--<label for="fileType">File type</label>-->
+    <#--<div class="radio">-->
+      <#--<label>-->
+        <#--<input type="radio" name="fileType" id="json" value="json" checked>-->
+        <#--JSON-->
+      <#--</label>-->
+    <#--</div>-->
+    <#--<div class="radio">-->
+      <#--<label>-->
+        <#--<input type="radio" name="fileType" id="hocon" value="conf">-->
+        <#--HOCON-->
+      <#--</label>-->
+    <#--</div>-->
+    <#--<a class="btn btn-default" href="/storage/export_all/"">Export all</a>-->
   <#--</div>-->
+    <a class="btn btn-default" href="#" name="enabled" title="File type" rel="all-plugins-popover" data-trigger="focus" data-placement="right" data-popover-content=".list-popover">Export enabled</a>
+    <a class="btn btn-default" href="#" name="disabled" title="File type" rel="all-plugins-popover" data-trigger="focus" data-placement="right" data-popover-content=".list-popover">Export disabled</a>
+    <a class="btn btn-default" href="#" name="all" title="File type" rel="all-plugins-popover" data-trigger="focus" data-placement="right" data-popover-content=".list-popover">Export all</a>
+  </div>
+  <!-- Content for Export Plugins -->
+  <div class="list-popover hide">
+    <ul class="nav nav-pills nav-stacked">
+      <li><a class="JSON btn btn-default">Export as JSON</a></li>
+      <li><a class="HOCON btn btn-default">Export as HOCON</a></li>
+    </ul>
+  </div>
 
   <script>
     function doSubmit() {
-      var name = document.getElementById("storageName");
-      var form = document.getElementById("newStorage");
+      const name = document.getElementById("storageName");
+      const form = document.getElementById("newStorage");
       form.action = "/storage/" + name.value;
       form.submit();
     }
@@ -140,19 +127,26 @@
         location.reload();
       });
     }
-    $(function(){
-        $('[data-toggle="popover"]').popover({
-            container: 'body',
-            html: true,
-            content: function () {
-                var clone = $($(this).data('popover-content')).clone(true).removeClass('hide');
-                // OBJECT.attr("name") TODO: get name of main button and transfer it to children buttons
-                return clone;
-            }
-        }).click(function(e) {
-            e.preventDefault();
-        });
-    });
+    $('[rel="plugin-popover"]').popover({
+      container: 'body',
+      html: true,
+      content: function () {
+        const plugin = $($(this)).attr("name");
+        $('.JSON').attr("href", "/storage/" + plugin + "/export/json");
+        $('.HOCON').attr("href", "/storage/" + plugin + "/export/hocon");
+        return $($(this).data('popover-content')).clone().html();
+      }
+    })
+    $('[rel="all-plugins-popover"]').popover({
+      container: 'body',
+      html: true,
+      content: function () {
+        const plugin = $($(this)).attr("name");
+        $('.JSON').attr("href", "/storage/" + plugin + "/export/json");
+        $('.HOCON').attr("href", "/storage/" + plugin + "/export/hocon");
+        return $($(this).data('popover-content')).clone().html();
+      }
+    })
   </script>
 </#macro>
 

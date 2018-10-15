@@ -47,17 +47,25 @@
       <#else>
         <a id="enabled" class="btn btn-primary">Enable</a>
       </#if>
-      <a class="btn btn-default" href="/storage/${model.getName()}/export"">Export</a>
+      <a class="btn btn-default" href="#" name="${model.getName()}" title="File type" data-toggle="popover" data-trigger="focus" data-placement="bottom" data-popover-content=".list-popover">Export</a>
       <a id="del" class="btn btn-danger" onclick="deleteFunction()">Delete</a>
     </#if>
   </form>
   <br>
   <div id="message" class="hidden alert alert-info">
   </div>
-  <script>
-    var editor = ace.edit("editor");
-    var textarea = $('textarea[name="config"]');
 
+  <!-- Content for Export Plugin -->
+  <div class="list-popover hide">
+    <ul class="nav nav-pills nav-stacked">
+      <li><a class="JSON btn btn-default">Export as JSON</a></li>
+      <li><a class="HOCON btn btn-default">Export as HOCON</a></li>
+    </ul>
+  </div>
+
+  <script>
+    const editor = ace.edit("editor");
+    const textarea = $('textarea[name="config"]');
 
     editor.setAutoScrollEditorIntoView(true);
     editor.setOption("maxLines", 25);
@@ -87,8 +95,8 @@
     });
     function doUpdate() {
       $("#updateForm").ajaxForm(function(data) {
-        var messageEl = $("#message");
-        if (data.result == "success") {
+        const messageEl = $("#message");
+        if (data.result === "success") {
           messageEl.removeClass("hidden")
                    .removeClass("alert-danger")
                    .addClass("alert-info")
@@ -107,15 +115,25 @@
           }, 200);
         }
       });
-    };
+    }
     function deleteFunction() {
-      var temp = confirm("Are you sure?");
-      if (temp == true) {
+      const temp = confirm("Are you sure?");
+      if (temp === true) {
         $.get("/storage/${model.getName()}/delete", function(data) {
           window.location.href = "/storage";
         });
       }
-    };
+    }
+    $('[data-toggle="popover"]').popover({
+      container: 'body',
+      html: true,
+      content: function () {
+        const plugin = $($(this)).attr("name");
+        $('.JSON').attr("href", "/storage/" + plugin + "/export/json");
+        $('.HOCON').attr("href", "/storage/" + plugin + "/export/hocon");
+        return $($(this).data('popover-content')).clone().html();
+      }
+    })
   </script>
 </#macro>
 
