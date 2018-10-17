@@ -86,8 +86,8 @@
   </div>
   <div class="page-header">
   </div>
-  <div>
-    <h4>Export Storage Plugins</h4>
+  <#--<div>-->
+    <#--<h4>Export Storage Plugins</h4>-->
     <#--<label for="fileType">File type</label>-->
     <#--<div class="radio">-->
       <#--<label>-->
@@ -103,10 +103,44 @@
     <#--</div>-->
     <#--<a class="btn btn-default" href="/storage/export_all/"">Export all</a>-->
   <#--</div>-->
-    <a class="btn btn-default" href="#" name="enabled" title="File type" rel="all-plugins-popover" data-trigger="focus" data-placement="right" data-popover-content=".list-popover">Export enabled</a>
-    <a class="btn btn-default" href="#" name="disabled" title="File type" rel="all-plugins-popover" data-trigger="focus" data-placement="right" data-popover-content=".list-popover">Export disabled</a>
-    <a class="btn btn-default" href="#" name="all" title="File type" rel="all-plugins-popover" data-trigger="focus" data-placement="right" data-popover-content=".list-popover">Export all</a>
+<#--</div>-->
+
+    <#--<a class="btn btn-default" href="#" name="enabled" title="File type" rel="all-plugins-popover" data-trigger="focus" data-placement="right" data-popover-content=".list-popover">Export enabled</a>-->
+    <#--<a class="btn btn-default" href="#" name="disabled" title="File type" rel="all-plugins-popover" data-trigger="focus" data-placement="right" data-popover-content=".list-popover">Export disabled</a>-->
+    <#--<a class="btn btn-default" href="#" name="all" title="File type" rel="all-plugins-popover" data-trigger="focus" data-placement="right" data-popover-content=".list-popover">Export all</a>-->
+  <div class="table-responsive" style="display: inline-block">
+  <#--background-color:red;-->
+    <h4>Export Storage Plugins</h4>
+    <table class="table">
+      <tbody>
+        <tr>
+          <td style="border:none; width:200px;">
+            Export Enabled Plugins
+          </td>
+          <td style="border:none;">
+            <a class="btn btn-default" href="#" name="enabled" title="File type" rel="plugin-popover" data-trigger="focus" data-placement="right" data-popover-content=".list-popover">Export</a>
+          </td>
+        </tr>
+        <tr>
+          <td style="border:none; width:200px;">
+            Export Disabled Plugins
+          </td>
+          <td style="border:none;">
+            <a class="btn btn-default" href="#" name="disabled" title="File type" rel="plugin-popover" data-trigger="focus" data-placement="right" data-popover-content=".list-popover">Export</a>
+          </td>
+        </tr>
+        <tr>
+          <td style="border:none; width:200px;">
+            Export All Plugins
+          </td>
+          <td style="border:none;">
+            <a class="btn btn-default" href="#" name="all" title="File type" rel="plugin-popover" data-trigger="focus" data-placement="right" data-popover-content=".list-popover">Export</a>
+          </td>
+        </tr>
+      </tbody>
+    </table>
   </div>
+
   <!-- Content for Export Plugins -->
   <div class="list-popover hide">
     <ul class="nav nav-pills nav-stacked">
@@ -131,22 +165,23 @@
       container: 'body',
       html: true,
       content: function () {
-        const plugin = $($(this)).attr("name");
-        $('.JSON').attr("href", "/storage/" + plugin + "/export/json");
-        $('.HOCON').attr("href", "/storage/" + plugin + "/export/hocon");
+        const plugins = $($(this)).attr("name");
+        $('.JSON').attr("href", "/storage/" + plugins + "/export/json");
+        $('.HOCON').attr("href", "/storage/" + plugins + "/export/hocon");
         return $($(this).data('popover-content')).clone().html();
       }
-    })
-    $('[rel="all-plugins-popover"]').popover({
-      container: 'body',
-      html: true,
-      content: function () {
-        const plugin = $($(this)).attr("name");
-        $('.JSON').attr("href", "/storage/" + plugin + "/export/json");
-        $('.HOCON').attr("href", "/storage/" + plugin + "/export/hocon");
-        return $($(this).data('popover-content')).clone().html();
-      }
-    })
+    });
+    // TODO: investigate whether it is possible to use one function
+    // $('[rel="all-plugins-popover"]').popover({
+    //   container: 'body',
+    //   html: true,
+    //   content: function () {
+    //     const plugins = $($(this)).attr("name");
+    //     $('.JSON').attr("href", "/storage/" + plugins + "/export/json");
+    //     $('.HOCON').attr("href", "/storage/" + plugins + "/export/hocon");
+    //     return $($(this).data('popover-content')).clone().html();
+    //   }
+    // });
   </script>
 </#macro>
 
