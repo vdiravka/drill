@@ -29,7 +29,7 @@
       <#--background-color:blue;-->
       <#--TODO: transform second table for disabled plugins as a second column for the first table-->
     <h4>Enabled Storage Plugins</h4>
-    <table class="table">
+    <table class="table table-bordered">
       <tbody>
         <#list model as plugin>
           <#if plugin.enabled() == true>
@@ -54,7 +54,8 @@
   <div class="table-responsive" style="display: inline-block">
       <#--background-color:red;-->
     <h4>Disabled Storage Plugins</h4>
-    <table class="table">
+    <#--<table class="table table-bordered">-->
+    <table class="table table-bordered">
       <tbody>
         <#list model as plugin>
           <#if plugin.enabled() == false>
@@ -165,9 +166,12 @@
       container: 'body',
       html: true,
       content: function () {
-        const plugins = $($(this)).attr("name");
-        $('.JSON').attr("href", "/storage/" + plugins + "/export/json");
-        $('.HOCON').attr("href", "/storage/" + plugins + "/export/hocon");
+        let exportInstance = $($(this)).attr("name");
+        if (exportInstance == "all" || exportInstance == "enabled" || exportInstance == "disabled") {
+          exportInstance = exportInstance + "/plugins";
+        }
+        $('.JSON').attr("href", "/storage/" + exportInstance + "/export/json");
+        $('.HOCON').attr("href", "/storage/" + exportInstance + "/export/conf");
         return $($(this).data('popover-content')).clone().html();
       }
     });

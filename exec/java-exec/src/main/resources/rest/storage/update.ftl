@@ -117,9 +117,8 @@
       });
     }
     function deleteFunction() {
-      const temp = confirm("Are you sure?");
-      if (temp === true) {
-        $.get("/storage/${model.getName()}/delete", function(data) {
+      if (confirm("Are you sure?")) {
+        $.get("/storage/${model.getName()}/delete", function() {
           window.location.href = "/storage";
         });
       }
@@ -130,7 +129,7 @@
       content: function () {
         const plugin = $($(this)).attr("name");
         $('.JSON').attr("href", "/storage/" + plugin + "/export/json");
-        $('.HOCON').attr("href", "/storage/" + plugin + "/export/hocon");
+        $('.HOCON').attr("href", "/storage/" + plugin + "/export/conf");
         return $($(this).data('popover-content')).clone().html();
       }
     })

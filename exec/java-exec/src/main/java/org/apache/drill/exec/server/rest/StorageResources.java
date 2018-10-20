@@ -19,10 +19,10 @@ package org.apache.drill.exec.server.rest;
 
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
@@ -34,7 +34,6 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
@@ -66,43 +65,59 @@ public class StorageResources {
 
   public static final String JSON_FILE_NAME = "json";
   public static final String HOCON_FILE_NAME = "conf";
+  public static final String ALL_PLUGINS = "all";
+  public static final String ENABLED_PLUGINS = "enabled";
+  public static final String DISABLED_PLUGINS = "disabled";
 
-  private static final Comparator<PluginConfigWrapper> PLUGIN_COMPARATOR = new Comparator<PluginConfigWrapper>() {
-    @Override
-    public int compare(PluginConfigWrapper o1, PluginConfigWrapper o2) {
-      return o1.getName().compareTo(o2.getName());
-    }
-  };
+  private static final Comparator<PluginConfigWrapper> PLUGIN_COMPARATOR =
+      Comparator.comparing(PluginConfigWrapper::getName);
 
   @GET
-  @Path("/storage.json")
+  @Path("/storage/{number}/plugins/export/{fileType}")
   @Produces(MediaType.APPLICATION_JSON)
-  public List<PluginConfigWrapper> getStoragePluginsJSON() {
-
-    List<PluginConfigWrapper> list = Lists.newArrayList();
-    for (Map.Entry<String, StoragePluginConfig> entry : Lists.newArrayList(storage.getStore().getAll())) {
-      PluginConfigWrapper plugin = new PluginConfigWrapper(entry.getKey(), entry.getValue());
-      list.add(plugin);
+  public Response getPluginsConfigs(@PathParam("number") String number, @PathParam("fileType") String fileType) {
+    if (JSON_FILE_NAME.equals(fileType) || HOCON_FILE_NAME.equals(fileType)) {
+      Response.ResponseBuilder response = Response.ok();
+      response.entity(getPluginsConfigs(number).toArray());
+      response.header("Content-Disposition",
+          String.format("attachment;filename=\"%s_storage_plugins.%s\"", number, fileType));
+      return response.build();
     }
-
-    Collections.sort(list, PLUGIN_COMPARATOR);
-
-    return list;
+    logger.error("Unknown file type {} for {} Storage Plugin Configs", fileType, number);
+    return null;
   }
 
   @GET
   @Path("/storage")
   @Produces(MediaType.TEXT_HTML)
-  public Viewable getStoragePlugins() {
-    List<PluginConfigWrapper> list = getStoragePluginsJSON();
+  public Viewable getPlugins() {
+    List<PluginConfigWrapper> list = getPluginsConfigs(ALL_PLUGINS);
     return ViewableWithPermissions.create(authEnabled.get(), "/rest/storage/list.ftl", sc, list);
+  }
+
+  private List<PluginConfigWrapper> getPluginsConfigs(String number) {
+    List<PluginConfigWrapper> list = Lists.newArrayList();
+    Predicate<Map.Entry<String, StoragePluginConfig>> predicate = entry -> false;
+    if (ALL_PLUGINS.equals(number)) {
+      predicate = entry -> true;
+    } else if (ENABLED_PLUGINS.equals(number)) {
+      predicate = entry -> entry.getValue().isEnabled();
+    } else if (DISABLED_PLUGINS.equals(number)) {
+      predicate = entry -> !entry.getValue().isEnabled();
+    }
+    Lists.newArrayList(storage.getStore().getAll()).stream()
+        .filter(predicate)
+        .map(entry -> new PluginConfigWrapper(entry.getKey(), entry.getValue()))
+        .forEach(list::add);
+    list.sort(PLUGIN_COMPARATOR);
+    return list;
   }
 
   @SuppressWarnings("resource")
   @GET
   @Path("/storage/{name}.json")
   @Produces(MediaType.APPLICATION_JSON)
-  public PluginConfigWrapper getStoragePluginJSON(@PathParam("name") String name) {
+  public PluginConfigWrapper getPluginConfigs(@PathParam("name") String name) {
     try {
       // TODO: DRILL-6412: No need to get StoragePlugin. It is enough to have plugin name and config here
       StoragePlugin plugin = storage.getPlugin(name);
@@ -110,7 +125,7 @@ public class StorageResources {
         return new PluginConfigWrapper(name, plugin.getConfig());
       }
     } catch (Exception e) {
-      logger.info("Failure while trying to access storage config: {}", name, e);
+      logger.error("Failure while trying to access storage config: {}", name, e);
     }
     return new PluginConfigWrapper(name, null);
   }
@@ -118,8 +133,8 @@ public class StorageResources {
   @GET
   @Path("/storage/{name}")
   @Produces(MediaType.TEXT_HTML)
-  public Viewable getStoragePlugin(@PathParam("name") String name) {
-    PluginConfigWrapper plugin = getStoragePluginJSON(name);
+  public Viewable getPlugin(@PathParam("name") String name) {
+    PluginConfigWrapper plugin = getPluginConfigs(name);
     return ViewableWithPermissions.create(authEnabled.get(), "/rest/storage/update.ftl", sc, plugin);
   }
 
@@ -127,7 +142,7 @@ public class StorageResources {
   @Path("/storage/{name}/enable/{val}")
   @Produces(MediaType.APPLICATION_JSON)
   public JsonResult enablePlugin(@PathParam("name") String name, @PathParam("val") Boolean enable) {
-    PluginConfigWrapper plugin = getStoragePluginJSON(name);
+    PluginConfigWrapper plugin = getPluginConfigs(name);
     try {
       if (plugin.setEnabledInStorage(storage, enable)) {
         return message("success");
@@ -141,44 +156,37 @@ public class StorageResources {
   }
 
   @GET
-  @Path("/storage/{name}/export")
+  @Path("/storage/{name}/export/{fileType}")
   @Produces(MediaType.APPLICATION_JSON)
-  public Response exportPlugin(@PathParam("name") String name) {
-    Response.ResponseBuilder response = Response.ok(getStoragePluginJSON(name));
-    response.header("Content-Disposition", String.format("attachment;filename=\"%s.json\"", name));
-    return response.build();
-  }
-
-  @GET
-  @Path("/storage/export_all")
-  @Produces(MediaType.APPLICATION_JSON)
-  public Response exportAllPlugin(@QueryParam("fileType") String fileType) {
-    Response.ResponseBuilder response = Response.ok();
+  public Response exportPlugin(@PathParam("name") String name, @PathParam("fileType") String fileType) {
     if (JSON_FILE_NAME.equals(fileType) || HOCON_FILE_NAME.equals(fileType)) {
-      List<PluginConfigWrapper> list = getStoragePluginsJSON();
-      response.entity(list.toArray());
-      response.header("Content-Disposition", String.format("attachment;filename=\"storage_plugins.%s\"", fileType));
+      PluginConfigWrapper storagePluginConfigs = getPluginConfigs(name);
+      Response.ResponseBuilder response = Response.ok(storagePluginConfigs);
+      response.header("Content-Disposition", String.format("attachment;filename=\"%s.%s\"", name, fileType));
+      return response.build();
     }
-    return response.build();
+    logger.error("Unknown file type {} for Storage Plugin Config: {}", fileType, name);
+    return null;
   }
 
   @DELETE
-  @Path("/storage/{name}.json")
+  @Path("/storage/{name}.{fileType}")
   @Produces(MediaType.APPLICATION_JSON)
-  public JsonResult deletePluginJSON(@PathParam("name") String name) {
-    PluginConfigWrapper plugin = getStoragePluginJSON(name);
-    if (plugin.deleteFromStorage(storage)) {
-      return message("success");
-    } else {
-      return message("error (unable to delete storage)");
+  public JsonResult deletePlugin(@PathParam("name") String name, @PathParam("fileType") String fileType) {
+    if (JSON_FILE_NAME.equals(fileType) || HOCON_FILE_NAME.equals(fileType)) {
+      PluginConfigWrapper plugin = getPluginConfigs(name);
+      if (plugin.deleteFromStorage(storage)) {
+        return message("Success");
+      }
     }
+    return message("Error (unable to delete %s.%s storage plugin)", name, fileType);
   }
 
   @GET
   @Path("/storage/{name}/delete")
   @Produces(MediaType.APPLICATION_JSON)
   public JsonResult deletePlugin(@PathParam("name") String name) {
-    return deletePluginJSON(name);
+    return deletePlugin(name, JSON_FILE_NAME);
   }
 
   @POST
@@ -191,7 +199,8 @@ public class StorageResources {
       return message("success");
     } catch (ExecutionSetupException e) {
       logger.error("Unable to create/ update plugin: " + plugin.getName(), e);
-      return message("Error while creating/ updating storage : " + (e.getCause() != null ? e.getCause().getMessage() : e.getMessage()));
+      return message("Error while creating / updating storage : " + (e.getCause() != null ?
+          e.getCause().getMessage() : e.getMessage()));
     }
   }
 
@@ -205,18 +214,18 @@ public class StorageResources {
       return createOrUpdatePluginJSON(new PluginConfigWrapper(name, config));
     } catch (JsonMappingException e) {
       logger.debug("Error in JSON mapping: {}", storagePluginConfig, e);
-      return message("error (invalid JSON mapping)");
+      return message("Error (invalid JSON mapping)");
     } catch (JsonParseException e) {
       logger.debug("Error parsing JSON: {}", storagePluginConfig, e);
-      return message("error (unable to parse JSON)");
+      return message("Error (unable to parse JSON)");
     } catch (IOException e) {
       logger.debug("Failed to read: {}", storagePluginConfig, e);
-      return message("error (unable to read)");
+      return message("Error (unable to read)");
     }
   }
 
-  private JsonResult message(String message) {
-    return new JsonResult(message);
+  private JsonResult message(String message, Object... args) {
+    return new JsonResult(String.format(message, args));
   }
 
   @XmlRootElement
