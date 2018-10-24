@@ -39,6 +39,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import javax.xml.bind.annotation.XmlRootElement;
 
+import com.fasterxml.jackson.core.JsonParser;
 import org.apache.drill.common.exceptions.ExecutionSetupException;
 import org.apache.drill.common.logical.StoragePluginConfig;
 import org.apache.drill.exec.server.rest.DrillRestServer.UserAuthEnabled;
@@ -75,16 +76,17 @@ public class StorageResources {
   @GET
   @Path("/storage/{number}/plugins/export/{fileType}")
   @Produces(MediaType.APPLICATION_JSON)
-  public Response getPluginsConfigs(@PathParam("number") String number, @PathParam("fileType") String fileType) {
+  public Response getPluginsConfigs(@PathParam("number") String pluginsNumber, @PathParam("fileType") String fileType) {
+    // TODO: change {number} and plugins places in the URL
     if (JSON_FILE_NAME.equals(fileType) || HOCON_FILE_NAME.equals(fileType)) {
       Response.ResponseBuilder response = Response.ok();
-      response.entity(getPluginsConfigs(number).toArray());
+      response.entity(getPluginsConfigs(pluginsNumber).toArray());
       response.header("Content-Disposition",
-          String.format("attachment;filename=\"%s_storage_plugins.%s\"", number, fileType));
+          String.format("attachment;filename=\"%s_storage_plugins.%s\"", pluginsNumber, fileType));
       return response.build();
     }
-    logger.error("Unknown file type {} for {} Storage Plugin Configs", fileType, number);
-    return null;
+    logger.error("Unknown file type {} for {} Storage Plugin Configs", fileType, pluginsNumber);
+    return Response.status(Response.Status.NOT_FOUND).build();
   }
 
   @GET
@@ -95,14 +97,14 @@ public class StorageResources {
     return ViewableWithPermissions.create(authEnabled.get(), "/rest/storage/list.ftl", sc, list);
   }
 
-  private List<PluginConfigWrapper> getPluginsConfigs(String number) {
+  private List<PluginConfigWrapper> getPluginsConfigs(String pluginsNumber) {
     List<PluginConfigWrapper> list = Lists.newArrayList();
     Predicate<Map.Entry<String, StoragePluginConfig>> predicate = entry -> false;
-    if (ALL_PLUGINS.equals(number)) {
+    if (ALL_PLUGINS.equals(pluginsNumber)) {
       predicate = entry -> true;
-    } else if (ENABLED_PLUGINS.equals(number)) {
+    } else if (ENABLED_PLUGINS.equals(pluginsNumber)) {
       predicate = entry -> entry.getValue().isEnabled();
-    } else if (DISABLED_PLUGINS.equals(number)) {
+    } else if (DISABLED_PLUGINS.equals(pluginsNumber)) {
       predicate = entry -> !entry.getValue().isEnabled();
     }
     Lists.newArrayList(storage.getStore().getAll()).stream()
@@ -166,7 +168,7 @@ public class StorageResources {
       return response.build();
     }
     logger.error("Unknown file type {} for Storage Plugin Config: {}", fileType, name);
-    return null;
+    return Response.status(Response.Status.NOT_FOUND).build();
   }
 
   @DELETE
@@ -206,10 +208,11 @@ public class StorageResources {
 
   @POST
   @Path("/storage/{name}")
-  @Consumes("application/x-www-form-urlencoded")
+  @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
   @Produces(MediaType.APPLICATION_JSON)
   public JsonResult createOrUpdatePlugin(@FormParam("name") String name, @FormParam("config") String storagePluginConfig) {
     try {
+      mapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
       StoragePluginConfig config = mapper.readValue(new StringReader(storagePluginConfig), StoragePluginConfig.class);
       return createOrUpdatePluginJSON(new PluginConfigWrapper(name, config));
     } catch (JsonMappingException e) {
