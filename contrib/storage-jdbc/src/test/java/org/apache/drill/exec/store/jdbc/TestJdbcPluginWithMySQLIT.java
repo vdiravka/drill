@@ -18,6 +18,7 @@
 package org.apache.drill.exec.store.jdbc;
 
 import org.apache.drill.categories.JdbcStorageTest;
+import org.apache.drill.common.exceptions.DrillRuntimeException;
 import org.apache.drill.exec.expr.fn.impl.DateUtility;
 import org.apache.drill.PlanTestBase;
 
@@ -125,6 +126,18 @@ public class TestJdbcPluginWithMySQLIT extends PlanTestBase {
             "WHERE e.last_name > 'hello'";
 
     testPlanMatchingPatterns(query, new String[] {}, new String[] { "Join", "Filter" });
+  }
+
+  @Test
+  public void emptyOutput() throws Exception {
+    final String query = "select * from mysql.`drill_mysql_test`.person e limit 0";
+
+    test(query);
+  }
+
+  @Test
+  public void checkRunningTests() throws Exception {
+    throw new DrillRuntimeException("IT tests work");
   }
 
   @Test
