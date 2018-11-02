@@ -50,7 +50,7 @@ public abstract class DrillFilterRelBase extends Filter implements DrillRelNode 
 
   protected DrillFilterRelBase(Convention convention, RelOptCluster cluster, RelTraitSet traits, RelNode child, RexNode condition) {
     super(cluster, traits, child, condition);
-    assert getConvention() == convention;
+    assert convention.equals(getConvention()); // TODO: null appears here for TestJdbcPluginWithDerbyIT.pushdownDoubleJoinAndFilter()
 
     // save the number of conjuncts that make up the filter condition such
     // that repeated calls to the costing function can use the saved copy

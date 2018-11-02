@@ -24,6 +24,8 @@ import org.apache.drill.PlanTestBase;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import java.math.BigDecimal;
+
 /**
  * JDBC storage plugin tests against MySQL.
  * Note: it requires libaio.so library in the system
@@ -55,7 +57,7 @@ public class TestJdbcPluginWithMySQLIT extends PlanTestBase {
                     "blob_field", "bit_field", "enum_field")
             .baselineValues(1,
                     "first_name_1", "last_name_1", "1401 John F Kennedy Blvd", "Philadelphia", "PA", 19107,
-                    123456789L, 1, 10.01,
+                    123456789L, 1, new BigDecimal("10.01"),
                     false,
                     1.0, 1.1, 1.2,
                     DateUtility.parseLocalDate("2012-02-29"), DateUtility.parseLocalDateTime("2012-02-29 13:00:01.0"), DateUtility.parseLocalDate("2015-01-01"), DateUtility.parseLocalTime("13:00:01.0"),
@@ -68,7 +70,7 @@ public class TestJdbcPluginWithMySQLIT extends PlanTestBase {
                     true, "XXX")
             .baselineValues(2,
                     "first_name_2", "last_name_2", "One Ferry Building", "San Francisco", "CA", 94111,
-                    45456767L, 3, 30.04,
+                    45456767L, 3, new BigDecimal("30.04"),
                     true,
                     3.0, 3.1, 3.2,
                     DateUtility.parseLocalDate("2011-10-30"), DateUtility.parseLocalDateTime("2011-10-30 11:34:21.0"), DateUtility.parseLocalDate("2015-01-01"), DateUtility.parseLocalTime("11:34:21.0"),
@@ -81,7 +83,7 @@ public class TestJdbcPluginWithMySQLIT extends PlanTestBase {
                     false, "YYY")
             .baselineValues(3,
                     "first_name_3", "last_name_3", "176 Bowery", "New York", "NY", 10012,
-                    123090L, -3, 55.12,
+                    123090L, -3, new BigDecimal("55.12"),
                     false,
                     5.0, 5.1, 5.55,
                     DateUtility.parseLocalDate("2015-06-01"), DateUtility.parseLocalDateTime("2015-09-22 15:46:10.0"), DateUtility.parseLocalDate("1901-01-01"), DateUtility.parseLocalTime("16:00:01.0"),
@@ -125,6 +127,13 @@ public class TestJdbcPluginWithMySQLIT extends PlanTestBase {
             "WHERE e.last_name > 'hello'";
 
     testPlanMatchingPatterns(query, new String[] {}, new String[] { "Join", "Filter" });
+  }
+
+  @Test // NPE from comment on the Drill WEB site
+  public void emptyOutput() throws Exception {
+    final String query = "select * from mysql.`drill_mysql_test`.person e limit 0";
+
+    test(query);
   }
 
   @Test

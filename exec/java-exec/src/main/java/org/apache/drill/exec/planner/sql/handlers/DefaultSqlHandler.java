@@ -150,6 +150,11 @@ public class DefaultSqlHandler extends AbstractSqlHandler {
     }
   }
 
+  protected void log(final String description, final RelNode node, final Logger logger) {
+      final String plan = RelOptUtil.toString(node, SqlExplainLevel.ALL_ATTRIBUTES);
+      logger.error(String.format("%s:\n%s", description, plan));
+  }
+
   protected void logAndSetTextPlan(final String description, final Prel prel, final Logger logger) {
     final String plan = PrelSequencer.printWithIds(prel, SqlExplainLevel.ALL_ATTRIBUTES);
     if (textPlan != null) {
@@ -422,6 +427,7 @@ public class DefaultSqlHandler extends AbstractSqlHandler {
       Preconditions.checkArgument(planner instanceof VolcanoPlanner,
           "Cluster is expected to be constructed using VolcanoPlanner. Was actually of type %s.", planner.getClass()
               .getName());
+      log("RelNode derby:", input, logger);
       output = program.run(planner, input, toTraits,
           ImmutableList.of(), ImmutableList.of());
 
