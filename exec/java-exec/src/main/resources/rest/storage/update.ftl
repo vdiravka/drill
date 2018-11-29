@@ -29,6 +29,7 @@
 <#macro page_body>
   <div class="page-header">
   </div>
+  <#--<a href="/queries">back</a><br/>-->
   <h3>Configuration</h3>
   <form id="updateForm" role="form" action="/storage/${model.getName()}" method="POST">
     <input type="hidden" name="name" value="${model.getName()}" />
@@ -47,7 +48,8 @@
       <#else>
         <a id="enabled" class="btn btn-primary">Enable</a>
       </#if>
-      <a class="btn btn-default" href="#" name="${model.getName()}" title="File type" data-toggle="popover" data-trigger="focus" data-placement="bottom" data-popover-content=".list-popover">Export</a>
+      <#--<a class="btn btn-default" href="#" name="${model.getName()}" title="File type" data-toggle="popover" data-trigger="focus" data-placement="bottom" data-popover-content=".list-popover">Export</a>-->
+      <button type="button" class="btn btn-default export" name="${model.getName()}" data-toggle="modal" data-target="#pluginsModal">Export</button>
       <a id="del" class="btn btn-danger" onclick="deleteFunction()">Delete</a>
     </#if>
   </form>
@@ -55,12 +57,38 @@
   <div id="message" class="hidden alert alert-info">
   </div>
 
-  <!-- Content for Export Plugin -->
-  <div class="list-popover hide">
-    <ul class="nav nav-pills nav-stacked">
-      <li><a class="JSON btn btn-default">Export as JSON</a></li>
-      <li><a class="HOCON btn btn-default">Export as HOCON</a></li>
-    </ul>
+  <#-- Modal window-->
+  <div class="modal fade" id="pluginsModal" tabindex="-1" role="dialog" aria-labelledby="exportPlugin" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h4 class="modal-title" id="exportPlugin">Export Plugin configs</h4>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div id="fileType" style="display: inline-block; position: relative;">
+            <label for="fileType">File type</label>
+            <div class="radio">
+              <label>
+                <input type="radio" name="fileType" id="json" value="json" checked="checked">
+                JSON
+              </label>
+            </div>
+            <div class="radio">
+              <label>
+                <input type="radio" name="fileType" id="hocon" value="conf">
+                HOCON
+              </label>
+            </div>
+          </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-primary">Export</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -123,15 +151,26 @@
         });
       }
     }
-    $('[data-toggle="popover"]').popover({
-      container: 'body',
-      html: true,
-      content: function () {
-        const plugin = $($(this)).attr("name");
-        $('.JSON').attr("href", "/storage/" + plugin + "/export/json");
-        $('.HOCON').attr("href", "/storage/" + plugin + "/export/conf");
-        return $($(this).data('popover-content')).clone().html();
-      }
+
+    $('#pluginsModal').on('show.bs.modal', function (event) {
+      const button = $(event.relatedTarget) // Button that triggered the modal
+      let exportInstance = button.attr("name");
+      const modal = $(this);
+
+      modal.find('.modal-title').text('Export '+ exportInstance.toUpperCase() +' Plugin configs');
+
+      modal.find('.btn-primary').click(function(){
+        let fileType = "";
+        if (modal.find('#json').is(":checked")) {
+          fileType = 'json';
+        }
+        if (modal.find('#hocon').is(":checked")) {
+          fileType = 'conf';
+        }
+
+        let url = '/storage/' + exportInstance + '/export/' + fileType;
+        window.open(url);
+      });
     })
   </script>
 </#macro>

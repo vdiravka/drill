@@ -26,10 +26,9 @@
   </div>
 
   <div class="table-responsive" style="display: inline-block;">
-      <#--background-color:blue;-->
       <#--TODO: transform second table for disabled plugins as a second column for the first table-->
     <h4>Enabled Storage Plugins</h4>
-    <table class="table table-bordered">
+    <table class="table">
       <tbody>
         <#list model as plugin>
           <#if plugin.enabled() == true>
@@ -38,9 +37,9 @@
                 ${plugin.getName()}
               </td>
               <td style="border:none;">
-                <a class="btn btn-primary" href="/storage/${plugin.getName()}">Update</a>
-                <a class="btn btn-default" onclick="doEnable('${plugin.getName()}', false)">Disable</a>
-                <a class="btn btn-default" href="#" name="${plugin.getName()}" title="File type" rel="plugin-popover" data-trigger="focus" data-placement="right" data-popover-content=".list-popover">Export</a>
+                <button type="button" class="btn btn-primary" onclick="location.href='/storage/${plugin.getName()}'">Update</button>
+                <button type="button" class="btn btn-default" onclick="doEnable('${plugin.getName()}', false)">Disable</button>
+                <button type="button" class="btn btn-default export" name="${plugin.getName()}" data-toggle="modal" data-target="#pluginsModal">Export</button>
               </td>
             </tr>
           </#if>
@@ -48,14 +47,10 @@
       </tbody>
     </table>
   </div>
-  <#--<div class="page-header">-->
-  <#--</div>-->
 
-  <div class="table-responsive" style="display: inline-block">
-      <#--background-color:red;-->
+  <div class="table-responsive" style="display: inline-block; margin-left: 100px;">
     <h4>Disabled Storage Plugins</h4>
-    <#--<table class="table table-bordered">-->
-    <table class="table table-bordered">
+    <table class="table">
       <tbody>
         <#list model as plugin>
           <#if plugin.enabled() == false>
@@ -64,9 +59,9 @@
                 ${plugin.getName()}
               </td>
               <td style="border:none;">
-                <a class="btn btn-primary" href="/storage/${plugin.getName()}">Update</a>
-                <a class="btn btn-primary" onclick="doEnable('${plugin.getName()}', true)">Enable</a>
-                <a class="btn btn-default" href="#" name="${plugin.getName()}" title="File type" rel="plugin-popover" data-trigger="focus" data-placement="right" data-popover-content=".list-popover">Export</a>
+                <button type="button" class="btn btn-primary" onclick="location.href='/storage/${plugin.getName()}'">Update</button>
+                <button type="button" class="btn btn-primary" onclick="doEnable('${plugin.getName()}', true)">Enable</button>
+                <button type="button" class="btn btn-default export" name="${plugin.getName()}" data-toggle="modal" data-target="#pluginsModal">Export</button>
               </td>
             </tr>
           </#if>
@@ -74,81 +69,140 @@
       </tbody>
     </table>
   </div>
+
   <div class="page-header">
   </div>
-  <div>
+
+  <div style="display: inline-block;/* width: 100%; *//* max-width: 536px; */position: relative;">
     <h4>New Storage Plugin</h4>
-    <form class="form-inline" id="newStorage" role="form" action="/" method="GET">
-      <div class="form-group">
-        <input type="text" class="form-control" id="storageName" placeholder="Storage Name">
+    <#--<form class="form-inline" id="newStorage" role="form" action="/" method="GET">-->
+      <#--<div class="form-group">-->
+        <#--<input type="text" class="form-control" id="storageName" placeholder="Storage Name">-->
+      <#--</div>-->
+      <#---->
+    <#--</form>-->
+    <button type="submit" class="btn btn-default" onclick="doSubmit()">Create</button>
+  </div>
+
+  <div style="display: inline-block;float: right;position: relative;">
+    <h4>Export All Storage Plugin configs</h4>
+    <div style="float: right;">
+      <button type="button" id="export-all" class="btn btn-primary export" name="all" data-toggle="modal" data-target="#pluginsModal">Export</button>
+    </div>
+  </div>
+
+  <#-- Modal window for exporting plugins -->
+  <div class="modal fade" id="pluginsModal" tabindex="-1" role="dialog" aria-labelledby="exportPlugin" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h4 class="modal-title" id="exportPlugin">Export Plugin configs</h4>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div id="fileType" style="display: inline-block; position: relative;">
+            <label for="fileType">File type</label>
+            <div class="radio">
+              <label>
+                <input type="radio" name="fileType" id="json" value="json" checked="checked">
+                JSON
+              </label>
+            </div>
+            <div class="radio">
+              <label>
+                <input type="radio" name="fileType" id="hocon" value="conf">
+                HOCON
+              </label>
+            </div>
+          </div>
+
+          <div id="plugins-number" class="" style="display: inline-block; position: relative; float: right;">
+            <label for="fileType">Plugins number</label>
+            <div class="radio">
+              <label>
+                <input type="radio" name="number" id="all" value="all" checked="checked">
+                ALL
+              </label>
+            </div>
+            <div class="radio">
+              <label>
+                <input type="radio" name="number" id="enabled" value="enabled">
+                ENABLED
+              </label>
+            </div>
+            <div class="radio">
+              <label>
+                <input type="radio" name="number" id="disabled" value="disabled">
+                DISABLED
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+          <button type="button" id="export" class="btn btn-primary">Export</button>
+        </div>
       </div>
-      <button type="submit" class="btn btn-default" onclick="doSubmit()">Create</button>
-    </form>
+    </div>
   </div>
-  <div class="page-header">
-  </div>
-  <#--<div>-->
-    <#--<h4>Export Storage Plugins</h4>-->
-    <#--<label for="fileType">File type</label>-->
-    <#--<div class="radio">-->
-      <#--<label>-->
-        <#--<input type="radio" name="fileType" id="json" value="json" checked>-->
-        <#--JSON-->
-      <#--</label>-->
-    <#--</div>-->
-    <#--<div class="radio">-->
-      <#--<label>-->
-        <#--<input type="radio" name="fileType" id="hocon" value="conf">-->
-        <#--HOCON-->
-      <#--</label>-->
-    <#--</div>-->
-    <#--<a class="btn btn-default" href="/storage/export_all/"">Export all</a>-->
-  <#--</div>-->
-<#--</div>-->
+  <#-- Modal window for exporting plugins -->
 
-    <#--<a class="btn btn-default" href="#" name="enabled" title="File type" rel="all-plugins-popover" data-trigger="focus" data-placement="right" data-popover-content=".list-popover">Export enabled</a>-->
-    <#--<a class="btn btn-default" href="#" name="disabled" title="File type" rel="all-plugins-popover" data-trigger="focus" data-placement="right" data-popover-content=".list-popover">Export disabled</a>-->
-    <#--<a class="btn btn-default" href="#" name="all" title="File type" rel="all-plugins-popover" data-trigger="focus" data-placement="right" data-popover-content=".list-popover">Export all</a>-->
-  <div class="table-responsive" style="display: inline-block">
-  <#--background-color:red;-->
-    <h4>Export Storage Plugins</h4>
-    <table class="table">
-      <tbody>
-        <tr>
-          <td style="border:none; width:200px;">
-            Export Enabled Plugins
-          </td>
-          <td style="border:none;">
-            <a class="btn btn-default" href="#" name="enabled" title="File type" rel="plugin-popover" data-trigger="focus" data-placement="right" data-popover-content=".list-popover">Export</a>
-          </td>
-        </tr>
-        <tr>
-          <td style="border:none; width:200px;">
-            Export Disabled Plugins
-          </td>
-          <td style="border:none;">
-            <a class="btn btn-default" href="#" name="disabled" title="File type" rel="plugin-popover" data-trigger="focus" data-placement="right" data-popover-content=".list-popover">Export</a>
-          </td>
-        </tr>
-        <tr>
-          <td style="border:none; width:200px;">
-            Export All Plugins
-          </td>
-          <td style="border:none;">
-            <a class="btn btn-default" href="#" name="all" title="File type" rel="plugin-popover" data-trigger="focus" data-placement="right" data-popover-content=".list-popover">Export</a>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+  <#-- Modal window for creating plugin -->
+  <div class="modal fade" id="pluginsModal" tabindex="-1" role="dialog" aria-labelledby="exportPlugin" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h4 class="modal-title" id="exportPlugin">Configuration</h4>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <form class="form-inline" id="newStorage" role="form" action="/" method="GET">
+            <div class="form-group">
+              <input type="text" class="form-control" id="storageName" placeholder="Storage Name">
+            </div>
 
-  <!-- Content for Export Plugins -->
-  <div class="list-popover hide">
-    <ul class="nav nav-pills nav-stacked">
-      <li><a class="JSON btn btn-default">Export as JSON</a></li>
-      <li><a class="HOCON btn btn-default">Export as HOCON</a></li>
-    </ul>
+          </form>
+          <h3>Configuration</h3>
+          <form id="updateForm" role="form" action="/storage/${model.getName()}" method="POST">
+            <input type="hidden" name="name" value="${model.getName()}" />
+            <div class="form-group">
+              <div id="editor" class="form-control"></div>
+              <textarea class="form-control" id="config" name="config" data-editor="json" style="display: none;" >
+              </textarea>
+            </div>
+            <a class="btn btn-default" href="/storage">Back</a>
+            <button class="btn btn-default" type="submit" onclick="doUpdate();">
+                  <#if model.exists()>Update<#else>Create</#if>
+            </button>
+            <#if model.exists()>
+              <#if model.enabled()>
+                <a id="enabled" class="btn btn-default">Disable</a>
+              <#else>
+                <a id="enabled" class="btn btn-primary">Enable</a>
+              </#if>
+            <#--<a class="btn btn-default" href="#" name="${model.getName()}" title="File type" data-toggle="popover" data-trigger="focus" data-placement="bottom" data-popover-content=".list-popover">Export</a>-->
+              <button type="button" class="btn btn-default export" name="${model.getName()}" data-toggle="modal" data-target="#pluginsModal">Export</button>
+              <a id="del" class="btn btn-danger" onclick="deleteFunction()">Delete</a>
+            </#if>
+            </form>
+            <br>
+          <div id="message" class="hidden alert alert-info">
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+          <button type="button" id="create" class="btn btn-primary">Create</button>
+        </div>
+      </div>
+    </div>
   </div>
+  <#-- Modal window for creating plugin -->
 
   <script>
     function doSubmit() {
@@ -162,31 +216,70 @@
         location.reload();
       });
     }
-    $('[rel="plugin-popover"]').popover({
-      container: 'body',
-      html: true,
-      content: function () {
-        let exportInstance = $($(this)).attr("name");
-        if (exportInstance == "all" || exportInstance == "enabled" || exportInstance == "disabled") {
-          exportInstance = exportInstance + "/plugins";
-        }
-        $('.JSON').attr("href", "/storage/" + exportInstance + "/export/json");
-        $('.HOCON').attr("href", "/storage/" + exportInstance + "/export/conf");
-        return $($(this).data('popover-content')).clone().html();
+
+    let exportInstance;
+    $('#pluginsModal').on('show.bs.modal', function(event) {
+      const button = $(event.relatedTarget); // Button that triggered the modal
+      const modal = $(this);
+      exportInstance = button.attr("name");
+
+      const optionalBlock = modal.find('#plugins-number');
+      if (exportInstance === "all") {
+        optionalBlock.removeClass('hide');
+        modal.find('.modal-title').text('Export All Plugin configs');
+      } else {
+        modal.find('#plugins-number').addClass('hide');
+        modal.find('.modal-title').text('Export '+ exportInstance.toUpperCase() +' Plugin configs');
+        // alert("1" + exportInstance);
       }
+
+      modal.find('#export').click(function() {
+        let fileType;
+        if (modal.find('#json').is(":checked")) {
+          fileType = 'json';
+        }
+        if (modal.find('#hocon').is(":checked")) {
+          fileType = 'conf';
+        }
+        // alert($(event.relatedTarget).attr("name"));
+        // alert("2 "+ exportInstance);
+        let url;
+        if (exportInstance === "all") {
+          let pluginsNumber = "";
+          if (modal.find('#all').is(":checked")) {
+            pluginsNumber = 'all';
+          } else if (modal.find('#enabled').is(":checked")) {
+            pluginsNumber = 'enabled';
+          } else if (modal.find('#disabled').is(":checked")) {
+            pluginsNumber = 'disabled';
+          }
+          url = '/storage/' + pluginsNumber + '/plugins/export/' + fileType;
+        } else {
+          url = '/storage/' + exportInstance + '/export/' + fileType;
+        }
+        window.open(url);
+      });
     });
-    // TODO: investigate whether it is possible to use one function
-    // $('[rel="all-plugins-popover"]').popover({
-    //   container: 'body',
-    //   html: true,
-    //   content: function () {
-    //     const plugins = $($(this)).attr("name");
-    //     $('.JSON').attr("href", "/storage/" + plugins + "/export/json");
-    //     $('.HOCON').attr("href", "/storage/" + plugins + "/export/hocon");
-    //     return $($(this).data('popover-content')).clone().html();
-    //   }
-    // });
+
+    $('#pluginsModal').on('hidden.bs.modal', function () {
+      const modal = $(this);
+      const pluginsNumber = modal.find('#plugins-number');
+      if (!pluginsNumber.hasClass('hide')) {
+        pluginsNumber.addClass('hide');
+      }
+    })
+
   </script>
+  <style>
+    .modal-dialog{
+      position: relative;
+      display: table;
+      overflow-y: auto;
+      overflow-x: auto;
+      width: auto;
+      min-width: 300px;
+    }
+  </style>
 </#macro>
 
 <@page_html/>

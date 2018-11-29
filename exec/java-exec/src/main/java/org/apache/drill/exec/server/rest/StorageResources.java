@@ -117,7 +117,7 @@ public class StorageResources {
 
   @SuppressWarnings("resource")
   @GET
-  @Path("/storage/{name}.json")
+  @Path("/storage/{name}.json") // show all plugins in WEB
   @Produces(MediaType.APPLICATION_JSON)
   public PluginConfigWrapper getPluginConfigs(@PathParam("name") String name) {
     try {
@@ -141,7 +141,7 @@ public class StorageResources {
   }
 
   @GET
-  @Path("/storage/{name}/enable/{val}")
+  @Path("/storage/{name}/enable/{val}") // val ???
   @Produces(MediaType.APPLICATION_JSON)
   public JsonResult enablePlugin(@PathParam("name") String name, @PathParam("val") Boolean enable) {
     PluginConfigWrapper plugin = getPluginConfigs(name);
@@ -192,7 +192,7 @@ public class StorageResources {
   }
 
   @POST
-  @Path("/storage/{name}.json")
+  @Path("/storage/{name}.json") // ? json?
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
   public JsonResult createOrUpdatePluginJSON(PluginConfigWrapper plugin) {
