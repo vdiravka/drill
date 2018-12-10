@@ -382,6 +382,8 @@
             <exclude>**/*.cproject</exclude>
             <exclude>**/*.drill</exclude>
             <exclude>**/.drill.parquet_metadata</exclude>
+            <exclude>**/*.bmp</exclude>
+            <exclude>**/*.pcapng</exclude>
             <!-- TODO DRILL-4336: try to avoid the need to add this -->
             <exclude>dependency-reduced-pom.xml</exclude>
           </excludes>

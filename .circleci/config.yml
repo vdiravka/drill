@@ -5,14 +5,14 @@
 # (the "License"); you may not use this file except in compliance with
 # the License.  You may obtain a copy of the License at
 #
-#     http://www.apache.org/licenses/LICENSE-2.0
+# http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
+
 version: 2
 general:
 jobs:
@@ -21,7 +21,6 @@ jobs:
       enabled: true
       image: circleci/classic:latest
     parallelism: 1 # TODO: 1. Configuring Parallel Jobs for Running Tests https://circleci.com/docs/2.0/parallelism-faster-jobs/
-
 
     working_directory: ~/drill
 
@@ -60,27 +59,22 @@ jobs:
 
     steps:
     - checkout
-
     - run:
         name: Update packages list
         command:
           sudo apt-get update
-
     - run:
         name: Install java 9
         command:
           sudo apt-get -y install openjdk-9-jdk
-
     - run:
         name: Set default java 9
         command:
           sudo update-java-alternatives --set java-1.9.0-openjdk-amd64
-
     - run:
         name: Update maven version
         command:
           curl -fsSL https://git.io/vpDIf | bash -s -- 3.6.0
-
     - run:
         name: Install libaio1.so library for MySQL integration tests
         command:
@@ -100,27 +94,22 @@ jobs:
 
     steps:
     - checkout
-
     - run:
         name: Update packages list
         command:
           sudo apt-get update
-
     - run:
         name: Install java 10
         command:
           sudo apt-get -y install openjdk-10-jdk
-
     - run:
         name: Set default java 10
         command:
           sudo update-java-alternatives --set java-1.10.0-openjdk-amd64
-
     - run:
         name: Update maven version
         command:
           curl -fsSL https://git.io/vpDIf | bash -s -- 3.6.0
-
     - run:
         name: Install libaio1.so library for MySQL integration tests
         command:
@@ -140,27 +129,22 @@ jobs:
 
     steps:
     - checkout
-
     - run:
         name: Update packages list
         command:
           sudo apt-get update
-
     - run:
         name: Install java 11
         command:
           sudo apt-get -y install openjdk-11-jdk
-
     - run:
         name: Set default java 11
         command:
           sudo update-java-alternatives --set java-1.11.0-openjdk-amd64
-
     - run:
         name: Update maven version
         command:
           curl -fsSL https://git.io/vpDIf | bash -s -- 3.6.0
-
     - run:
         name: Install libaio1.so library for MySQL integration tests
         command:
