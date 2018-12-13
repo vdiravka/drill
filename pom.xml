@@ -24,7 +24,7 @@
   <parent>
     <groupId>org.apache</groupId>
     <artifactId>apache</artifactId>
-    <version>21</version>
+    <version>18</version>
     <relativePath />
   </parent>
 
@@ -89,6 +89,7 @@
     <excludedGroups />
     <memoryMb>4096</memoryMb>
     <directMemoryMb>4096</directMemoryMb>
+    <additionalparam>-Xdoclint:none</additionalparam>
     <doclint>none</doclint>
     <rat.skip>true</rat.skip>
     <license.skip>true</license.skip>
@@ -399,7 +400,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>
-        <version>2.12.1</version>
         <dependencies>
           <dependency>
             <groupId>com.puppycrawl.tools</groupId>
@@ -574,6 +574,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-jar-plugin</artifactId>
+          <version>3.1.1</version>
           <executions>
             <execution>
               <goals>
@@ -704,7 +705,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-resources-plugin</artifactId>
-          <version>2.6</version>
+          <version>3.1.0</version> <!--check whether it works-->
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
@@ -738,6 +739,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
+          <version>2.22.1</version>
           <executions>
             <execution>
               <id>default-test</id>
@@ -881,6 +883,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-shade-plugin</artifactId>
+          <version>3.2.1</version>
           <executions>
             <execution>
               <phase>package</phase>
@@ -890,7 +893,38 @@
             </execution>
           </executions>
         </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-assembly-plugin</artifactId>
+          <version>3.1.0</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-checkstyle-plugin</artifactId>
+          <version>2.12.1</version>
+        </plugin>
+
+        <!--default for apache-21.pom, can be removed for that pom-->
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-javadoc-plugin</artifactId>
+          <version>3.0.1</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.rat</groupId>
+          <artifactId>apache-rat-plugin</artifactId>
+          <version>0.12</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-dependency-plugin</artifactId>
+          <version>3.1.1</version>
+        </plugin>
+        <!--default versions for apache-21.pom, can be removed for that pom-->
+
       </plugins>
+
+
     </pluginManagement>
   </build>
   <dependencies>
@@ -1690,6 +1724,7 @@
           <plugin>
             <groupId>net.nicoulaj.maven.plugins</groupId>
             <artifactId>checksum-maven-plugin</artifactId>
+            <version>1.7</version>
             <executions>
               <execution>
                 <id>source-release-checksum</id>
@@ -1708,7 +1743,6 @@
           <!-- override the parent assembly execution to customize the assembly final name -->
           <plugin>
             <artifactId>maven-assembly-plugin</artifactId>
-            <version>3.1.0</version>
             <executions>
               <execution>
                 <id>source-release-assembly</id>
