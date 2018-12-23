@@ -113,6 +113,12 @@
           <excludes>
             <exclude>**/*</exclude>
           </excludes>
+          <systemProperties>
+            <property>
+              <name>derby.stream.error.file</name>
+              <value>target/derby.log</value>
+            </property>
+          </systemProperties>
         </configuration>
       </plugin>
       <plugin>
