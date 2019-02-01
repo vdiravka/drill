@@ -1158,11 +1158,13 @@ public class TestScripts {
       // Change client memory: should affect sqlline
 
       Map<String, String> shellEnv = new HashMap<>();
-      shellEnv.put("CLIENT_GC_OPTS", "-XX:+UseG1GC");
+//      shellEnv.put("CLIENT_GC_OPTS", "-XX:+UseG1GC");
+      shellEnv.put("CLIENT_GC_OPTS", "-XX:+UnlockExperimentalVMOptions -XX:+UseZGC");
       RunResult result = new ScriptRunner("sqlline")
           .withEnvironment(shellEnv)
           .run();
-      assertTrue(result.containsArg("-XX:+UseG1GC"));
+//      assertTrue(result.containsArg("-XX:+UseG1GC"));
+      assertTrue(result.containsArg("-XX:+UseZGC"));
     }
     {
       // Change drill memory and other drill-specific

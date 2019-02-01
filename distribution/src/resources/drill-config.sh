@@ -218,7 +218,8 @@ fi
 export SQLLINE_JAVA_OPTS=${SQLLINE_JAVA_OPTS:-""}
 
 
-export SERVER_GC_OPTS="$SERVER_GC_OPTS -XX:+UseG1GC"
+# export SERVER_GC_OPTS="$SERVER_GC_OPTS -XX:+UseG1GC"
+export SERVER_GC_OPTS="$SERVER_GC_OPTS -XX:+UnlockExperimentalVMOptions -XX:+UseZGC"
 
 # No GC options by default for SQLLine
 export CLIENT_GC_OPTS=${CLIENT_GC_OPTS:-""}

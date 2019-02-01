@@ -127,7 +127,9 @@ public class ScriptUtils {
       "-Ddrill\\.exec\\.enable-epoll=false",
       // Removed in Drill 1.14
       //"-XX:\\+CMSClassUnloadingEnabled",
-      "-XX:\\+UseG1GC",
+//      "-XX:\\+UseG1GC",
+      "-XX:\\+UnlockExperimentalVMOptions",
+      "-XX:\\+UseZGC",
       "org\\.apache\\.drill\\.exec\\.server\\.Drillbit",
       "-Dlog\\.path=/.*/script-test/drill/log/drillbit\\.log",
       "-Dlog\\.query\\.path=/.*/script-test/drill/log/drillbit_queries\\.json",
