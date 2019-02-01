@@ -25,6 +25,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 
+import org.apache.drill.exec.record.metadata.ColumnMetadata;
+import org.apache.drill.exec.record.metadata.SchemaPathUtils;
+import org.apache.drill.exec.record.metadata.TupleMetadata;
 import org.apache.drill.shaded.guava.com.google.common.base.Preconditions;
 import org.apache.drill.shaded.guava.com.google.common.collect.Maps;
 import org.apache.drill.common.exceptions.DrillRuntimeException;
@@ -114,7 +117,7 @@ public class ExpressionTreeMaterializer {
     return materialize(expr, batch, errorCollector, functionLookupContext, allowComplexWriterExpr, false);
   }
 
-  public static LogicalExpression materializeFilterExpr(LogicalExpression expr, Map<SchemaPath, MajorType> fieldTypes, ErrorCollector errorCollector, FunctionLookupContext functionLookupContext) {
+  public static LogicalExpression materializeFilterExpr(LogicalExpression expr, TupleMetadata fieldTypes, ErrorCollector errorCollector, FunctionLookupContext functionLookupContext) {
     final FilterMaterializeVisitor filterMaterializeVisitor = new FilterMaterializeVisitor(fieldTypes, errorCollector);
     return expr.accept(filterMaterializeVisitor, functionLookupContext);
   }
@@ -298,9 +301,9 @@ public class ExpressionTreeMaterializer {
   }
 
   private static class FilterMaterializeVisitor extends AbstractMaterializeVisitor {
-    private final Map<SchemaPath, MajorType> types;
+    private final TupleMetadata types;
 
-    public FilterMaterializeVisitor(Map<SchemaPath, MajorType> types, ErrorCollector errorCollector) {
+    public FilterMaterializeVisitor(TupleMetadata types, ErrorCollector errorCollector) {
       super(errorCollector, false, false);
       this.types = types;
     }
@@ -309,8 +312,10 @@ public class ExpressionTreeMaterializer {
     public LogicalExpression visitSchemaPath(SchemaPath path, FunctionLookupContext functionLookupContext) {
       MajorType type = null;
 
-      if (types.containsKey(path.getUnIndexed())) {
-        type = types.get(path.getUnIndexed());
+      ColumnMetadata columnMetadata = SchemaPathUtils.getColumnMetadata(path.getUnIndexed(), types);
+
+      if (columnMetadata != null) {
+        type = columnMetadata.majorType();
         // for the case when specified path refers to array element, makes its type optional
         if (path.isArray()) {
           type = type.toBuilder().setMode(DataMode.OPTIONAL).build();
