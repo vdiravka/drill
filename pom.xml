@@ -44,7 +44,6 @@
 
     <target.gen.source.path>${project.basedir}/target/generated-sources</target.gen.source.path>
     <proto.cas.path>${project.basedir}/src/main/protobuf/</proto.cas.path>
-    <dep.junit.version>4.12</dep.junit.version>
     <dep.slf4j.version>1.7.25</dep.slf4j.version>
     <shaded.guava.version>23.0</shaded.guava.version>
     <guava.version>19.0</guava.version>
@@ -63,7 +62,8 @@
     <findbugs.version>3.0.0</findbugs.version>
     <netty.tcnative.classifier />
     <commons.io.version>2.4</commons.io.version>
-    <junit.version>4.11</junit.version>
+    <!--<junit.version>4.12</junit.version>-->
+    <junit.jupiter.version>5.3.2</junit.jupiter.version>
     <hamcrest.core.version>1.3</hamcrest.core.version>
     <maven.embedder.version>3.5.3</maven.embedder.version>
     <curator.version>2.7.1</curator.version>
@@ -984,10 +984,34 @@
       <version>${jmockit.version}</version>
       <scope>test</scope>
     </dependency>
+    <!--<dependency>-->
+      <!--<groupId>junit</groupId>-->
+      <!--<artifactId>junit</artifactId>-->
+      <!--<version>${junit.version}</version>-->
+      <!--<scope>test</scope>-->
+    <!--</dependency>-->
+    <!--<dependency>-->
+      <!--<groupId>org.junit.jupiter</groupId>-->
+      <!--<artifactId>junit-jupiter-api</artifactId>-->
+      <!--<version>${junit.jupiter.version}</version>-->
+      <!--<scope>test</scope>-->
+    <!--</dependency>-->
+    <!--<dependency>-->
+      <!--<groupId>org.junit.jupiter</groupId>-->
+      <!--<artifactId>junit-jupiter-params</artifactId>-->
+      <!--<version>${junit.jupiter.version}</version>-->
+      <!--<scope>test</scope>-->
+    <!--</dependency>-->
     <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>${dep.junit.version}</version>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>  <!--TODO: see https://howtodoinjava.com/junit5/junit-5-maven-dependency-pom-xml-example/-->
+      <version>${junit.jupiter.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.vintage</groupId>
+      <artifactId>junit-vintage-engine</artifactId>
+      <version>${junit.jupiter.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>

@@ -1,26 +1,34 @@
 # Testing with JUnit
 
-Most of us know the basics of JUnit. Drill uses many advanced features that we mention here. Drill uses [JUnit 4](http://junit.org/junit4/), currently version 4.11.
+Most of us know the basics of JUnit. Drill uses many advanced features that we mention here. Drill uses [JUnit 5 Jupiter](http://junit.org/junit5/), currently version 5.3.2.
+Drill migrated from [JUnit 4](http://junit.org/junit4/) without full removing junit4 style tests. It is allowed by leveraging [JUnit Vintage test engine](https://junit.org/junit5/docs/current/user-guide/#migrating-from-junit4) 
 
 ## References
 
-* [Tutorial](https://github.com/junit-team/junit4/wiki/Getting-started) if you are new to JUnit.
-* [JUnit Wiki](http://junit.org/junit4/), especially the Usage and Idioms section.
+* [Guide to JUnit 5](https://www.baeldung.com/junit-5) if you are new to JUnit.
+* [Full User Guide to JUnit 5](https://junit.org/junit5/docs/current/user-guide/) to find any specific info.
+* [JUnit5 Wiki](https://github.com/junit-team/junit5)
+* [JUnit4 Wiki](http://junit.org/junit4/), especially the Usage and Idioms section.
 * [Hamcrest Tutorial](http://code.google.com/p/hamcrest/wiki/Tutorial)
 * [Hamcrest Java on GitHub](https://github.com/hamcrest/JavaHamcrest)
 * [Understanding JUnit method order execution](https://garygregory.wordpress.com/2011/09/25/understaning-junit-method-order-execution/). Good overview of how the before/after annotations work.
 * See also the [update](https://garygregory.wordpress.com/2013/01/23/understanding-junit-method-order-execution-updated-for-version-4-11/) to the above.
-* [Using JUnit with Maven](https://github.com/junit-team/junit4/wiki/Use-with-Maven)
+* [Using JUnit with Maven](https://github.com/junit-team/junit5-samples/tree/r5.3.2/junit5-jupiter-starter-maven)
 
-## JUnit/Hamcrest Idioms
+## JUnit 5 vs JUnit 4
+
+ https://howtodoinjava.com/junit5/junit-5-vs-junit-4/
+ https://www.baeldung.com/junit-5-migration
+ 
+ ## JUnit/Hamcrest Idioms
 
 Drill tests use the JUnit 4 series that uses annotations to identify tests. Drill makes use of the "Hamcrest" additions (which seem to have come from a separate project, later merged into JUnit, hence the strange naming.) Basic rules:
 
 * All tests are packaged into classes, all classes start or end with the word "Test". In Drill, most tests use the prefix format: "TestMumble".
 * Test methods are indicted with `@Test`.
-* Disabled tests are indicated with [`@Ignore("reason for ignoring")`](https://github.com/junit-team/junit4/wiki/Ignoring-tests)
-* Tests use "classic" [JUnit assertions](https://github.com/junit-team/junit4/wiki/Assertions) such as `assertEquals(expected,actual,opt_msg)`.
-* Tests also use the newer ["Hamcrest" `assertThat`](https://github.com/junit-team/junit4/wiki/Matchers-and-assertthat) formulation. The Hamcrest project provided a system based on assertions and matchers that are quite handy for cases that are cumbersome with the JUnit-Style assertions.
+* Disabled tests are indicated with [`@Disabled("reason for disabling") or @Ignore (for the old junit4 style tests)`](https://junit.org/junit5/docs/current/user-guide/#writing-tests-disabling)
+* Tests use "classic" [JUnit assertions](https://github.com/pkainulainen/junit5-examples/tree/master/unit-tests/writing-assertions/junit5-api) such as `assertEquals(expected,actual,opt_msg)`.
+* Tests also use the newer ["Hamcrest" `assertThat`](https://github.com/pkainulainen/junit5-examples/tree/master/unit-tests/writing-assertions/hamcrest) formulation. The Hamcrest project provided a system based on assertions and matchers that are quite handy for cases that are cumbersome with the JUnit-Style assertions.
 * Many tests make use of the [test fixture](https://github.com/junit-team/junit4/wiki/Test-fixtures) annotations. These include methods marked to run before or after all tests in a class (`@BeforeClass` and `@AfterClass`) and those that run before or after each test (`@Before` and `@After`).
 * The base `DrillTest` class uses the [`ExceptionRule`](https://github.com/junit-team/junit4/wiki/Rules#expectedexception-rules) to declare that no test should throw an exception.
 * Some Drill tests verify exceptions directly using the `expected` parameter of `@Test`:
@@ -52,13 +60,19 @@ A collection of JUnit rules for testing code that uses `java.lang.System` such a
 
 ## JUnit with Maven
 
-The root Drill `pom.xml` declares a test-time dependency on [JUnit 4.11](https://github.com/junit-team/junit4/wiki/Use-with-Maven):
+The root Drill `pom.xml` declares a test-time dependency on [JUnit Jupiter 5.3.2](https://junit.org/junit5/docs/current/user-guide/) and [JUnit Vintage 5.3.2](https://junit.org/junit5/docs/current/user-guide/#migrating-from-junit4) to support JUnit4 unit tests:
 
 ```
     <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>4.11</version>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
+      <version>5.3.2</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.vintage</groupId>
+      <artifactId>junit-vintage-engine</artifactId>
+      <version>5.3.2</version>
       <scope>test</scope>
     </dependency>
 ```

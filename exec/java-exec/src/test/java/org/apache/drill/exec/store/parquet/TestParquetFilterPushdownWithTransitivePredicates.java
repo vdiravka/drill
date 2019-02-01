@@ -20,8 +20,9 @@ package org.apache.drill.exec.store.parquet;
 import org.apache.drill.PlanTestBase;
 import org.apache.drill.exec.util.StoragePluginTestUtils;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.DisplayName;
 
 import java.nio.file.Paths;
 
@@ -43,6 +44,7 @@ public class TestParquetFilterPushdownWithTransitivePredicates extends PlanTestB
   }
 
   @Test
+  @DisplayName("Test inferring Transitive predicates for the query with a several JOIN operators")
   public void testForSeveralInnerJoins() throws Exception {
     String query = String.format("SELECT * FROM %s t1 JOIN %s t2 ON t1.`month` = t2.`month` " +
             "JOIN %s t3 ON t1.`period` = t3.`period` WHERE t2.`month` = 7 AND t1.`period` = 2",
@@ -57,6 +59,7 @@ public class TestParquetFilterPushdownWithTransitivePredicates extends PlanTestB
   }
 
   @Test
+  @DisplayName("Test inferring Transitive predicates for the query with a filter in a JOIN operator, aka Local Filters")
   public void testForFilterInJoinOperator() throws Exception {
     String query = String.format("SELECT * FROM %s t1 JOIN %s t2 ON t1.`month` = t2.`month` AND t2.`month` = 7 " +
             "JOIN %s t3 ON t1.`period` = t3.`period` AND t1.`period` = 2",
@@ -71,6 +74,7 @@ public class TestParquetFilterPushdownWithTransitivePredicates extends PlanTestB
   }
 
   @Test
+  @DisplayName("Test inferring Transitive predicates for the old JOIN style query with a different logical types of JOIN operators")
   public void testForLeftAndRightJoins() throws Exception {
     String query = String.format("SELECT * FROM %s t1 RIGHT JOIN %s t2 ON t1.`year` = t2.`year` " +
             "LEFT JOIN %s t3 ON t1.`period` = t3.`period` WHERE t2.`year` = 1987 AND t1.`period` = 1",
@@ -85,6 +89,7 @@ public class TestParquetFilterPushdownWithTransitivePredicates extends PlanTestB
   }
 
   @Test
+  @DisplayName("Test inferring Transitive predicates for the old JOIN style query")
   public void testForCommaSeparatedJoins() throws Exception {
     String query = String.format("SELECT * FROM %s t1, %s t2, %s t3 WHERE t1.`year` = t2.`year` " +
             "AND t1.`period` = t3.`period` AND t2.`year` = 1990 AND t3.`period` = 1",
@@ -175,7 +180,7 @@ public class TestParquetFilterPushdownWithTransitivePredicates extends PlanTestB
   }
 
   @Test // TODO: CALCITE-1048
-  @Ignore // For now plan has "first.*numRowGroups=7". Replacing left join to inner should be made earlier.
+  @Disabled // For now plan has "first.*numRowGroups=7". Replacing left join to inner should be made earlier.
   public void testForTwoExists() throws Exception {
     String query = String.format("SELECT * from %s t1 " +
         " WHERE EXISTS (SELECT * FROM %s t2 WHERE t1.`year` = t2.`year` AND t2.`year` = 1988) " +
@@ -208,7 +213,7 @@ public class TestParquetFilterPushdownWithTransitivePredicates extends PlanTestB
   }
 
   @Test // TODO: CALCITE-2241
-  @Ignore // For now plan has "first.*numRowGroups=16", "second.*numRowGroups=7"
+  @Disabled // For now plan has "first.*numRowGroups=16", "second.*numRowGroups=7"
   public void testForOrOperator() throws Exception {
     String query = String.format("SELECT * FROM %s t1 " +
             "JOIN %s t2 ON t1.`month` = t2.`month` " +
@@ -224,7 +229,7 @@ public class TestParquetFilterPushdownWithTransitivePredicates extends PlanTestB
   }
 
   @Test // TODO: CALCITE-2275
-  @Ignore // For now plan has "first.*numRowGroups=14""
+  @Disabled // For now plan has "first.*numRowGroups=14""
   public void testForInAndNotOperatorsInJoinCondition() throws Exception {
     String query = String.format("SELECT * FROM %s t1 JOIN %s t2 " +
             "ON t1.`year` = t2.`year` AND t2.`year` NOT IN (1987, 1988) JOIN %s t3 ON t1.`period` = t3.`period` " +
@@ -241,7 +246,7 @@ public class TestParquetFilterPushdownWithTransitivePredicates extends PlanTestB
   }
 
   @Test // TODO: CALCITE-2274
-  @Ignore // For now plan has "first.*numRowGroups=16""
+  @Disabled // For now plan has "first.*numRowGroups=16""
   public void testForSubQueryAndDynamicStar() throws Exception {
     String query = String.format("SELECT * FROM %s t1 JOIN " +
             "(SELECT * FROM %s WHERE `year` = 1987 AND `month` = 5) t2 ON t1.`year` = t2.`year` AND t1.`month` = t2.`month`",
@@ -256,7 +261,7 @@ public class TestParquetFilterPushdownWithTransitivePredicates extends PlanTestB
   }
 
   @Test // TODO: CALCITE-2274
-  @Ignore // For now plan has "second.*numRowGroups=7"
+  @Disabled // For now plan has "second.*numRowGroups=7"
   public void testForWithStatementAndDynamicStar() throws Exception {
     String query = String.format("WITH `first_date` AS (SELECT * FROM %s t1 WHERE t1.`year` = 1987 and t1.`month` = 5) " +
             "SELECT * FROM %s t2 JOIN `first_date` ON t2.`year` = `first_date`.`year` AND t2.`month` = `first_date`.`month`",

@@ -38,12 +38,35 @@
       <version>${project.version}</version>
     </dependency>
 
-    <dependency>
-      <!-- add as provided scope so that we can compile TestTools.  Should only be ever used in a test scenario where someone else is bringing JUnit in. -->
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>${dep.junit.version}</version>
-    </dependency>
+    <!--<dependency>-->
+      <!--&lt;!&ndash; add as provided scope so that we can compile TestTools.  Should only be ever used in a test scenario where someone else is bringing JUnit in. &ndash;&gt;-->
+      <!--<groupId>junit</groupId>-->
+      <!--<artifactId>junit</artifactId>-->
+      <!--<version>${junit.version}</version>-->
+    <!--</dependency>-->
+
+    <!--<dependency>-->
+      <!--<groupId>org.junit.jupiter</groupId>-->
+      <!--<artifactId>junit-jupiter-api</artifactId>-->
+      <!--<version>${junit.jupiter.version}</version>-->
+    <!--</dependency>-->
+
+    <!--<dependency>-->
+      <!--<groupId>org.junit.jupiter</groupId>-->
+      <!--<artifactId>junit-jupiter-params</artifactId>-->
+      <!--<version>${junit.jupiter.version}</version>-->
+    <!--</dependency>-->
+    <!--<dependency>-->
+      <!--<groupId>org.junit.jupiter</groupId>-->
+      <!--<artifactId>junit-jupiter-engine</artifactId>-->
+      <!--<version>${junit.jupiter.version}</version>-->
+    <!--</dependency>-->
+
+    <!--<dependency>-->
+      <!--<groupId>org.junit.vintage</groupId>-->
+      <!--<artifactId>junit-vintage-engine</artifactId>-->
+      <!--<version>${junit.jupiter.version}</version>-->
+    <!--</dependency>-->
 
     <dependency>
       <groupId>org.apache.calcite</groupId>
