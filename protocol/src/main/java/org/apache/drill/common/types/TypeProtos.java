@@ -25,26 +25,9 @@ public final class TypeProtos {
   public static void registerAllExtensions(
       com.google.protobuf.ExtensionRegistry registry) {
   }
-  /**
-   * Protobuf enum {@code common.MinorType}
-   */
   public enum MinorType
       implements com.google.protobuf.ProtocolMessageEnum {
-    /**
-     * <code>LATE = 0;</code>
-     *
-     * <pre>
-     *  late binding type
-     * </pre>
-     */
     LATE(0, 0),
-    /**
-     * <code>MAP = 1;</code>
-     *
-     * <pre>
-     *  an empty map column.  Useful for conceptual setup.  Children listed within here
-     * </pre>
-     */
     MAP(1, 1),
     /**
      * <code>TINYINT = 3;</code>
