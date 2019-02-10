@@ -80,7 +80,8 @@ public abstract class BaseTableMetadataCreator {
 
   private List<RowGroupMetadata> rowGroups;
   private TableMetadata tableMetadata;
-  private List<PartitionMetadata> partitions; // replace with Map, to obtain PartitionMetadata with a partitionColumnName
+  private Map<SchemaPath, PartitionMetadata> partitions; // replace with Map, to obtain PartitionMetadata with a partitionColumnName
+  private Map<String, PartitionMetadata> partitionsMetadata; // replace with Map, to obtain PartitionMetadata with a partitionColumnName
   private List<FileMetadata> files;
   protected boolean usedMetadataCache; // false by default
 
@@ -126,8 +127,8 @@ public abstract class BaseTableMetadataCreator {
     return tableMetadata;
   }
 
-  public List<PartitionMetadata> getPartitionMetadata() {
-    if (partitions == null) {
+  public Map<SchemaPath, PartitionMetadata> getPartitionMetadata() {
+    if (partitions == null) { // getter with lazy initialization?
       Table<SchemaPath, Object, List<FileMetadata>> colValFile = HashBasedTable.create();
       ParquetGroupScanStatistics parquetGroupScanStatistics = new ParquetGroupScanStatistics(getFilesMetadata());
       List<FileMetadata> filesMetadata = getFilesMetadata();
@@ -146,11 +147,11 @@ public abstract class BaseTableMetadataCreator {
         }
       }
 
-      partitions = new ArrayList<>();
+      partitions = new HashMap<>();
 
       for (SchemaPath logicalExpressions : colValFile.rowKeySet()) {
         for (List<FileMetadata> partValues : colValFile.row(logicalExpressions).values()) {
-          partitions.add(getPartitionMetadata(logicalExpressions, partValues));
+          partitions.put(logicalExpressions, getPartitionMetadata(logicalExpressions, partValues));
         }
       }
     }

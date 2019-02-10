@@ -46,6 +46,11 @@ public class ParquetTableMetadataProvider implements TableMetadataProvider {
 
   @Override
   public PartitionMetadata getPartitionMetadata(String location, String tableName, String columnName) {
+    for (PartitionMetadata partitionMetadatum : metadataCreator.getPartitionMetadata()) {
+      if (columnName.equals(partitionMetadatum.getColumn().getRootSegmentPath())) {
+        return partitionMetadatum;
+      }
+    }
 //    return metadataCreator.getPartitionMetadata().get(columnName); // TODO: introduce Map<String, PartitionMetadata> in the metadataCreator, where String is the columnName
     return null;
   }

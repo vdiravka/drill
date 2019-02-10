@@ -29,14 +29,24 @@ import java.util.List;
  * Base interface for providing table, partition, file etc. metadata.
  */
 public interface TableMetadataProvider {
+
   TableMetadata getTableMetadata(String location, String tableName); // TODO: do change: do not pass location and tableName for every method
+
   List<SchemaPath> getPartitionColumns();
+
   List<PartitionMetadata> getPartitionsMetadata(String location, String tableName);
+
   PartitionMetadata getPartitionMetadata(String location, String tableName, String columnName);
+
   FileMetadata getFileMetadata(String location, String tableName);
+
   List<FileMetadata> getFilesForPartition(PartitionMetadata partition);
+
   List<FileMetadata> getFiles(String location, String tableName);
+
   String getSelectionRoot();
+
   boolean isUsedMetadataCache(); // is it really needed
+
   List<ReadEntryWithPath> getEntries(); // // do we really need it
 }

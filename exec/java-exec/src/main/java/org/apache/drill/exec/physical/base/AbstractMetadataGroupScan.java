@@ -57,6 +57,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public abstract class AbstractMetadataGroupScan extends AbstractFileGroupScan {
@@ -71,7 +72,7 @@ public abstract class AbstractMetadataGroupScan extends AbstractFileGroupScan {
   protected String tableName;
 
   // partition metadata info: mixed partition values for all partition keys in the same list
-  protected List<PartitionMetadata> partitions;
+  protected Map<SchemaPath, PartitionMetadata> partitions;
 
   protected List<SchemaPath> partitionColumns;
   protected LogicalExpression filter;
@@ -197,7 +198,7 @@ public abstract class AbstractMetadataGroupScan extends AbstractFileGroupScan {
       }
       logger.debug("All files have been filtered out. Add back one to get schema from scanner");
       builder.withMatching(false);
-      PartitionMetadata nextPart = partitions.iterator().next();
+      PartitionMetadata nextPart = partitions.values().iterator().next();
       FileMetadata nextFile = files.iterator().next();
       builder.withPartitions(Collections.singletonList(nextPart));
       builder.withFiles(Collections.singletonList(nextFile));
@@ -450,7 +451,9 @@ public abstract class AbstractMetadataGroupScan extends AbstractFileGroupScan {
   @JsonIgnore
   public <T> T getPartitionValue(String path, SchemaPath column, Class<T> clazz) {
     // TODO: add path-to-file metadata map to avoid filtering
-    return partitions.stream()
+
+    return partitions.get(column)
+    return partitions.values().stream()
         .filter(partition -> partition.getColumn().equals(column) && partition.getLocation().contains(path))
         .findAny()
         .map(metadata -> clazz.cast(metadata.getColumnStatistics().get(column).getStatistic(ColumnStatisticsKind.MAX_VALUE)))
