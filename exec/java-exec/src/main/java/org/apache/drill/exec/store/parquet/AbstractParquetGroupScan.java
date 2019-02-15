@@ -68,13 +68,10 @@ public abstract class AbstractParquetGroupScan extends AbstractMetadataGroupScan
   protected List<RowGroupMetadata> rowGroups = new ArrayList<>();
   protected Map<Integer, Long> rowGroupAndNumsToRead = new HashMap<>();
 
-//  protected ParquetTableMetadataBase parquetTableMetadata;
-//  private List<RowGroupInfo> rowGroupInfos;
   protected ListMultimap<Integer, RowGroupInfo> mappings;
   protected ParquetReaderConfig readerConfig;
 
   private List<EndpointAffinity> endpointAffinities;
-//  private ParquetGroupScanStatistics parquetGroupScanStatistics;
 
   protected AbstractParquetGroupScan(String userName,
                                      List<SchemaPath> columns,
@@ -94,11 +91,8 @@ public abstract class AbstractParquetGroupScan extends AbstractMetadataGroupScan
     this.files = that.files;
     this.tableMetadata = that.tableMetadata;
     this.partitions = that.partitions;
-//    this.tableMetadata = that.parquetTableMetadata;
-//    this.rowGroupInfos = that.rowGroupInfos == null ? null : new ArrayList<>(that.rowGroupInfos);
     this.endpointAffinities = that.endpointAffinities == null ? null : new ArrayList<>(that.endpointAffinities);
     this.mappings = that.mappings == null ? null : ArrayListMultimap.create(that.mappings);
-//    this.parquetGroupScanStatistics = that.parquetGroupScanStatistics == null ? null : new ParquetGroupScanStatistics(that.parquetGroupScanStatistics);
     this.fileSet = that.fileSet == null ? null : new HashSet<>(that.fileSet);
     this.entries = that.entries == null ? null : new ArrayList<>(that.entries);
     this.readerConfig = that.readerConfig;
@@ -203,7 +197,15 @@ public abstract class AbstractParquetGroupScan extends AbstractMetadataGroupScan
 
   @Override
   public int getMaxParallelizationWidth() {
-    return rowGroups != null ? rowGroups.size() : files != null ? files.size() : partitions != null ? partitions.size() : 1;
+    if (rowGroups != null) {
+      return rowGroups.size();
+    } else {
+      if (files != null) {
+        return files.size();
+      } else {
+        return partitions != null ? partitions.size() : 1;
+      }
+    }
   }
 
   protected List<RowGroupReadEntry> getReadEntries(int minorFragmentId) {
@@ -231,7 +233,6 @@ public abstract class AbstractParquetGroupScan extends AbstractMetadataGroupScan
   public AbstractMetadataGroupScan applyFilter(LogicalExpression filterExpr, UdfUtilities udfUtilities,
       FunctionImplementationRegistry functionImplementationRegistry, OptionManager optionManager) {
     // Builds filter for pruning. If filter cannot be built, null should be returned.
-    // TODO: pass implicit and partition columns to getFilterPredicate() along with tableMetadata.getSchema()
     FilterPredicate filterPredicate = getFilterPredicate(filterExpr, udfUtilities, functionImplementationRegistry, optionManager, true);
     if (filterPredicate == null) {
       logger.debug("FilterPredicate cannot be built.");
@@ -299,6 +300,7 @@ public abstract class AbstractParquetGroupScan extends AbstractMetadataGroupScan
     return builder.build();
   }
 
+  @Override
   protected RowGroupScanBuilder getFiltered(OptionManager optionManager, FilterPredicate filterPredicate, Set<SchemaPath> schemaPathsInExpr) {
     RowGroupScanBuilder builder = (RowGroupScanBuilder) super.getFiltered(optionManager, filterPredicate, schemaPathsInExpr);
 
@@ -308,9 +310,10 @@ public abstract class AbstractParquetGroupScan extends AbstractMetadataGroupScan
     return builder;
   }
 
+  @Override
   protected TupleMetadata getColumnMetadata() {
     TupleMetadata columnMetadata = super.getColumnMetadata();
-    if (columnMetadata == null && rowGroups != null && rowGroups.size() > 0) {
+    if (columnMetadata == null && rowGroups != null && !rowGroups.isEmpty()) {
       return rowGroups.iterator().next().getSchema();
     }
     return columnMetadata;
@@ -388,10 +391,10 @@ public abstract class AbstractParquetGroupScan extends AbstractMetadataGroupScan
     List<FileMetadata> qualifiedFiles = builder.getFiles();
     qualifiedFiles = qualifiedFiles != null ? qualifiedFiles : Collections.emptyList();
 
-    List<RowGroupMetadata> qualifiedRowGroups = qualifiedFiles.size() > 0 ? pruneRowGroupsForFiles(qualifiedFiles.subList(0, qualifiedFiles.size() - 1)) : new ArrayList<>();
+    List<RowGroupMetadata> qualifiedRowGroups = !qualifiedFiles.isEmpty() ? pruneRowGroupsForFiles(qualifiedFiles.subList(0, qualifiedFiles.size() - 1)) : new ArrayList<>();
 
     // get row groups of the last file to filter them or get all row groups if files metadata isn't available
-    List<RowGroupMetadata> lastFileRowGroups = qualifiedFiles.size() > 0 ? pruneRowGroupsForFiles(qualifiedFiles.subList(qualifiedFiles.size() - 1, qualifiedFiles.size())) : rowGroups;
+    List<RowGroupMetadata> lastFileRowGroups = !qualifiedFiles.isEmpty() ? pruneRowGroupsForFiles(qualifiedFiles.subList(qualifiedFiles.size() - 1, qualifiedFiles.size())) : rowGroups;
 
     qualifiedRowGroups.addAll(limitMetadata(lastFileRowGroups, maxRecords));
 
@@ -445,6 +448,7 @@ public abstract class AbstractParquetGroupScan extends AbstractMetadataGroupScan
   }
 
   // protected methods block
+  @Override
   protected void init() throws IOException {
     super.init();
 
@@ -456,7 +460,7 @@ public abstract class AbstractParquetGroupScan extends AbstractMetadataGroupScan
   protected abstract AbstractParquetGroupScan cloneWithFileSelection(Collection<String> filePaths) throws IOException;
   // abstract methods block end
 
-  protected static abstract class RowGroupScanBuilder extends GroupScanBuilder {
+  protected abstract static class RowGroupScanBuilder extends GroupScanBuilder {
     protected List<RowGroupMetadata> rowGroups;
 
     public RowGroupScanBuilder withRowGroups(List<RowGroupMetadata> rowGroups) {
