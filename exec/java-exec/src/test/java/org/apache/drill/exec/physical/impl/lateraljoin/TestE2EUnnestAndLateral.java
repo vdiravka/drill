@@ -24,6 +24,7 @@ import org.apache.drill.test.ClusterFixtureBuilder;
 import org.apache.drill.test.ClusterTest;
 import org.apache.drill.test.TestBuilder;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -176,6 +177,7 @@ public class TestE2EUnnestAndLateral extends ClusterTest {
   }
 
   @Test
+  @Ignore
   public void testMultiUnnestAtSameLevelExec() throws Exception {
     String sql = "SELECT customer.c_name, customer.c_address, U1.order_id, U1.order_amt," +
       " U1.itemName, U1.itemNum FROM cp.`lateraljoin/nested-customer.parquet` customer, LATERAL" +
@@ -194,6 +196,7 @@ public class TestE2EUnnestAndLateral extends ClusterTest {
   }
 
   @Test
+  @Ignore
   public void testMultiUnnestAtSameLevelExecExplicitResult() throws Exception {
     String sql = "SELECT customer.c_name, customer.c_address, U1.order_id, U1.order_amt," +
             " U1.itemName, U1.itemNum FROM cp.`lateraljoin/nested-customer.parquet` customer, LATERAL" +
@@ -422,6 +425,7 @@ public class TestE2EUnnestAndLateral extends ClusterTest {
    * @throws Exception
    */
   @Test
+  @Ignore
   public void testSchemaChangeOnNonUnnestColumn_InMultilevelCase() throws Exception {
 
     try {
@@ -458,6 +462,7 @@ public class TestE2EUnnestAndLateral extends ClusterTest {
   }
 
   @Test
+  @Ignore
   public void testSchemaChangeOnUnnestColumn_InMultilevelCase() throws Exception {
     try {
       dirTestWatcher.copyResourceToRoot(Paths.get("lateraljoin", "multipleFiles", schemaChangeFile_2));

@@ -32,6 +32,7 @@ import org.apache.drill.exec.work.foreman.SqlUnsupportedException;
 import org.apache.drill.exec.work.foreman.UnsupportedRelOperatorException;
 import org.apache.drill.test.BaseTestQuery;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -280,6 +281,7 @@ public class TestUnionDistinct extends BaseTestQuery {
   }
 
   @Test
+  @Ignore
   public void testDiffDataTypesAndModes() throws Exception {
     test("use dfs.tmp");
     test("create view nation_view_testunion as select n_name, n_nationkey from cp.`tpch/nation.parquet`;");

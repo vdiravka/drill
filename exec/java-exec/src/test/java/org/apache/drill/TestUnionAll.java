@@ -32,6 +32,7 @@ import org.apache.drill.exec.work.foreman.SqlUnsupportedException;
 import org.apache.drill.exec.work.foreman.UnsupportedRelOperatorException;
 import org.apache.drill.test.BaseTestQuery;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -267,6 +268,7 @@ public class TestUnionAll extends BaseTestQuery {
   }
 
   @Test
+  @Ignore
   public void testDiffDataTypesAndModes() throws Exception {
     try {
       test("use dfs.tmp");

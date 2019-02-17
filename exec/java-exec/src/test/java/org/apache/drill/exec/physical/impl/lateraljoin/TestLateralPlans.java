@@ -32,6 +32,7 @@ import org.apache.drill.test.ClientFixture;
 import org.apache.drill.test.ClusterFixture;
 import org.apache.drill.test.ClusterFixtureBuilder;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.nio.file.Paths;
@@ -211,6 +212,7 @@ public class TestLateralPlans extends BaseTestQuery {
   }
 
   @Test
+  @Ignore
   public void testSubQuerySql() throws Exception {
     String sql = "select t.c_name, d1.items as items0 , t3.items as items1 from cp.`lateraljoin/nested-customer.parquet` t," +
         " lateral (select t2.ord.items as items from unnest(t.orders) t2(ord)) d1," +
@@ -230,6 +232,7 @@ public class TestLateralPlans extends BaseTestQuery {
   }
 
   @Test
+  @Ignore
   public void testUnnestWithFilter() throws Exception {
     String sql = "select t.c_name, d1.items as items0, t3.items as items1 from cp.`lateraljoin/nested-customer.parquet` t," +
         " lateral (select t2.ord.items as items from unnest(t.orders) t2(ord)) d1," +
@@ -249,6 +252,7 @@ public class TestLateralPlans extends BaseTestQuery {
   }
 
   @Test
+  @Ignore
   public void testUnnestWithAggInSubquery() throws Exception {
     String sql = "select t.c_name, sum(t4.items) from cp.`lateraljoin/nested-customer.parquet` t," +
         " lateral (select t2.ord.items as items from unnest(t.orders) t2(ord)) d1," +
@@ -273,6 +277,7 @@ public class TestLateralPlans extends BaseTestQuery {
   }
 
   @Test
+  @Ignore
   public void testUnnestWithAggOnOuterTable() throws Exception {
     String sql = "select avg(d2.inum) from cp.`lateraljoin/nested-customer.parquet` t," +
         " lateral (select t2.ord.items as items from unnest(t.orders) t2(ord)) d1," +
@@ -528,6 +533,7 @@ public class TestLateralPlans extends BaseTestQuery {
   }
 
   @Test
+  @Ignore
   public void testMultiUnnestQuery() throws Exception {
     String sql = "SELECT t5.l_quantity FROM dfs.`lateraljoin/multipleFiles` t, " +
             "LATERAL (SELECT t2.ordrs.o_lineitems FROM UNNEST(t.c_orders) t2(ordrs)) t3(lineitems), " +

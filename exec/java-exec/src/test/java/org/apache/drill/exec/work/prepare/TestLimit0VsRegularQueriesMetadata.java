@@ -21,6 +21,7 @@ import org.apache.drill.shaded.guava.com.google.common.collect.ImmutableList;
 import org.apache.drill.shaded.guava.com.google.common.collect.Lists;
 import org.apache.drill.common.types.Types;
 import org.apache.drill.exec.ExecConstants;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.List;
@@ -269,6 +270,7 @@ public class TestLimit0VsRegularQueriesMetadata extends PreparedStatementTestBas
   }
 
   @Test
+  @Ignore
   public void unionWithConstants() throws Exception {
     String query = "select * from (\n" +
         "select cast('AAA' as varchar(3)) as col_const from (values(1))\n" +
