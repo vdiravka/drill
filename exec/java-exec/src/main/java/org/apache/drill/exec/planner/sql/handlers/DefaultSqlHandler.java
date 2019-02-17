@@ -413,7 +413,7 @@ public class DefaultSqlHandler extends AbstractSqlHandler {
       }
 
       // Set noDAG = true to avoid caching problems which lead to incorrect Drill work.
-      final HepPlanner planner = new HepPlanner(hepPgmBldr.build(), context.getPlannerSettings(), true, null,
+      final HepPlanner planner = new HepPlanner(hepPgmBldr.build(), context.getPlannerSettings(), false, null,
           RelOptCostImpl.FACTORY);
 
       JaninoRelMetadataProvider relMetadataProvider = JaninoRelMetadataProvider.of(DrillDefaultRelMetadataProvider.INSTANCE);
