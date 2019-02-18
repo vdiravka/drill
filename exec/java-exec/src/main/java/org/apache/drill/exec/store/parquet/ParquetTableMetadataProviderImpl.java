@@ -35,7 +35,6 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -46,26 +45,24 @@ public class ParquetTableMetadataProviderImpl extends BaseParquetTableMetadataPr
   private final DrillFileSystem fs;
   private final MetadataContext metaContext;
   // may change when filter push down / partition pruning is applied
-  private String selectionRoot;
-  private String cacheFileRoot;
+  private Path selectionRoot;
+  private Path cacheFileRoot;
   private final boolean corruptDatesAutoCorrected;
 
 
   public ParquetTableMetadataProviderImpl(List<ReadEntryWithPath> entries,
-                                          String selectionRoot,
-                                          String cacheFileRoot,
-                                          Set<String> fileSet,
+                                          Path selectionRoot,
+                                          Path cacheFileRoot,
                                           ParquetReaderConfig readerConfig,
                                           DrillFileSystem fs,
                                           boolean autoCorrectCorruptedDates) throws IOException {
-    super(entries, readerConfig, fileSet);
+    super(readerConfig, entries);
     this.entries = entries;
     this.fs = fs;
     this.selectionRoot = selectionRoot;
     this.cacheFileRoot = cacheFileRoot;
     this.metaContext = new MetadataContext();
-
-    this.tableName = selectionRoot;
+    this.tableName = selectionRoot != null ? selectionRoot.toUri().getPath() : null; // TODO: change to correct table name
     this.tableLocation = selectionRoot;
     this.corruptDatesAutoCorrected = autoCorrectCorruptedDates;
 
@@ -85,7 +82,7 @@ public class ParquetTableMetadataProviderImpl extends BaseParquetTableMetadataPr
     MetadataContext metadataContext = selection.getMetaContext();
     this.metaContext = metadataContext != null ? metadataContext : new MetadataContext();
 
-    this.tableName = selectionRoot;
+    this.tableName = selectionRoot.toUri().getPath(); // TODO: change to correct table name
     this.tableLocation = selectionRoot;
     this.corruptDatesAutoCorrected = autoCorrectCorruptedDates;
 
@@ -95,8 +92,8 @@ public class ParquetTableMetadataProviderImpl extends BaseParquetTableMetadataPr
         // The fully expanded list is already stored as part of the fileSet
         entries.add(new ReadEntryWithPath(fileSelection.getSelectionRoot()));
       } else {
-        for (String fileName : fileSelection.getFiles()) {
-          entries.add(new ReadEntryWithPath(fileName));
+        for (Path file : fileSelection.getFiles()) {
+          entries.add(new ReadEntryWithPath(file));
         }
       }
 
@@ -105,7 +102,7 @@ public class ParquetTableMetadataProviderImpl extends BaseParquetTableMetadataPr
   }
 
   @Override
-  public String getSelectionRoot() {
+  public Path getSelectionRoot() {
     return selectionRoot;
   }
 
@@ -114,7 +111,7 @@ public class ParquetTableMetadataProviderImpl extends BaseParquetTableMetadataPr
     FileSystem processUserFileSystem = ImpersonationUtil.createFileSystem(ImpersonationUtil.getProcessUserName(), fs.getConf());
     Path metaPath = null;
     if (entries.size() == 1 && parquetTableMetadata == null) {
-      Path p = Path.getPathWithoutSchemeAndAuthority(new Path(entries.get(0).getPath()));
+      Path p = Path.getPathWithoutSchemeAndAuthority(entries.get(0).getPath());
       if (fs.isDirectory(p)) {
         // Using the metadata file makes sense when querying a directory; otherwise
         // if querying a single file we can look up the metadata directly from the file
@@ -130,9 +127,9 @@ public class ParquetTableMetadataProviderImpl extends BaseParquetTableMetadataPr
         parquetTableMetadata = Metadata.getParquetTableMetadata(processUserFileSystem, p.toString(), readerConfig);
       }
     } else {
-      Path p = Path.getPathWithoutSchemeAndAuthority(new Path(selectionRoot));
+      Path p = Path.getPathWithoutSchemeAndAuthority(selectionRoot);
       metaPath = new Path(p, Metadata.METADATA_FILENAME);
-      if (!metaContext.isMetadataCacheCorrupted() && fs.isDirectory(new Path(selectionRoot))
+      if (!metaContext.isMetadataCacheCorrupted() && fs.isDirectory(selectionRoot)
           && fs.exists(metaPath)) {
         if (parquetTableMetadata == null) {
           parquetTableMetadata = Metadata.readBlockMeta(processUserFileSystem, metaPath, metaContext, readerConfig);
@@ -148,7 +145,7 @@ public class ParquetTableMetadataProviderImpl extends BaseParquetTableMetadataPr
         final List<FileStatus> fileStatuses = new ArrayList<>();
         for (ReadEntryWithPath entry : entries) {
           fileStatuses.addAll(
-              DrillFileSystemUtil.listFiles(fs, Path.getPathWithoutSchemeAndAuthority(new Path(entry.getPath())), true));
+              DrillFileSystemUtil.listFiles(fs, Path.getPathWithoutSchemeAndAuthority(entry.getPath()), true));
         }
 
         Map<FileStatus, FileSystem> statusMap = fileStatuses.stream()
@@ -275,7 +272,7 @@ public class ParquetTableMetadataProviderImpl extends BaseParquetTableMetadataPr
           }
         } else {
           final Path path = Path.getPathWithoutSchemeAndAuthority(cacheFileRoot);
-          fileSet.add(path.toString());
+          fileSet.add(path);
         }
       }
     }
@@ -286,21 +283,20 @@ public class ParquetTableMetadataProviderImpl extends BaseParquetTableMetadataPr
       return null;
     }
 
-    List<String> fileNames = new ArrayList<>(fileSet);
+    List<Path> fileNames = new ArrayList<>(fileSet);
 
     // when creating the file selection, set the selection root without the URI prefix
     // The reason is that the file names above have been created in the form
     // /a/b/c.parquet and the format of the selection root must match that of the file names
     // otherwise downstream operations such as partition pruning can break.
-    final Path metaRootPath = Path.getPathWithoutSchemeAndAuthority(new Path(selection.getSelectionRoot()));
-    this.selectionRoot = metaRootPath.toString();
+    final Path metaRootPath = Path.getPathWithoutSchemeAndAuthority(selection.getSelectionRoot());
+    this.selectionRoot = metaRootPath;
 
     // Use the FileSelection constructor directly here instead of the FileSelection.create() method
     // because create() changes the root to include the scheme and authority; In future, if create()
     // is the preferred way to instantiate a file selection, we may need to do something different...
     // WARNING: file statuses and file names are inconsistent
-    FileSelection newSelection = new FileSelection(selection.getStatuses(fs), fileNames, metaRootPath.toString(),
-        cacheFileRoot, selection.wasAllPartitionsPruned());
+    FileSelection newSelection = new FileSelection(selection.getStatuses(fs), fileNames, metaRootPath, cacheFileRoot, selection.wasAllPartitionsPruned());
 
     newSelection.setExpandedFully();
     newSelection.setMetaContext(metaContext);

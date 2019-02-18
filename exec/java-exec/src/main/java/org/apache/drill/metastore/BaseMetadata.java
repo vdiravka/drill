@@ -26,7 +26,10 @@ import java.util.Map;
  * Common statistics provider for table, file or row group.
  */
 public interface BaseMetadata {
-  Map<SchemaPath, ColumnStatistic> getColumnStatistics();
+
   TupleSchema getSchema();
+
   Object getStatistic(StatisticsKind statisticsKind);
+
+  Map<SchemaPath, ColumnStatistic> getColumnStatistics();
 }

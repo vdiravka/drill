@@ -21,6 +21,7 @@ import org.apache.drill.common.expression.SchemaPath;
 import org.apache.drill.exec.record.metadata.ColumnMetadata;
 import org.apache.drill.exec.record.metadata.SchemaPathUtils;
 import org.apache.drill.exec.record.metadata.TupleSchema;
+import org.apache.hadoop.fs.Path;
 
 import java.util.Map;
 
@@ -30,10 +31,14 @@ public class RowGroupMetadata implements BaseMetadata, LocationProvider {
   private final Map<String, Object> rowGroupStatistics;
   private Map<String, Float> hostAffinity;
   private int rowGroupIndex;
-  private String location;
+  private Path location;
 
   public RowGroupMetadata(TupleSchema schema,
-                          Map<SchemaPath, ColumnStatistic> columnStatistics, Map<String, Object> rowGroupStatistics, Map<String, Float> hostAffinity, int rowGroupIndex, String location) {
+                          Map<SchemaPath, ColumnStatistic> columnStatistics,
+                          Map<String, Object> rowGroupStatistics,
+                          Map<String, Float> hostAffinity,
+                          int rowGroupIndex,
+                          Path location) {
     this.schema = schema;
     this.columnStatistics = columnStatistics;
     this.rowGroupStatistics = rowGroupStatistics;
@@ -42,23 +47,30 @@ public class RowGroupMetadata implements BaseMetadata, LocationProvider {
     this.location = location;
   }
 
-
-  public Map<SchemaPath, ColumnStatistic> getColumnStatistics() {
-    return columnStatistics;
-  }
-
   @Override
   public TupleSchema getSchema() {
     return schema;
   }
 
-  public ColumnMetadata getColumn(SchemaPath name) {
-    return SchemaPathUtils.getColumnMetadata(name, schema);
-  }
-
   @Override
   public Object getStatistic(StatisticsKind statisticsKind) {
     return rowGroupStatistics.get(statisticsKind.getName());
+  }
+
+  @Override
+  public Map<SchemaPath, ColumnStatistic> getColumnStatistics() {
+    return columnStatistics;
+  }
+
+  @Override
+  public Path getLocation() {
+    return location;
+  }
+
+  //TODO: why do not add these methods to interface?
+
+  public ColumnMetadata getColumn(SchemaPath name) {
+    return SchemaPathUtils.getColumnMetadata(name, schema);
   }
 
   public int getRowGroupIndex() {
@@ -69,7 +81,4 @@ public class RowGroupMetadata implements BaseMetadata, LocationProvider {
     return hostAffinity;
   }
 
-  public String getLocation() {
-    return location;
-  }
 }

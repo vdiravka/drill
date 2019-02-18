@@ -17,6 +17,10 @@
  */
 package org.apache.drill.metastore;
 
+import org.apache.hadoop.fs.Path;
+
 public interface LocationProvider {
-  String getLocation();
+
+  Path getLocation();
+
 }

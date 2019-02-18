@@ -55,8 +55,8 @@ public class ParquetGroupScan extends AbstractParquetGroupScan {
 
   private boolean usedMetadataCache; // false by default
   // may change when filter push down / partition pruning is applied
-  private String selectionRoot;
-  private String cacheFileRoot;
+  private Path selectionRoot;
+  private Path cacheFileRoot;
 
   @JsonCreator
   public ParquetGroupScan(@JacksonInject StoragePluginRegistry engineRegistry,
@@ -65,8 +65,8 @@ public class ParquetGroupScan extends AbstractParquetGroupScan {
                           @JsonProperty("storage") StoragePluginConfig storageConfig,
                           @JsonProperty("format") FormatPluginConfig formatConfig,
                           @JsonProperty("columns") List<SchemaPath> columns,
-                          @JsonProperty("selectionRoot") String selectionRoot,
-                          @JsonProperty("cacheFileRoot") String cacheFileRoot,
+                          @JsonProperty("selectionRoot") Path selectionRoot,
+                          @JsonProperty("cacheFileRoot") Path cacheFileRoot,
                           @JsonProperty("readerConfig") ParquetReaderConfig readerConfig,
                           @JsonProperty("filter") LogicalExpression filter) throws IOException, ExecutionSetupException {
     super(ImpersonationUtil.resolveUserName(userName), columns, entries, readerConfig, filter);
@@ -80,9 +80,9 @@ public class ParquetGroupScan extends AbstractParquetGroupScan {
     DrillFileSystem fs =
         ImpersonationUtil.createFileSystem(ImpersonationUtil.resolveUserName(userName), formatPlugin.getFsConf());
 
-    this.metadataProvider = new ParquetTableMetadataProviderImpl(entries, selectionRoot, cacheFileRoot, null,
-        readerConfig, fs, this.formatConfig.areCorruptDatesAutoCorrected());
-    this.selectionRoot = metadataProvider.getSelectionRoot();
+    this.metadataProvider = new ParquetTableMetadataProviderImpl(entries, selectionRoot, cacheFileRoot, readerConfig,
+        fs, this.formatConfig.areCorruptDatesAutoCorrected());
+    this.selectionRoot = metadataProvider.getSelectionRoot(); // TODO: it can be initialized without metadataProvider
     this.tableMetadata = metadataProvider.getTableMetadata();
     this.partitions = metadataProvider.getPartitionsMetadata();
     this.files = metadataProvider.getFilesMetadata();
@@ -134,10 +134,6 @@ public class ParquetGroupScan extends AbstractParquetGroupScan {
     this.entries = metadataProvider.getEntries();
     this.rowGroups = metadataProvider.getRowGroupsMeta();
 
-
-    // TODO: initialize TableMetadata, FileMetadata and RowGroupMetadata from
-    //  parquetTableMetadata if it wasn't fetched from the metastore using ParquetTableMetadataCreator
-
     init();
   }
 
@@ -176,12 +172,12 @@ public class ParquetGroupScan extends AbstractParquetGroupScan {
   }
 
   @JsonProperty
-  public String getSelectionRoot() {
+  public Path getSelectionRoot() {
     return selectionRoot;
   }
 
   @JsonProperty
-  public String getCacheFileRoot() {
+  public Path getCacheFileRoot() {
     return cacheFileRoot;
   }
   // getters for serialization / deserialization end
@@ -238,8 +234,8 @@ public class ParquetGroupScan extends AbstractParquetGroupScan {
       // For EXPLAIN, remove the URI prefix from cacheFileRoot.  If cacheFileRoot is null, we
       // would have read the cache file from selectionRoot
       String cacheFileRootString = (cacheFileRoot == null) ?
-          Path.getPathWithoutSchemeAndAuthority(new Path(selectionRoot)).toString() :
-          Path.getPathWithoutSchemeAndAuthority(new Path(cacheFileRoot)).toString();
+          Path.getPathWithoutSchemeAndAuthority(selectionRoot).toString() :
+          Path.getPathWithoutSchemeAndAuthority(cacheFileRoot).toString();
       builder.append(", cacheFileRoot=").append(cacheFileRootString);
     }
 
@@ -251,7 +247,7 @@ public class ParquetGroupScan extends AbstractParquetGroupScan {
 
   // overridden protected methods block start
   @Override
-  protected AbstractParquetGroupScan cloneWithFileSelection(Collection<String> filePaths) throws IOException {
+  protected AbstractParquetGroupScan cloneWithFileSelection(Collection<Path> filePaths) throws IOException {
     FileSelection newSelection = new FileSelection(null, new ArrayList<>(filePaths), getSelectionRoot(), cacheFileRoot, false);
     return clone(newSelection);
   }

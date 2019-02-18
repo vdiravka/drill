@@ -21,6 +21,7 @@ import org.apache.drill.common.expression.SchemaPath;
 import org.apache.drill.metastore.FileMetadata;
 import org.apache.drill.metastore.PartitionMetadata;
 import org.apache.drill.metastore.TableMetadata;
+import org.apache.hadoop.fs.Path;
 
 import java.util.List;
 import java.util.Set;
@@ -43,7 +44,7 @@ public interface TableMetadataProvider {
 
   List<FileMetadata> getFilesMetadata();
 
-  String getSelectionRoot();
+  Path getSelectionRoot();
 
-  Set<String> getFileSet();
+  Set<Path> getFileSet();
 }

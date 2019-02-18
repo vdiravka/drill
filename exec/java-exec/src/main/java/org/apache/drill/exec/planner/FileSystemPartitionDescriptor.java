@@ -54,6 +54,7 @@ import org.apache.drill.exec.store.dfs.FormatSelection;
 import org.apache.drill.exec.store.dfs.MetadataContext;
 import org.apache.drill.exec.vector.NullableVarCharVector;
 import org.apache.drill.exec.vector.ValueVector;
+import org.apache.hadoop.fs.Path;
 
 
 // partition descriptor for file system based tables
@@ -145,18 +146,18 @@ public class FileSystemPartitionDescriptor extends AbstractPartitionDescriptor {
   }
 
   @Override
-  public String getBaseTableLocation() {
+  public Path getBaseTableLocation() {
     final FormatSelection origSelection = (FormatSelection) table.getSelection();
-    return origSelection.getSelection().selectionRoot;
+    return origSelection.getSelection().getSelectionRoot();
   }
 
   @Override
   protected void createPartitionSublists() {
-    final Pair<Collection<String>, Boolean> fileLocationsAndStatus = getFileLocationsAndStatus();
+    final Pair<Collection<Path>, Boolean> fileLocationsAndStatus = getFileLocationsAndStatus();
     List<PartitionLocation> locations = new LinkedList<>();
     boolean hasDirsOnly = fileLocationsAndStatus.right;
 
-    final String selectionRoot = getBaseTableLocation();
+    final Path selectionRoot = getBaseTableLocation();
 
     // map used to map the partition keys (dir0, dir1, ..), to the list of partitions that share the same partition keys.
     // For example,
@@ -166,7 +167,7 @@ public class FileSystemPartitionDescriptor extends AbstractPartitionDescriptor {
 
     // Figure out the list of leaf subdirectories. For each leaf subdirectory, find the list of files (DFSFilePartitionLocation)
     // it contains.
-    for (String file: fileLocationsAndStatus.left) {
+    for (Path file: fileLocationsAndStatus.left) {
       DFSFilePartitionLocation dfsFilePartitionLocation = new DFSFilePartitionLocation(MAX_NESTED_SUBDIRS, selectionRoot, file, hasDirsOnly);
 
       final String[] dirs = dfsFilePartitionLocation.getDirs();
@@ -187,9 +188,8 @@ public class FileSystemPartitionDescriptor extends AbstractPartitionDescriptor {
     sublistsCreated = true;
   }
 
-  protected Pair<Collection<String>, Boolean> getFileLocationsAndStatus() {
-    Collection<String> fileLocations = null;
-    Pair<Collection<String>, Boolean> fileLocationsAndStatus = null;
+  protected Pair<Collection<Path>, Boolean> getFileLocationsAndStatus() {
+    Collection<Path> fileLocations = null;
     boolean isExpandedPartial = false;
     if (scanRel instanceof DrillScanRel) {
       // If a particular GroupScan provides files, get the list of files from there rather than
@@ -208,14 +208,13 @@ public class FileSystemPartitionDescriptor extends AbstractPartitionDescriptor {
       fileLocations = selection.getFiles();
       isExpandedPartial = selection.isExpandedPartial();
     }
-    fileLocationsAndStatus = Pair.of(fileLocations, isExpandedPartial);
-    return fileLocationsAndStatus;
+    return Pair.of(fileLocations, isExpandedPartial);
   }
 
   @Override
-  public TableScan createTableScan(List<PartitionLocation> newPartitionLocation, String cacheFileRoot,
+  public TableScan createTableScan(List<PartitionLocation> newPartitionLocation, Path cacheFileRoot,
       boolean wasAllPartitionsPruned, MetadataContext metaContext) throws Exception {
-    List<String> newFiles = Lists.newArrayList();
+    List<Path> newFiles = new ArrayList<>();
     for (final PartitionLocation location : newPartitionLocation) {
       if (!location.isCompositePartition()) {
         newFiles.add(location.getEntirePartitionLocation());
@@ -242,16 +241,17 @@ public class FileSystemPartitionDescriptor extends AbstractPartitionDescriptor {
                       ((DrillScanRel) scanRel).getColumns(),
                       true /*filter pushdown*/);
     } else if (scanRel instanceof EnumerableTableScan) {
-      return createNewTableScanFromSelection((EnumerableTableScan)scanRel, newFiles, cacheFileRoot,
+      return createNewTableScanFromSelection((EnumerableTableScan) scanRel, newFiles, cacheFileRoot,
           wasAllPartitionsPruned, metaContext);
     } else {
       throw new UnsupportedOperationException("Only DrillScanRel and EnumerableTableScan is allowed!");
     }
   }
 
-  private TableScan createNewTableScanFromSelection(EnumerableTableScan oldScan, List<String> newFiles, String cacheFileRoot,
-      boolean wasAllPartitionsPruned, MetadataContext metaContext) {
+  private TableScan createNewTableScanFromSelection(EnumerableTableScan oldScan, List<Path> newFiles,
+      Path cacheFileRoot, boolean wasAllPartitionsPruned, MetadataContext metaContext) {
     final RelOptTableImpl t = (RelOptTableImpl) oldScan.getTable();
+    // TODO: refactor duplicate code
     final FormatSelection formatSelection = (FormatSelection) table.getSelection();
     final FileSelection newFileSelection = new FileSelection(null, newFiles, getBaseTableLocation(),
             cacheFileRoot, wasAllPartitionsPruned, formatSelection.getSelection().getDirStatus());

@@ -48,6 +48,7 @@ import org.apache.drill.metastore.RowGroupMetadata;
 import org.apache.drill.metastore.TableMetadata;
 import org.apache.drill.shaded.guava.com.google.common.primitives.Longs;
 import org.apache.drill.shaded.guava.com.google.common.primitives.UnsignedBytes;
+import org.apache.hadoop.fs.Path;
 import org.apache.parquet.io.api.Binary;
 import org.apache.parquet.schema.OriginalType;
 import org.apache.parquet.schema.PrimitiveComparator;
@@ -82,12 +83,12 @@ public abstract class BaseParquetTableMetadataProvider implements ParquetTableMe
   protected List<ReadEntryWithPath> entries;
 
   protected MetadataBase.ParquetTableMetadataBase parquetTableMetadata;
-  protected Set<String> fileSet;
+  protected Set<Path> fileSet;
   protected /*final*/ ParquetReaderConfig readerConfig;
 
   private List<SchemaPath> partitionColumns;
   protected String tableName;
-  protected String tableLocation;
+  protected Path tableLocation;
 
   private List<RowGroupMetadata> rowGroups;
   private TableMetadata tableMetadata;
@@ -99,7 +100,7 @@ public abstract class BaseParquetTableMetadataProvider implements ParquetTableMe
 
   public BaseParquetTableMetadataProvider(List<ReadEntryWithPath> entries,
                                   ParquetReaderConfig readerConfig,
-                                  Set<String> fileSet) {
+                                  Set<Path> fileSet) {
     this(readerConfig, entries);
     this.fileSet = fileSet;
   }
@@ -157,6 +158,7 @@ public abstract class BaseParquetTableMetadataProvider implements ParquetTableMe
           columnStatistics.put(partitionColumn, new ColumnStatisticImpl(stats, getNaturalNullsFirstComparator()));
         }
       }
+      // TODO: specify correct user (not root)
       tableMetadata = new TableMetadata(tableName, tableLocation, schema, columnStatistics, tableStatistics,
           -1, "root", partitionKeys);
     }
@@ -216,14 +218,14 @@ public abstract class BaseParquetTableMetadataProvider implements ParquetTableMe
         }
       } else {
         for (SchemaPath partitionColumn : getParquetGroupScanStatistics().getPartitionColumns()) {
-          Map<String, Object> partitionPaths = getParquetGroupScanStatistics().getPartitionPaths(partitionColumn);
-          SetMultimap<Object, String> partitionsForValue = Multimaps.newSetMultimap(new HashMap<>(), HashSet::new);
+          Map<Path, Object> partitionPaths = getParquetGroupScanStatistics().getPartitionPaths(partitionColumn);
+          SetMultimap<Object, Path> partitionsForValue = Multimaps.newSetMultimap(new HashMap<>(), HashSet::new);
 
-          for (Map.Entry<String, Object> stringObjectEntry : partitionPaths.entrySet()) {
+          for (Map.Entry<Path, Object> stringObjectEntry : partitionPaths.entrySet()) {
             partitionsForValue.put(stringObjectEntry.getValue(), stringObjectEntry.getKey());
           }
 
-          for (Map.Entry<Object, Collection<String>> valueLocationsEntry : partitionsForValue.asMap().entrySet()) {
+          for (Map.Entry<Object, Collection<Path>> valueLocationsEntry : partitionsForValue.asMap().entrySet()) {
             HashMap<SchemaPath, ColumnStatistic> columnStatistics = new HashMap<>();
 
             Map<String, Object> statistics = new HashMap<>();
@@ -239,7 +241,7 @@ public abstract class BaseParquetTableMetadataProvider implements ParquetTableMe
                     getComparator(getParquetGroupScanStatistics().getTypeForColumn(partitionColumn).getMinorType())));
 
             partitions.add(new PartitionMetadata(partitionColumn, getTableMetadata().getSchema(),
-                columnStatistics, statistics, (Set<String>) valueLocationsEntry.getValue(), tableName, -1));
+                columnStatistics, statistics, (Set<Path>) valueLocationsEntry.getValue(), tableName, -1));
           }
         }
       }
@@ -257,7 +259,7 @@ public abstract class BaseParquetTableMetadataProvider implements ParquetTableMe
   }
 
   private PartitionMetadata getPartitionMetadata(SchemaPath logicalExpressions, List<FileMetadata> files) {
-    Set<String> locations = new HashSet<>();
+    Set<Path> locations = new HashSet<>();
     long partRowCount = 0;
     Set<SchemaPath> columns = new HashSet<>();
 
@@ -331,13 +333,12 @@ public abstract class BaseParquetTableMetadataProvider implements ParquetTableMe
 
     TupleSchema schema = rowGroups.iterator().next().getSchema();
 
-    return new FileMetadata(rowGroups.iterator().next().getLocation(), schema,
-      getColumnStatistics(rowGroups, rowGroups.iterator().next().getColumnStatistics().keySet()),
+    return new FileMetadata(schema, getColumnStatistics(rowGroups, rowGroups.iterator().next().getColumnStatistics().keySet()),
       fileStatistics, rowGroups.iterator().next().getLocation(), tableName, -1);
   }
 
   @Override
-  public Set<String> getFileSet() {
+  public Set<Path> getFileSet() {
     return fileSet;
   }
 
@@ -365,7 +366,8 @@ public abstract class BaseParquetTableMetadataProvider implements ParquetTableMe
     return rowGroups;
   }
 
-  private RowGroupMetadata getRowGroupMetadata(MetadataBase.RowGroupMetadata rowGroupMetadata, int rgIndexInFile, String location) {
+  private RowGroupMetadata getRowGroupMetadata(
+      MetadataBase.RowGroupMetadata rowGroupMetadata, int rgIndexInFile, Path location) {
     HashMap<SchemaPath, ColumnStatistic> columnStatistics = getRowGroupColumnStatistics(rowGroupMetadata);
     HashMap<String, Object> rowGroupStatistics = new HashMap<>();
     rowGroupStatistics.put(ColumnStatisticsKind.ROW_COUNT.getName(), rowGroupMetadata.getRowCount());
@@ -379,8 +381,8 @@ public abstract class BaseParquetTableMetadataProvider implements ParquetTableMe
       SchemaPathUtils.addColumnMetadata(pathTypePair.getKey(), schema, pathTypePair.getValue());
     }
 
-    return new RowGroupMetadata(
-      schema, columnStatistics, rowGroupStatistics, rowGroupMetadata.getHostAffinity(), rgIndexInFile, location);
+    return new RowGroupMetadata(schema, columnStatistics, rowGroupStatistics, rowGroupMetadata.getHostAffinity(),
+        rgIndexInFile, location);
   }
 
   protected abstract void initInternal() throws IOException;

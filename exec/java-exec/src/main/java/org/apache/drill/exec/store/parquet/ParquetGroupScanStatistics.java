@@ -29,6 +29,7 @@ import org.apache.drill.metastore.ColumnStatisticsKind;
 import org.apache.drill.metastore.LocationProvider;
 import org.apache.drill.shaded.guava.com.google.common.collect.HashBasedTable;
 import org.apache.drill.shaded.guava.com.google.common.collect.Table;
+import org.apache.hadoop.fs.Path;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -43,7 +44,7 @@ import java.util.Objects;
 public class ParquetGroupScanStatistics<T extends BaseMetadata & LocationProvider> {
 
   // map from file names to maps of column name to partition value mappings
-  private Table<String, SchemaPath, Object> partitionValueMap;
+  private Table<Path, SchemaPath, Object> partitionValueMap;
   // only for partition columns : value is unique for each partition
   private Map<SchemaPath, TypeProtos.MajorType> partitionColTypeMap;
   // total number of non-null value for each column in parquet files
@@ -80,7 +81,7 @@ public class ParquetGroupScanStatistics<T extends BaseMetadata & LocationProvide
     return rowCount;
   }
 
-  public Object getPartitionValue(String path, SchemaPath column) {
+  public Object getPartitionValue(Path path, SchemaPath column) {
     Object partitionValue = partitionValueMap.get(path, column);
     if (partitionValue == BaseParquetTableMetadataProvider.NULL_VALUE) {
       return null;
@@ -88,7 +89,7 @@ public class ParquetGroupScanStatistics<T extends BaseMetadata & LocationProvide
     return partitionValue;
   }
 
-  public Map<String, Object> getPartitionPaths(SchemaPath column) {
+  public Map<Path, Object> getPartitionPaths(SchemaPath column) {
     return partitionValueMap.column(column);
   }
 

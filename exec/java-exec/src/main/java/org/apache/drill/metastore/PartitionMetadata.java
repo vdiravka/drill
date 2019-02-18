@@ -21,6 +21,7 @@ import org.apache.drill.common.expression.SchemaPath;
 import org.apache.drill.exec.record.metadata.ColumnMetadata;
 import org.apache.drill.exec.record.metadata.SchemaPathUtils;
 import org.apache.drill.exec.record.metadata.TupleSchema;
+import org.apache.hadoop.fs.Path;
 
 import java.util.Map;
 import java.util.Set;
@@ -32,13 +33,12 @@ public class PartitionMetadata implements BaseMetadata {
   private final SchemaPath column;
   // part location -> part column value
 //  private final Map<String, Object> values;
-  // TODO: currently it is impossible to obtain statistics for the concrete partition.
-  // Refactor this code to allow that.
+  // TODO: currently it is impossible to obtain statistics for the exact partition.
+  //  Refactor this code to allow that.
   private final TupleSchema schema;
   private final Map<SchemaPath, ColumnStatistic> columnStatistics;
   private final Map<String, Object> partitionStatistics;
-  // TODO: decide which of these: fileName or location should be left.
-  private final Set<String> location;
+  private final Set<Path> location;
   // TODO: decide whether this field is required
   private final String tableName;
   private final long lastModifiedTime;
@@ -48,7 +48,7 @@ public class PartitionMetadata implements BaseMetadata {
                            TupleSchema schema,
       Map<SchemaPath, ColumnStatistic> columnStatistics,
       Map<String, Object> partitionStatistics,
-      Set<String> location,
+      Set<Path> location,
       String tableName,
       long lastModifiedTime) {
     this.column = column;
@@ -69,7 +69,7 @@ public class PartitionMetadata implements BaseMetadata {
 //    return values;
 //  }
 
-  public Set<String> getLocations() {
+  public Set<Path> getLocations() {
     return location;
   }
 

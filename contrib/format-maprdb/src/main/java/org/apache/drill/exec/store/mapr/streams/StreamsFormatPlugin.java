@@ -31,6 +31,7 @@ import org.apache.drill.exec.store.dfs.FileSelection;
 import org.apache.drill.exec.store.dfs.FormatMatcher;
 import org.apache.drill.exec.store.mapr.TableFormatPlugin;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
 
 public class StreamsFormatPlugin extends TableFormatPlugin {
   static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(StreamsFormatPlugin.class);
@@ -71,7 +72,7 @@ public class StreamsFormatPlugin extends TableFormatPlugin {
   @Override
   public AbstractGroupScan getGroupScan(String userName, FileSelection selection,
       List<SchemaPath> columns) throws IOException {
-    List<String> files = selection.getFiles();
+    List<Path> files = selection.getFiles();
     assert (files.size() == 1);
     //TableProperties props = getMaprFS().getTableProperties(new Path(files.get(0)));
     throw UserException.unsupportedError().message("MapR streams can not be querried at this time.").build(logger);

@@ -17,12 +17,19 @@
  */
 package org.apache.drill;
 
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import org.apache.drill.exec.planner.SerializablePath;
+import org.apache.drill.exec.store.schedule.CompleteFileWork;
+import org.apache.hadoop.fs.Path;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.nio.file.Paths;
 
+import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 
 public class TestCTASPartitionFilter extends PlanTestBase {
   static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(TestCTASPartitionFilter.class);
@@ -104,4 +111,47 @@ public class TestCTASPartitionFilter extends PlanTestBase {
     String query = ("select * from drill_3414_2 where (x=1994 or y='Q1') and (x=1995 or y='Q2' or columns[0] > 5000) or columns[0] < 3000");
     testIncludeFilter(query, 1, "Filter\\(", 120);
   }
+
+  @Test
+  public void testDeSerializingWithJsonCreator() throws IOException {
+
+    String jsonString = "{\"start\": 1, \"length\": 2, \"path\": \"/tmp/drill/test\"}";
+
+    SimpleModule module = new SimpleModule();
+    module.addSerializer(Path.class, new SerializablePath.PathSerializer());
+//    module.addDeserializer(Path.class, new SerializablePath.PathDeserializer());
+    objectMapper.registerModule(module);
+
+    CompleteFileWork.FileWorkImpl bean = objectMapper.readValue(jsonString, CompleteFileWork.FileWorkImpl.class);
+
+    System.out.println();
+    System.out.println(bean);
+    System.out.println();
+    System.out.println(bean.start);
+    System.out.println(bean.length);
+    System.out.println(bean.path);
+
+
+    assertThat(bean.start == 1,  equalTo( true ));
+    assertThat(bean.length == 2, equalTo( true ));
+    assertThat(bean.path.equals(new Path("/tmp/drill/test")), equalTo( true ));
+  }
+
+  @Test
+  public void testHadoopPathSerDe() throws IOException {
+    CompleteFileWork.FileWorkImpl fileWork = new CompleteFileWork.FileWorkImpl(5, 5, new Path("/tmp"));
+    SimpleModule module = new SimpleModule();
+    module.addSerializer(Path.class, new SerializablePath.PathSerializer());
+    objectMapper.registerModule(module);
+    String s = objectMapper.writeValueAsString(fileWork);
+    System.out.println(s);
+
+    CompleteFileWork.FileWorkImpl fileWork1 = objectMapper.readValue(s, CompleteFileWork.FileWorkImpl.class);
+    System.out.println(fileWork1);
+
+    assertThat(fileWork1.start == 5,  equalTo( true ));
+    assertThat(fileWork1.length == 5, equalTo( true ));
+    assertThat(fileWork1.path.equals(new Path("/tmp")), equalTo( true ));
+  }
+
 }

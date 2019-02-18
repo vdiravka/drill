@@ -21,16 +21,17 @@ import org.apache.drill.exec.store.dfs.easy.FileWork;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.apache.hadoop.fs.Path;
 
 public class CompleteFileWork implements FileWork, CompleteWork {
   static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(CompleteFileWork.class);
 
   private long start;
   private long length;
-  private String path;
+  private Path path;
   private EndpointByteMap byteMap;
 
-  public CompleteFileWork(EndpointByteMap byteMap, long start, long length, String path) {
+  public CompleteFileWork(EndpointByteMap byteMap, long start, long length, Path path) {
     super();
     this.start = start;
     this.length = length;
@@ -69,7 +70,7 @@ public class CompleteFileWork implements FileWork, CompleteWork {
   }
 
   @Override
-  public String getPath() {
+  public Path getPath() {
     return path;
   }
 
@@ -96,20 +97,19 @@ public class CompleteFileWork implements FileWork, CompleteWork {
 
     public long start;
     public long length;
-    public String path;
+    public Path path;
 
     @JsonCreator
     public FileWorkImpl(@JsonProperty("start") long start,
                         @JsonProperty("length") long length,
-                        @JsonProperty("path") String path) {
-      super();
+                        @JsonProperty("path") Path path) {
       this.start = start;
       this.length = length;
       this.path = path;
     }
 
     @Override
-    public String getPath() {
+    public Path getPath() {
       return path;
     }
 
@@ -123,5 +123,13 @@ public class CompleteFileWork implements FileWork, CompleteWork {
       return length;
     }
 
+    @Override
+    public String toString() {
+      return "FileWorkImpl{" +
+          "start=" + start +
+          ", length=" + length +
+          ", path=" + path +
+          '}';
+    }
   }
 }

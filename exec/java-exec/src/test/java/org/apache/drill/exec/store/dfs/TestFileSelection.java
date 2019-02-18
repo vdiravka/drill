@@ -22,6 +22,7 @@ import static org.junit.Assert.assertNull;
 
 import java.util.List;
 
+import org.apache.drill.shaded.guava.com.google.common.base.Strings;
 import org.apache.drill.shaded.guava.com.google.common.collect.ImmutableList;
 import org.apache.drill.test.BaseTestQuery;
 import org.apache.hadoop.fs.FileStatus;
@@ -30,7 +31,7 @@ import org.junit.Test;
 
 public class TestFileSelection extends BaseTestQuery {
   private static final List<FileStatus> EMPTY_STATUSES = ImmutableList.of();
-  private static final List<String> EMPTY_FILES = ImmutableList.of();
+  private static final List<Path> EMPTY_FILES = ImmutableList.of();
   private static final String EMPTY_ROOT = "";
 
   @Test
@@ -38,8 +39,11 @@ public class TestFileSelection extends BaseTestQuery {
     for (final Object statuses : new Object[] { null, EMPTY_STATUSES}) {
       for (final Object files : new Object[]{null, EMPTY_FILES}) {
         for (final Object root : new Object[]{null, EMPTY_ROOT}) {
-          final FileSelection selection = FileSelection.create((List<FileStatus>) statuses, (List<String>) files,
-              (String)root);
+          String stringRoot = (String) root;
+          System.out.println(stringRoot);
+          Path path = Strings.isNullOrEmpty(stringRoot) ? new Path("/") : new Path(stringRoot);
+          // TODO: make FileSelection.create working with String
+          FileSelection selection = FileSelection.create((List<FileStatus>) statuses, (List<Path>) files, path);
           assertNull(selection);
         }
       }

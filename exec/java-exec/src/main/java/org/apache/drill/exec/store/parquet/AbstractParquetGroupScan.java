@@ -47,6 +47,7 @@ import org.apache.drill.exec.store.schedule.EndpointByteMapImpl;
 import org.apache.drill.metastore.FileMetadata;
 import org.apache.drill.metastore.RowGroupMetadata;
 import org.apache.drill.metastore.expr.FilterPredicate;
+import org.apache.hadoop.fs.Path;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -365,7 +366,7 @@ public abstract class AbstractParquetGroupScan extends AbstractGroupScanWithMeta
     List<RowGroupMetadata> prunedRowGroups = new ArrayList<>();
     for (RowGroupMetadata file : rowGroups) {
       for (FileMetadata filteredPartition : filteredFileMetadata) {
-        if (file.getLocation().startsWith(filteredPartition.getLocation())) {
+        if (file.getLocation().toUri().getPath().startsWith(filteredPartition.getLocation().toUri().getPath())) {
           prunedRowGroups.add(file);
           break;
         }
@@ -414,7 +415,7 @@ public abstract class AbstractParquetGroupScan extends AbstractGroupScanWithMeta
   public void modifyFileSelection(FileSelection selection) {
     super.modifyFileSelection(selection);
 
-    List<String> files = selection.getFiles();
+    List<Path> files = selection.getFiles();
     fileSet = new HashSet<>(files);
     entries = new ArrayList<>(files.size());
 
@@ -437,7 +438,7 @@ public abstract class AbstractParquetGroupScan extends AbstractGroupScanWithMeta
     if (partitions != null) {
       Set<PartitionMetadata> newPartitions = new HashSet<>();
       for (PartitionMetadata entry : partitions) {
-        for (String partLocation : entry.getLocations()) {
+        for (Path partLocation : entry.getLocations()) {
           if (fileSet.contains(partLocation)) {
             newPartitions.add(entry);
           }
@@ -457,7 +458,7 @@ public abstract class AbstractParquetGroupScan extends AbstractGroupScanWithMeta
 
   // abstract methods block start
   protected abstract Collection<CoordinationProtos.DrillbitEndpoint> getDrillbits();
-  protected abstract AbstractParquetGroupScan cloneWithFileSelection(Collection<String> filePaths) throws IOException;
+  protected abstract AbstractParquetGroupScan cloneWithFileSelection(Collection<Path> filePaths) throws IOException;
   // abstract methods block end
 
   protected abstract static class RowGroupScanBuilder extends GroupScanWithMetadataBuilder {

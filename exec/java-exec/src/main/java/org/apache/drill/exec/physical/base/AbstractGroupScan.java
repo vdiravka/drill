@@ -34,6 +34,7 @@ import org.apache.drill.exec.planner.physical.PlannerSettings;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.drill.exec.server.options.OptionManager;
+import org.apache.hadoop.fs.Path;
 
 public abstract class AbstractGroupScan extends AbstractBase implements GroupScan {
 
@@ -166,7 +167,8 @@ public abstract class AbstractGroupScan extends AbstractBase implements GroupSca
   }
 
   @Override
-  public Collection<String> getFiles() {
+  public Collection<Path> getFiles() {
+    // TODO: Is it necessary to return null in this abstract class?
     return null;
   }
 

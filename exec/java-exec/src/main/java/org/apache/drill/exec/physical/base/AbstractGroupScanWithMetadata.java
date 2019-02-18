@@ -52,6 +52,7 @@ import org.apache.drill.metastore.TableStatistics;
 import org.apache.drill.metastore.expr.FilterBuilder;
 import org.apache.drill.metastore.expr.FilterPredicate;
 import org.apache.drill.metastore.expr.StatisticsProvider;
+import org.apache.hadoop.fs.Path;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -83,7 +84,7 @@ public abstract class AbstractGroupScanWithMetadata extends AbstractFileGroupSca
   protected List<FileMetadata> files;
 
   // set of the files to be handled
-  protected Set<String> fileSet;
+  protected Set<Path> fileSet;
 
   // whether all row groups of this group scan fully match the filter
   protected boolean matchAllRowGroups = false;
@@ -101,7 +102,7 @@ public abstract class AbstractGroupScanWithMetadata extends AbstractFileGroupSca
 
   @JsonIgnore
   @Override
-  public Collection<String> getFiles() {
+  public Collection<Path> getFiles() {
     return fileSet;
   }
 
@@ -541,7 +542,7 @@ public abstract class AbstractGroupScanWithMetadata extends AbstractFileGroupSca
   }
 
   @JsonIgnore
-  public <T> T getPartitionValue(String path, SchemaPath column, Class<T> clazz) {
+  public <T> T getPartitionValue(Path path, SchemaPath column, Class<T> clazz) {
     // TODO: add path-to-file metadata map to avoid filtering
     if (partitions != null) {
       return partitions.stream()
@@ -554,7 +555,7 @@ public abstract class AbstractGroupScanWithMetadata extends AbstractFileGroupSca
   }
 
   @JsonIgnore
-  public Set<String> getFileSet() {
+  public Set<Path> getFileSet() {
     return fileSet;
   }
   // partition pruning methods end

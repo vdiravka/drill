@@ -39,6 +39,7 @@ import org.apache.drill.exec.store.hive.HiveMetadataProvider.LogicalInputSplit;
 import org.apache.drill.exec.store.parquet.AbstractParquetGroupScan;
 import org.apache.drill.exec.store.parquet.RowGroupReadEntry;
 import org.apache.drill.exec.util.ImpersonationUtil;
+import org.apache.hadoop.fs.Path;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -67,7 +68,7 @@ public class HiveDrillNativeParquetScan extends AbstractParquetGroupScan {
     this.hiveStoragePlugin = (HiveStoragePlugin) engineRegistry.getPlugin(hiveStoragePluginConfig);
     this.confProperties = confProperties;
 
-    this.metadataProvider = new HiveParquetTableMetadataProvider(entries, hivePartitionHolder, hiveStoragePlugin, readerConfig, null);
+    this.metadataProvider = new HiveParquetTableMetadataProvider(entries, hivePartitionHolder, hiveStoragePlugin, readerConfig);
 
 //    String tableLocation = null; // TODO: initialize properly
 //    String tableName = null; // TODO: initialize properly
@@ -208,8 +209,9 @@ public class HiveDrillNativeParquetScan extends AbstractParquetGroupScan {
   }
 
   @Override
-  protected AbstractParquetGroupScan cloneWithFileSelection(Collection<String> filePaths) throws IOException {
-    FileSelection newSelection = new FileSelection(null, new ArrayList<>(filePaths), null, null, false);
+  protected AbstractParquetGroupScan cloneWithFileSelection(Collection<Path> filePaths) throws IOException {
+    FileSelection newSelection = new FileSelection(null, new ArrayList<>(filePaths), null,
+        null, false);
     return clone(newSelection);
   }
 

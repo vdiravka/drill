@@ -24,17 +24,18 @@ import org.apache.hadoop.fs.Path;
  */
 public class DFSFilePartitionLocation extends SimplePartitionLocation {
   private final String[] dirs;
-  private final String file;
+  private final Path file;
 
-  public DFSFilePartitionLocation(int max, String selectionRoot, String file, boolean hasDirsOnly) {
+  public DFSFilePartitionLocation(int max, Path selectionRoot, Path file, boolean hasDirsOnly) {
     this.file = file;
     this.dirs = new String[max];
 
     // strip the scheme and authority if they exist
-    selectionRoot = Path.getPathWithoutSchemeAndAuthority(new Path(selectionRoot)).toString();
+    String selectionRootText = Path.getPathWithoutSchemeAndAuthority(selectionRoot).toString();
 
-    int start = file.indexOf(selectionRoot) + selectionRoot.length();
-    String postPath = file.substring(start);
+    String fileText = file.toUri().getPath();
+    int start = fileText.indexOf(selectionRootText) + selectionRootText.length();
+    String postPath = fileText.substring(start);
     if (postPath.length() == 0) {
       return;
     }
@@ -64,7 +65,7 @@ public class DFSFilePartitionLocation extends SimplePartitionLocation {
    * @return The partition location.
    */
   @Override
-  public String getEntirePartitionLocation() {
+  public Path getEntirePartitionLocation() {
     return file;
   }
 

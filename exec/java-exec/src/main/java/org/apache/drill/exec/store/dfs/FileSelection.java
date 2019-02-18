@@ -41,15 +41,15 @@ public class FileSelection {
 
   private List<FileStatus> statuses;
 
-  public List<String> files;
+  public List<Path> files;
   /**
    * root path for the selections
    */
-  public final String selectionRoot;
+  public final Path selectionRoot;
   /**
    * root path for the metadata cache file (if any)
    */
-  public final String cacheFileRoot;
+  public final Path cacheFileRoot;
 
   /**
    * metadata context useful for metadata operations (if any)
@@ -82,17 +82,17 @@ public class FileSelection {
    * @param files  list of files
    * @param selectionRoot  root path for selections
    */
-  public FileSelection(final List<FileStatus> statuses, final List<String> files, final String selectionRoot) {
+  public FileSelection(final List<FileStatus> statuses, final List<Path> files, final Path selectionRoot) {
     this(statuses, files, selectionRoot, null, false, StatusType.NOT_CHECKED);
   }
 
-  public FileSelection(final List<FileStatus> statuses, final List<String> files, final String selectionRoot,
-      final String cacheFileRoot, final boolean wasAllPartitionsPruned) {
+  public FileSelection(final List<FileStatus> statuses, List<Path> files, Path selectionRoot,
+      final Path cacheFileRoot, final boolean wasAllPartitionsPruned) {
     this(statuses, files, selectionRoot, cacheFileRoot, wasAllPartitionsPruned, StatusType.NOT_CHECKED);
   }
 
-  public FileSelection(final List<FileStatus> statuses, final List<String> files, final String selectionRoot,
-      final String cacheFileRoot, final boolean wasAllPartitionsPruned, final StatusType dirStatus) {
+  public FileSelection(final List<FileStatus> statuses, final List<Path> files, final Path selectionRoot,
+      final Path cacheFileRoot, final boolean wasAllPartitionsPruned, final StatusType dirStatus) {
     this.statuses = statuses;
     this.files = files;
     this.selectionRoot = selectionRoot;
@@ -116,7 +116,7 @@ public class FileSelection {
     this.wasAllPartitionsPruned = selection.wasAllPartitionsPruned;
   }
 
-  public String getSelectionRoot() {
+  public Path getSelectionRoot() {
     return selectionRoot;
   }
 
@@ -125,8 +125,8 @@ public class FileSelection {
 
     if (statuses == null)  {
       final List<FileStatus> newStatuses = Lists.newArrayList();
-      for (final String pathStr:files) {
-        newStatuses.add(fs.getFileStatus(new Path(pathStr)));
+      for (final Path pathStr : files) {
+        newStatuses.add(fs.getFileStatus(pathStr));
       }
       statuses = newStatuses;
     }
@@ -139,11 +139,11 @@ public class FileSelection {
     return statuses;
   }
 
-  public List<String> getFiles() {
+  public List<Path> getFiles() {
     if (files == null) {
-      final List<String> newFiles = Lists.newArrayList();
+      final List<Path> newFiles = Lists.newArrayList();
       for (final FileStatus status:statuses) {
-        newFiles.add(status.getPath().toString());
+        newFiles.add(status.getPath());
       }
       files = newFiles;
     }
@@ -223,16 +223,16 @@ public class FileSelection {
    * @param files  list of files.
    * @return  longest common path
    */
-  private static String commonPathForFiles(final List<String> files) {
+  private static Path commonPathForFiles(final List<Path> files) {
     if (files == null || files.isEmpty()) {
-      return "";
+      return new Path("/");
     }
 
     final int total = files.size();
     final String[][] folders = new String[total][];
     int shortest = Integer.MAX_VALUE;
     for (int i = 0; i < total; i++) {
-      final Path path = new Path(files.get(i));
+      final Path path = files.get(i);
       folders[i] = Path.getPathWithoutSchemeAndAuthority(path).toString().split(Path.SEPARATOR);
       shortest = Math.min(shortest, folders[i].length);
     }
@@ -247,10 +247,9 @@ public class FileSelection {
         }
       }
     }
-    final Path path = new Path(files.get(0));
-    final URI uri = path.toUri();
+    final URI uri = files.get(0).toUri();
     final String pathString = buildPath(folders[0], latest);
-    return new Path(uri.getScheme(), uri.getAuthority(), pathString).toString();
+    return new Path(uri.getScheme(), uri.getAuthority(), pathString);
   }
 
   private static String buildPath(final String[] path, final int folderIndex) {
@@ -275,7 +274,7 @@ public class FileSelection {
     if (statuses == null) {
       return null;
     }
-    final FileSelection fileSel = create(Lists.newArrayList(statuses), null, combined.toUri().getPath());
+    final FileSelection fileSel = create(Lists.newArrayList(statuses), null, combined);
     if (timer != null) {
       logger.debug("FileSelection.create() took {} ms ", timer.elapsed(TimeUnit.MILLISECONDS));
       timer.stop();
@@ -298,10 +297,10 @@ public class FileSelection {
    * @return  null if creation of {@link FileSelection} fails with an {@link IllegalArgumentException}
    *          otherwise a new selection.
    *
-   * @see FileSelection#FileSelection(List, List, String)
+   * @see FileSelection#FileSelection(List, List, Path)
    */
-  public static FileSelection create(final List<FileStatus> statuses, final List<String> files, final String root,
-      final String cacheFileRoot, final boolean wasAllPartitionsPruned) {
+  public static FileSelection create(List<FileStatus> statuses, List<Path> files, Path root,
+      Path cacheFileRoot, boolean wasAllPartitionsPruned) {
     final boolean bothNonEmptySelection = (statuses != null && statuses.size() > 0) && (files != null && files.size() > 0);
     final boolean bothEmptySelection = (statuses == null || statuses.size() == 0) && (files == null || files.size() == 0);
 
@@ -309,41 +308,40 @@ public class FileSelection {
       return null;
     }
 
-    final String selectionRoot;
+    final Path selectionRoot;
     if (statuses == null || statuses.isEmpty()) {
       selectionRoot = commonPathForFiles(files);
     } else {
-      if (Strings.isNullOrEmpty(root)) {
+      if (root == null || Strings.isNullOrEmpty(root.toUri().getPath())) {
         throw new DrillRuntimeException("Selection root is null or empty" + root);
       }
       final Path rootPath = handleWildCard(root);
       final URI uri = statuses.get(0).getPath().toUri();
-      final Path path = new Path(uri.getScheme(), uri.getAuthority(), rootPath.toUri().getPath());
-      selectionRoot = path.toString();
+      selectionRoot = new Path(uri.getScheme(), uri.getAuthority(), rootPath.toUri().getPath());
     }
     return new FileSelection(statuses, files, selectionRoot, cacheFileRoot, wasAllPartitionsPruned);
   }
 
-  public static FileSelection create(final List<FileStatus> statuses, final List<String> files, final String root) {
+  public static FileSelection create(List<FileStatus> statuses, List<Path> files, Path root) {
     return FileSelection.create(statuses, files, root, null, false);
   }
 
-  public static FileSelection createFromDirectories(final List<String> dirPaths, final FileSelection selection,
-      final String cacheFileRoot) {
+  public static FileSelection createFromDirectories(final List<Path> dirPaths, final FileSelection selection,
+      final Path cacheFileRoot) {
     Stopwatch timer = logger.isDebugEnabled() ? Stopwatch.createStarted() : null;
-    final String root = selection.getSelectionRoot();
-    if (Strings.isNullOrEmpty(root)) {
+    final Path root = selection.getSelectionRoot();
+    if (root == null || Strings.isNullOrEmpty(root.toUri().getPath())) {
       throw new DrillRuntimeException("Selection root is null or empty" + root);
     }
     if (dirPaths == null || dirPaths.isEmpty()) {
       throw new DrillRuntimeException("List of directories is null or empty");
     }
 
-    List<String> dirs = Lists.newArrayList();
+    List<Path> dirs = Lists.newArrayList();
 
     if (selection.hadWildcard()) { // for wildcard the directory list should have already been expanded
       for (FileStatus status : selection.getFileStatuses()) {
-        dirs.add(status.getPath().toString());
+        dirs.add(status.getPath());
       }
     } else {
       dirs.addAll(dirPaths);
@@ -353,7 +351,7 @@ public class FileSelection {
     // final URI uri = dirPaths.get(0).toUri();
     final URI uri = selection.getFileStatuses().get(0).getPath().toUri();
     final Path path = new Path(uri.getScheme(), uri.getAuthority(), rootPath.toUri().getPath());
-    FileSelection fileSel = new FileSelection(null, dirs, path.toString(), cacheFileRoot, false);
+    FileSelection fileSel = new FileSelection(null, dirs, path, cacheFileRoot, false);
     fileSel.setHadWildcard(selection.hadWildcard());
     if (timer != null) {
       logger.debug("FileSelection.createFromDirectories() took {} ms ", timer.elapsed(TimeUnit.MILLISECONDS));
@@ -362,18 +360,19 @@ public class FileSelection {
     return fileSel;
   }
 
-  private static Path handleWildCard(final String root) {
-    if (root.contains(WILD_CARD)) {
-      int idx = root.indexOf(WILD_CARD); // first wild card in the path
-      idx = root.lastIndexOf('/', idx); // file separator right before the first wild card
-      final String newRoot = root.substring(0, idx);
+  private static Path handleWildCard(final Path root) {
+    String stringRoot = root.toUri().getPath();
+    if (stringRoot.contains(WILD_CARD)) {
+      int idx = stringRoot.indexOf(WILD_CARD); // first wild card in the path
+      idx = stringRoot.lastIndexOf('/', idx); // file separator right before the first wild card
+      final String newRoot = stringRoot.substring(0, idx);
       if (newRoot.length() == 0) {
-          // Ensure that we always return a valid root.
+          // Ensure that we always return a valid stringRoot.
           return new Path("/");
       }
       return new Path(newRoot);
     } else {
-      return new Path(root);
+      return new Path(stringRoot);
     }
   }
 
@@ -426,7 +425,7 @@ public class FileSelection {
     return this.hadWildcard;
   }
 
-  public String getCacheFileRoot() {
+  public Path getCacheFileRoot() {
     return cacheFileRoot;
   }
 
@@ -461,7 +460,7 @@ public class FileSelection {
 
     sb.append("files=[");
     boolean isFirst = true;
-    for (final String file : this.files) {
+    for (final Path file : this.files) {
       if (isFirst) {
         isFirst = false;
         sb.append(file);

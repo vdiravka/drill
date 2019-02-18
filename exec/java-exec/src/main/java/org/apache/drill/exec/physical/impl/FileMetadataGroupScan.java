@@ -49,6 +49,7 @@ import org.apache.drill.exec.store.schedule.AssignmentCreator;
 import org.apache.drill.exec.store.schedule.BlockMapBuilder;
 import org.apache.drill.exec.store.schedule.CompleteFileWork;
 import org.apache.drill.exec.util.ImpersonationUtil;
+import org.apache.hadoop.fs.Path;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -64,7 +65,7 @@ public class FileMetadataGroupScan extends AbstractGroupScanWithMetadata {
   private ListMultimap<Integer, CompleteFileWork> mappings;
   private List<CompleteFileWork> chunks;
   private List<EndpointAffinity> endpointAffinities;
-  private String selectionRoot;
+  private Path selectionRoot;
 
   protected FileMetadataGroupScan(String userName, List<SchemaPath> columns, LogicalExpression filter) {
     super(userName, columns, filter);
@@ -97,7 +98,7 @@ public class FileMetadataGroupScan extends AbstractGroupScanWithMetadata {
     this.endpointAffinities = AffinityCreator.getAffinityMap(chunks);
   }
 
-  public String getSelectionRoot() {
+  public Path getSelectionRoot() {
     return selectionRoot;
   }
 
@@ -133,7 +134,7 @@ public class FileMetadataGroupScan extends AbstractGroupScanWithMetadata {
 
   @JsonProperty("files")
   @Override
-  public List<String> getFiles() {
+  public List<Path> getFiles() {
     return selection.getFiles();
   }
 

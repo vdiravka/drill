@@ -235,7 +235,7 @@ public class DrillParquetReader extends AbstractRecordReader {
         paths.put(md.getPath(), md);
       }
 
-      Path filePath = new Path(entry.getPath());
+      Path filePath = entry.getPath();
 
       BlockMetaData blockMetaData = footer.getBlocks().get(entry.getRowGroupIndex());
 
@@ -336,16 +336,6 @@ public class DrillParquetReader extends AbstractRecordReader {
       }
     } catch (IOException e) {
       logger.warn("Failure while closing PageReadStore", e);
-    }
-  }
-
-  static public class ProjectedColumnType {
-    public final String projectedColumnName;
-    public final MessageType type;
-
-    ProjectedColumnType(String projectedColumnName, MessageType type) {
-      this.projectedColumnName = projectedColumnName;
-      this.type = type;
     }
   }
 

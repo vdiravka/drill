@@ -21,6 +21,7 @@ import org.apache.drill.common.expression.SchemaPath;
 import org.apache.drill.exec.record.metadata.ColumnMetadata;
 import org.apache.drill.exec.record.metadata.SchemaPathUtils;
 import org.apache.drill.exec.record.metadata.TupleSchema;
+import org.apache.hadoop.fs.Path;
 
 import java.util.Collections;
 import java.util.List;
@@ -29,7 +30,7 @@ import java.util.Set;
 
 public class TableMetadata implements BaseMetadata {
   private final String tableName;
-  private final String location;
+  private final Path location;
   private final TupleSchema schema;
   private final Map<SchemaPath, ColumnStatistic> columnStatistics;
   private final Map<String, Object> tableStatistics;
@@ -42,8 +43,14 @@ public class TableMetadata implements BaseMetadata {
 
   public static final TableMetadata EMPTY = new TableMetadata();
 
-  public TableMetadata(String tableName, String location, TupleSchema schema,
-                       Map<SchemaPath, ColumnStatistic> columnStatistics, Map<String, Object> tableStatistics, long lastModifiedTime, String owner, Set<String> partitionKeys) {
+  public TableMetadata(String tableName,
+                       Path location,
+                       TupleSchema schema,
+                       Map<SchemaPath, ColumnStatistic> columnStatistics,
+                       Map<String, Object> tableStatistics,
+                       long lastModifiedTime,
+                       String owner,
+                       Set<String> partitionKeys) {
     this.tableName = tableName;
     this.location = location;
     this.schema = schema;
@@ -97,7 +104,7 @@ public class TableMetadata implements BaseMetadata {
     return tableName;
   }
 
-  public String getLocation() {
+  public Path getLocation() {
     return location;
   }
 

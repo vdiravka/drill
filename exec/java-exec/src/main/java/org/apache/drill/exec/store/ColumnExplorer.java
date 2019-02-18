@@ -133,14 +133,14 @@ public class ColumnExplorer {
   public static List<String> getPartitionColumnNames(FileSelection selection, SchemaConfig schemaConfig) {
     int partitionsCount = 0;
     // a depth of table root path
-    int rootDepth = new Path(selection.getSelectionRoot()).depth();
+    int rootDepth = selection.getSelectionRoot().depth();
 
-    for (String file : selection.getFiles()) {
+    for (Path file : selection.getFiles()) {
       // Calculates partitions count for the concrete file:
       // depth of file path - depth of table root path - 1.
       // The depth of file path includes file itself,
       // so we should subtract 1 to consider only directories.
-      int currentPartitionsCount = new Path(file).depth() - rootDepth - 1;
+      int currentPartitionsCount = file.depth() - rootDepth - 1;
       // max depth of files path should be used to handle all partitions
       partitionsCount = Math.max(partitionsCount, currentPartitionsCount);
     }
@@ -165,7 +165,7 @@ public class ColumnExplorer {
    * @param includeFileImplicitColumns if file implicit columns should be included into the result
    * @return implicit columns map
    */
-  public Map<String, String> populateImplicitColumns(String filePath,
+  public Map<String, String> populateImplicitColumns(Path filePath,
                                                      List<String> partitionValues,
                                                      boolean includeFileImplicitColumns) {
     Map<String, String> implicitValues = new LinkedHashMap<>();
@@ -177,7 +177,7 @@ public class ColumnExplorer {
     }
 
     if (includeFileImplicitColumns) {
-      Path path = Path.getPathWithoutSchemeAndAuthority(new Path(filePath));
+      Path path = Path.getPathWithoutSchemeAndAuthority(filePath);
       for (Map.Entry<String, ImplicitFileColumns> entry : selectedImplicitColumns.entrySet()) {
         implicitValues.put(entry.getKey(), entry.getValue().getValue(path));
       }
@@ -197,14 +197,13 @@ public class ColumnExplorer {
    * @param root root directory
    * @return list of directory names
    */
-  public static List<String> listPartitionValues(String filePath, String root) {
+  public static List<String> listPartitionValues(Path filePath, Path root) {
     if (filePath == null || root == null) {
       return Collections.emptyList();
     }
 
-    int rootDepth = new Path(root).depth();
-    Path path = new Path(filePath);
-    int parentDepth = path.getParent().depth();
+    int rootDepth = root.depth();
+    int parentDepth = filePath.getParent().depth();
 
     int diffCount = parentDepth - rootDepth;
 
@@ -216,9 +215,9 @@ public class ColumnExplorer {
 
     // start filling in array from the end
     for (int i = rootDepth; parentDepth > i; i++) {
-      path = path.getParent();
+      filePath = filePath.getParent();
       // place in the end of array
-      diffDirectoryNames[parentDepth - i - 1] = path.getName();
+      diffDirectoryNames[parentDepth - i - 1] = filePath.getName();
     }
 
     return Arrays.asList(diffDirectoryNames);

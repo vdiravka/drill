@@ -23,36 +23,42 @@ import org.apache.drill.common.types.TypeProtos;
 import org.apache.drill.exec.planner.physical.PlannerSettings;
 import org.apache.drill.exec.store.dfs.MetadataContext;
 import org.apache.drill.exec.vector.ValueVector;
+import org.apache.hadoop.fs.Path;
 
 import java.util.BitSet;
 import java.util.List;
 import java.util.Map;
 
-// Interface used to describe partitions. Currently used by file system based partitions and hive partitions
+/**
+ * Interface used to describe partitions. Currently used by file system based partitions and hive partitions
+ */
 public interface PartitionDescriptor extends Iterable<List<PartitionLocation>> {
 
-  public static final int PARTITION_BATCH_SIZE = Character.MAX_VALUE;
+  int PARTITION_BATCH_SIZE = Character.MAX_VALUE;
 
-  /* Get the hierarchy index of the given partition
+  /** Get the hierarchy index of the given partition
    * For eg: if we have the partition laid out as follows
    * 1997/q1/jan
    *
    * then getPartitionHierarchyIndex("jan") => 2
+   * TODO: add all parameters to javadoc
    */
-  public int getPartitionHierarchyIndex(String partitionName);
+  int getPartitionHierarchyIndex(String partitionName);
 
-  // Given a column name return boolean to indicate if its a partition column or not
-  public boolean isPartitionName(String name);
+  /**
+   * Given a column name return boolean to indicate if its a partition column or not
+   */
+  boolean isPartitionName(String name);
 
   /**
    * Check to see if the name is a partition name.
    * @param name The field name you want to compare to partition names.
    * @return Return index if valid, otherwise return null;
    */
-  public Integer getIdIfValid(String name);
+  Integer getIdIfValid(String name);
 
   // Maximum level of partition nesting/ hierarchy supported
-  public int getMaxHierarchyLevel();
+  int getMaxHierarchyLevel();
 
   /**
    * Method creates an in memory representation of all the partitions. For each level of partitioning we
@@ -79,7 +85,7 @@ public interface PartitionDescriptor extends Iterable<List<PartitionLocation>> {
    * @param wasAllPartitionsPruned
    * @throws Exception
    */
-  public TableScan createTableScan(List<PartitionLocation> newPartitions,
+  TableScan createTableScan(List<PartitionLocation> newPartitions,
       boolean wasAllPartitionsPruned) throws Exception;
 
   /**
@@ -91,11 +97,11 @@ public interface PartitionDescriptor extends Iterable<List<PartitionLocation>> {
    * @param metaContext
    * @throws Exception
    */
-  public TableScan createTableScan(List<PartitionLocation> newPartitions, String cacheFileRoot,
+  TableScan createTableScan(List<PartitionLocation> newPartitions, Path cacheFileRoot,
       boolean wasAllPartitionsPruned, MetadataContext metaContext) throws Exception;
 
-  public boolean supportsMetadataCachePruning();
+  boolean supportsMetadataCachePruning();
 
-  public String getBaseTableLocation();
+  Path getBaseTableLocation();
 
 }

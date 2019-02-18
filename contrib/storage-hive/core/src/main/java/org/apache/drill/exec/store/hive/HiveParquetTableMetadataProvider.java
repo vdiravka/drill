@@ -36,7 +36,6 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public class HiveParquetTableMetadataProvider extends BaseParquetTableMetadataProvider {
 
@@ -46,9 +45,8 @@ public class HiveParquetTableMetadataProvider extends BaseParquetTableMetadataPr
   public HiveParquetTableMetadataProvider(List<ReadEntryWithPath> entries,
                                          HivePartitionHolder hivePartitionHolder,
                                          HiveStoragePlugin hiveStoragePlugin,
-                                         ParquetReaderConfig readerConfig,
-                                         Set<String> fileSet) throws IOException {
-    super(entries, readerConfig, fileSet);
+                                         ParquetReaderConfig readerConfig) throws IOException {
+    super(readerConfig, entries);
     this.hiveStoragePlugin = hiveStoragePlugin;
     this.hivePartitionHolder = hivePartitionHolder;
 
@@ -75,7 +73,7 @@ public class HiveParquetTableMetadataProvider extends BaseParquetTableMetadataPr
       assert split instanceof FileSplit;
       FileSplit fileSplit = (FileSplit) split;
       Path finalPath = fileSplit.getPath();
-      String pathString = Path.getPathWithoutSchemeAndAuthority(finalPath).toString();
+      Path pathString = Path.getPathWithoutSchemeAndAuthority(finalPath);
       entries.add(new ReadEntryWithPath(pathString));
 
       // store partition values per path
@@ -95,7 +93,7 @@ public class HiveParquetTableMetadataProvider extends BaseParquetTableMetadataPr
   protected void initInternal() throws IOException {
     Map<FileStatus, FileSystem> fileStatusConfMap = new LinkedHashMap<>();
     for (ReadEntryWithPath entry : entries) {
-      Path path = new Path(entry.getPath());
+      Path path = entry.getPath();
       Configuration conf = new ProjectionPusher().pushProjectionsAndFilters(
           new JobConf(hiveStoragePlugin.getHiveConf()),
           path.getParent());
@@ -106,7 +104,7 @@ public class HiveParquetTableMetadataProvider extends BaseParquetTableMetadataPr
   }
 
   @Override
-  public String getSelectionRoot() {
+  public Path getSelectionRoot() {
     return null; // TODO: get the path from HMS if neeeded
   }
 }

@@ -21,25 +21,21 @@ import org.apache.drill.common.expression.SchemaPath;
 import org.apache.drill.exec.record.metadata.ColumnMetadata;
 import org.apache.drill.exec.record.metadata.SchemaPathUtils;
 import org.apache.drill.exec.record.metadata.TupleSchema;
+import org.apache.hadoop.fs.Path;
 
 import java.util.Map;
 
 public class FileMetadata implements BaseMetadata, LocationProvider {
-  // TODO: unify fileName and location
-  private final String fileName;
   private final TupleSchema schema;
   private final Map<SchemaPath, ColumnStatistic> columnStatistics;
   private final Map<String, Object> fileStatistics;
-  // TODO: decide which of these: fileName or location should be left.
-  private final String location;
+  private final Path location;
   // TODO: decide whether this field is required
   private final String tableName;
   private final long lastModifiedTime;
 
-  public FileMetadata(String fileName, TupleSchema schema,
-                      Map<SchemaPath, ColumnStatistic> columnStatistics,
-                      Map<String, Object> fileStatistics, String location, String tableName, long lastModifiedTime) {
-    this.fileName = fileName;
+  public FileMetadata(TupleSchema schema, Map<SchemaPath, ColumnStatistic> columnStatistics,
+                      Map<String, Object> fileStatistics, Path location, String tableName, long lastModifiedTime) {
     this.schema = schema;
     this.columnStatistics = columnStatistics;
     this.fileStatistics = fileStatistics;
@@ -48,8 +44,14 @@ public class FileMetadata implements BaseMetadata, LocationProvider {
     this.lastModifiedTime = lastModifiedTime;
   }
 
-  public String getFileName() {
-    return fileName;
+  @Override
+  public TupleSchema getSchema() {
+    return schema;
+  }
+
+  @Override
+  public Map<SchemaPath, ColumnStatistic> getColumnStatistics() {
+    return columnStatistics;
   }
 
   public Object getStatisticsForColumn(SchemaPath columnName, StatisticsKind statisticsKind) {
@@ -60,7 +62,7 @@ public class FileMetadata implements BaseMetadata, LocationProvider {
     return fileStatistics.get(statisticsKind.getName());
   }
 
-  public String getLocation() {
+  public Path getLocation() {
     return location;
   }
 
@@ -74,13 +76,5 @@ public class FileMetadata implements BaseMetadata, LocationProvider {
 
   public ColumnMetadata getColumn(SchemaPath name) {
     return SchemaPathUtils.getColumnMetadata(name, schema);
-  }
-
-  public TupleSchema getSchema() {
-    return schema;
-  }
-
-  public Map<SchemaPath, ColumnStatistic> getColumnStatistics() {
-    return columnStatistics;
   }
 }

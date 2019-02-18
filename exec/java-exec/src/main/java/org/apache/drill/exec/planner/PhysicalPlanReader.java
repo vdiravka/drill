@@ -44,6 +44,7 @@ import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.deser.std.StdDelegatingDeserializer;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import org.apache.drill.shaded.guava.com.google.common.annotations.VisibleForTesting;
+import org.apache.hadoop.fs.Path;
 
 public class PhysicalPlanReader {
   static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(PhysicalPlanReader.class);
@@ -59,15 +60,17 @@ public class PhysicalPlanReader {
     ObjectMapper lpMapper = lpPersistance.getMapper();
 
     // Endpoint serializer/deserializer.
-    SimpleModule deserModule = new SimpleModule("PhysicalOperatorModule") //
+    SimpleModule serDeModule = new SimpleModule("PhysicalOperatorModule") //
         .addSerializer(DrillbitEndpoint.class, new DrillbitEndpointSerDe.Se()) //
         .addDeserializer(DrillbitEndpoint.class, new DrillbitEndpointSerDe.De()) //
         .addSerializer(MajorType.class, new MajorTypeSerDe.Se())
         .addDeserializer(MajorType.class, new MajorTypeSerDe.De())
         .addDeserializer(DynamicPojoRecordReader.class,
-            new StdDelegatingDeserializer<>(new DynamicPojoRecordReader.Converter(lpMapper)));
+            new StdDelegatingDeserializer<>(new DynamicPojoRecordReader.Converter(lpMapper)))
+        .addSerializer(Path.class, new SerializablePath.PathSerializer());
+//        .addDeserializer(Path.class, new SerializablePath.PathDeserializer());
 
-    lpMapper.registerModule(deserModule);
+    lpMapper.registerModule(serDeModule);
     Set<Class<? extends PhysicalOperator>> subTypes = PhysicalOperatorUtil.getSubTypes(scanResult);
     for (Class<? extends PhysicalOperator> subType : subTypes) {
       lpMapper.registerSubtypes(subType);
@@ -77,10 +80,15 @@ public class PhysicalPlanReader {
             .addValue(StoragePluginRegistry.class, pluginRegistry) //
         .addValue(DrillbitEndpoint.class, endpoint); //
 
+//    SimpleModule module = new SimpleModule();
+//    module.addSerializer(Path.class, new SerializablePath.PathSerializer());
+
+
+//    this.mapper = lpMapper.registerModule(module);
     this.mapper = lpMapper;
-    this.physicalPlanReader = mapper.reader(PhysicalPlan.class).with(injectables);
-    this.operatorReader = mapper.reader(PhysicalOperator.class).with(injectables);
-    this.logicalPlanReader = mapper.reader(LogicalPlan.class).with(injectables);
+    this.physicalPlanReader = mapper.readerFor(PhysicalPlan.class).with(injectables);
+    this.operatorReader = mapper.readerFor(PhysicalOperator.class).with(injectables);
+    this.logicalPlanReader = mapper.readerFor(LogicalPlan.class).with(injectables);
   }
 
   public String writeJson(OptionList list) throws JsonProcessingException{
@@ -98,7 +106,9 @@ public class PhysicalPlanReader {
 
   public FragmentRoot readFragmentRoot(String json) throws JsonProcessingException, IOException {
     logger.debug("Attempting to read {}", json);
+    System.out.println(json);
     PhysicalOperator op = operatorReader.readValue(json);
+    System.out.println(op);
     if(op instanceof FragmentRoot){
       return (FragmentRoot) op;
     }else{
