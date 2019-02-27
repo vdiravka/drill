@@ -28,7 +28,7 @@ import org.apache.drill.exec.record.metadata.TupleMetadata;
 import org.apache.drill.metastore.LocationProvider;
 import org.apache.drill.metastore.PartitionMetadata;
 import org.apache.drill.metastore.TableStatisticsKind;
-import org.apache.drill.metastore.expr.StatisticsConstants;
+import org.apache.drill.metastore.expr.ExactStatisticsConstants;
 import org.apache.drill.shaded.guava.com.google.common.base.Preconditions;
 import org.apache.drill.shaded.guava.com.google.common.collect.ArrayListMultimap;
 import org.apache.drill.shaded.guava.com.google.common.collect.ListMultimap;
@@ -149,8 +149,8 @@ public abstract class AbstractParquetGroupScan extends AbstractGroupScanWithMeta
       rowGroupInfos = new ArrayList<>();
       for (RowGroupMetadata rowGroupMetadata : getRowGroupsMetadata()) {
         RowGroupInfo rowGroupInfo = new RowGroupInfo(rowGroupMetadata.getLocation(),
-            (long) rowGroupMetadata.getStatistic(() -> StatisticsConstants.START),
-            (long) rowGroupMetadata.getStatistic(() -> StatisticsConstants.LENGTH),
+            (long) rowGroupMetadata.getStatistic(() -> ExactStatisticsConstants.START),
+            (long) rowGroupMetadata.getStatistic(() -> ExactStatisticsConstants.LENGTH),
             rowGroupMetadata.getRowGroupIndex(),
             (long) rowGroupMetadata.getStatistic(TableStatisticsKind.ROW_COUNT));
         rowGroupInfo.setNumRecordsToRead(rowGroupInfo.getRowCount());
@@ -159,7 +159,7 @@ public abstract class AbstractParquetGroupScan extends AbstractGroupScanWithMeta
         for (String host : rowGroupMetadata.getHostAffinity().keySet()) {
           if (hostEndpointMap.containsKey(host)) {
             endpointByteMap.add(hostEndpointMap.get(host),
-              (long) (rowGroupMetadata.getHostAffinity().get(host) * (long) rowGroupMetadata.getStatistic(() -> "length")));
+              (long) (rowGroupMetadata.getHostAffinity().get(host) * (long) rowGroupMetadata.getStatistic(() -> ExactStatisticsConstants.LENGTH)));
           }
         }
 
