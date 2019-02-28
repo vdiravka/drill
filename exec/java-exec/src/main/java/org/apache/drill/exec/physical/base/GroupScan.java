@@ -37,7 +37,7 @@ import org.apache.drill.exec.server.options.OptionManager;
  * A GroupScan operator represents all data which will be scanned by a given physical
  * plan.  It is the superset of all SubScans for the plan.
  */
-public interface GroupScan extends Scan, HasAffinity{
+public interface GroupScan extends Scan, HasAffinity {
 
   /**
    * columns list in GroupScan : 1) empty_column is for skipAll query.
