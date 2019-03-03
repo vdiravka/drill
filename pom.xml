@@ -746,19 +746,19 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
-          <version>3.0.0-M2</version>
-          <executions>
-            <execution>
-              <id>default-test</id>
-              <phase>test</phase>
-              <goals><goal>test</goal></goals>
-            </execution>
-          </executions>
+          <version>3.0.0-M3</version>
+          <!--<executions>-->
+            <!--<execution>-->
+              <!--<id>default-test</id>-->
+              <!--<phase>test</phase>-->
+              <!--<goals><goal>test</goal></goals>-->
+            <!--</execution>-->
+          <!--</executions>-->
           <dependencies>
             <dependency>
               <groupId>org.apache.maven.surefire</groupId>
               <artifactId>surefire-junit47</artifactId>
-              <version>3.0.0-M2</version>
+              <version>3.0.0-M3</version>
             </dependency>
           </dependencies>
           <configuration>
