@@ -85,6 +85,7 @@
     <reflections.version>0.9.10</reflections.version>
     <avro.version>1.8.2</avro.version>
     <metrics.version>4.0.2</metrics.version>
+    <jetty.version>9.3.19.v20170502</jetty.version>
     <asm.version>7.0</asm.version>
     <excludedGroups />
     <memoryMb>4096</memoryMb>
@@ -2468,8 +2469,12 @@
                 <artifactId>netty-all</artifactId>
               </exclusion>
               <exclusion>
-                  <groupId>io.netty</groupId>
-                  <artifactId>netty</artifactId>
+                <groupId>io.netty</groupId>
+                <artifactId>netty</artifactId>
+              </exclusion>
+              <exclusion>
+                <groupId>log4j</groupId>
+                <artifactId>log4j</artifactId>
               </exclusion>
             </exclusions>
           </dependency>
@@ -2511,6 +2516,45 @@
               </exclusion>
             </exclusions>
           </dependency>
+          <!-- Test Dependencies -->
+          <!--TODO: factored out jetty-dep from test dependencies-->
+          <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-server</artifactId>
+            <version>${jetty.version}</version>
+          </dependency>
+          <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-servlet</artifactId>
+            <version>${jetty.version}</version>
+          </dependency>
+          <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-servlets</artifactId>
+            <version>${jetty.version}</version>
+          </dependency>
+          <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-security</artifactId>
+            <version>${jetty.version}</version>
+          </dependency>
+          <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-util</artifactId>
+            <version>${jetty.version}</version>
+          </dependency>
+          <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-io</artifactId>
+            <version>${jetty.version}</version>
+          </dependency>
+          <!--&lt;!&ndash;TODO: remove commons-logging test dependency and bann it once HADOOP-15749 is fixed &ndash;&gt;-->
+          <!--<dependency>-->
+            <!--<groupId>commons-logging</groupId>-->
+            <!--<artifactId>commons-logging</artifactId>-->
+            <!--<version>1.2</version>-->
+            <!--<scope>test</scope>-->
+          <!--</dependency>-->
         </dependencies>
       </dependencyManagement>
     </profile>

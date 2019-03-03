@@ -244,8 +244,8 @@ public class TestSpnegoAuthentication {
   }
 
   /**
-   * Validate successful {@link DrillSpnegoLoginService#login(String, Object)} when provided with client token for a
-   * configured service principal.
+   * Validate successful {@link DrillSpnegoLoginService#login(String, Object, javax.servlet.ServletRequest)}
+   * when provided with client token for a configured service principal.
    * @throws Exception
    */
   @Test
@@ -305,7 +305,7 @@ public class TestSpnegoAuthentication {
     final DrillSpnegoLoginService loginService = new DrillSpnegoLoginService(drillbitContext);
 
     // Authenticate the client using its SPNEGO token
-    final UserIdentity user = loginService.login(null, token);
+    final UserIdentity user = loginService.login(null, token, null);
 
     // Validate the UserIdentity of authenticated client
     assertTrue(user != null);

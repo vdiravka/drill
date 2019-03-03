@@ -30,6 +30,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.Set;
 
+import javax.servlet.ServletRequest;
 import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpSessionEvent;
 import javax.servlet.http.HttpSessionListener;
@@ -249,7 +250,7 @@ public class WebServer implements AutoCloseable {
     }
 
     @Override
-    public UserIdentity login(String username, Object credentials) {
+    public UserIdentity login(String username, Object credentials, ServletRequest request) {
       if (!securityMgr.login(username, (String) credentials)) {
         return null;
       }
@@ -290,11 +291,8 @@ public class WebServer implements AutoCloseable {
   }
 
   /**
-   * @return
-   * @return
-   * @see http://www.eclipse.org/jetty/documentation/current/embedded-examples.html
+   * @see <a href="http://www.eclipse.org/jetty/documentation/current/embedded-examples.html">Eclipse Jetty Documentation</a>
    */
-
   private ConstraintSecurityHandler createSecurityHandler(Config config) {
     ConstraintSecurityHandler security = new ConstraintSecurityHandler();
 
@@ -366,14 +364,13 @@ public class WebServer implements AutoCloseable {
    * certificate is generated and used.
    * <p>
    * This is a shameless copy of
-   * {@link org.apache.drill.exec.server.rest.Webserver#createHttpsConnector( )}.
+   * {@link org.apache.drill.exec.server.rest.WebServer#createHttpsConnector(int, int, int)}.
    * The two should be merged at some point. The primary issue is that the Drill
    * version is tightly coupled to Drillbit configuration.
    *
    * @return Initialized {@link ServerConnector} for HTTPS connections.
    * @throws Exception
    */
-
   private ServerConnector createHttpsConnector(Config config) throws Exception {
     LOG.info("Setting up HTTPS connector for web server");
 
