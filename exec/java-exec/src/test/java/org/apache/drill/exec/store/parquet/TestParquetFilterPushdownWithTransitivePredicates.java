@@ -52,7 +52,7 @@ public class TestParquetFilterPushdownWithTransitivePredicates extends PlanTestB
     int expectedRowCount = 24;
     assertEquals("Expected and actual row count should match", expectedRowCount, actualRowCount);
 
-    final String[] expectedPlan = {"first.*numRowGroups=1", "second.*numRowGroups=1", "third.*numRowGroups=3"};
+    final String[] expectedPlan = {"first.*numRowGroups=1", "second.*numRowGroups=2", "third.*numRowGroups=3"}; // wrong numRowGroups for test failure
     testPlanMatchingPatterns(query, expectedPlan);
   }
 
