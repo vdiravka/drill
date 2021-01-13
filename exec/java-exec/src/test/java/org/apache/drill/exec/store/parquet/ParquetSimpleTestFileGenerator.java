@@ -65,7 +65,7 @@ public class ParquetSimpleTestFileGenerator {
           "  required int32 rowKey; \n" +
           "  required binary _UTF8  ( UTF8 ) ; \n" +
           "  required binary _Enum  ( ENUM ) ; \n" +
-          //    "    required binary _UUID  ( UUID ) ; \n" +
+          "  required fixed_len_byte_array(16) _UUID  ( UUID ) ; \n" +
           "  required int32  _INT32_RAW  ; \n" +
           "  required int32 _INT_8  ( INT_8 ) ; \n" +
           "  required int32 _INT_16  ( INT_16 ) ; \n" +
@@ -93,7 +93,7 @@ public class ParquetSimpleTestFileGenerator {
           "  required int32 rowKey; \n" +
           "  optional binary _UTF8  ( UTF8 ) ; \n" +
           "  optional binary _Enum  ( ENUM ) ; \n" +
-          //    "    optional binary _UUID  ( UUID ) ; \n" +
+          "  optional fixed_len_byte_array(16) _UUID  ( UUID ) ; \n" +
           "  optional int32  _INT32_RAW  ; \n" +
           "  optional int32 _INT_8  ( INT_8 ) ; \n" +
           "  optional int32 _INT_16  ( INT_16 ) ; \n" +
@@ -123,7 +123,7 @@ public class ParquetSimpleTestFileGenerator {
           "  required group StringTypes { \n" +
           "    required binary _UTF8  ( UTF8 ) ; \n" +
           "    required binary _Enum  ( ENUM ) ; \n" +
-          //      "    required binary _UUID  ( UUID ) ; \n" +
+          "    required fixed_len_byte_array(16) _UUID  ( UUID ) ; \n" +
           "  } \n" +
           "  required group NumericTypes { \n" +
           "    required group Int32 { \n" +
@@ -167,7 +167,7 @@ public class ParquetSimpleTestFileGenerator {
           "  optional group StringTypes { \n" +
           "    optional binary _UTF8  ( UTF8 ) ; \n" +
           "    optional binary _Enum  ( ENUM ) ; \n" +
-          //      "    optional binary _UUID  ( UUID ) ; \n" +
+          "    optional fixed_len_byte_array(16) _UUID  ( UUID ) ; \n" +
           "  } \n" +
           "  optional group NumericTypes { \n" +
           "    optional group Int32 { \n" +
@@ -243,9 +243,12 @@ public class ParquetSimpleTestFileGenerator {
     {
       Group complexGroup = gf.newGroup();
       complexGroup.add("rowKey", ++rowKey);
-      complexGroup.addGroup("StringTypes").append("_UTF8", "UTF8 string" + rowKey).append("_Enum", RANDOM_VALUE
-          .toString());
-      //        .append("_UUID", "00112233445566778899aabbccddeeff");
+      byte[] bytes = new byte[30];
+      Arrays.fill(bytes, (byte) 1);
+      complexGroup.addGroup("StringTypes")
+          .append("_UTF8", "UTF8 string" + rowKey)
+          .append("_Enum", RANDOM_VALUE.toString())
+          .append("_UUID", Binary.fromConstantByteArray(bytes, 0, 16));
       Group numeric = complexGroup.addGroup("NumericTypes");
       numeric.addGroup("Int32")
           .append("_INT32_RAW", 1234567)
@@ -275,9 +278,12 @@ public class ParquetSimpleTestFileGenerator {
     {
       Group complexGroup = gf.newGroup();
       complexGroup.add("rowKey", ++rowKey);
-      complexGroup.addGroup("StringTypes").append("_UTF8", "UTF8 string" + rowKey).append("_Enum", MAX_VALUE
-          .toString());
-      //        .append("_UUID", "00112233445566778899aabbccddeeff");
+      byte[] bytes = new byte[30];
+      Arrays.fill(bytes, (byte) 1);
+      complexGroup.addGroup("StringTypes")
+          .append("_UTF8", "UTF8 string" + rowKey)
+          .append("_Enum", MAX_VALUE.toString())
+          .append("_UUID", Binary.fromConstantByteArray(bytes, 0, 16));
       Group numeric = complexGroup.addGroup("NumericTypes");
       numeric.addGroup("Int32")
           .append("_INT32_RAW", 0x7FFFFFFF)
@@ -293,8 +299,6 @@ public class ParquetSimpleTestFileGenerator {
           .append("_INT_64", 0x7FFFFFFFFFFFFFFFL)
           .append("_UINT_64", 0xFFFFFFFFFFFFFFFFL)
           .append("_DECIMAL_decimal18", 0xFFFFFFFFFFFFFFFFL);
-      byte[] bytes = new byte[30];
-      Arrays.fill(bytes, (byte) 1);
       numeric.addGroup("FixedLen").append("_DECIMAL_fixed_n", Binary.fromConstantByteArray(bytes, 0, 20));
       numeric.addGroup("Binary").append("_DECIMAL_unlimited", Binary.fromConstantByteArray(bytes, 0, 30));
       numeric.addGroup("DateTimeTypes")
@@ -309,9 +313,12 @@ public class ParquetSimpleTestFileGenerator {
     {
       Group complexGroup = gf.newGroup();
       complexGroup.add("rowKey", ++rowKey);
-      complexGroup.addGroup("StringTypes").append("_UTF8", "UTF8 string" + rowKey).append("_Enum", MIN_VALUE
-          .toString());
-      //        .append("_UUID", "00112233445566778899aabbccddeeff");
+      byte[] bytes = new byte[30];
+      Arrays.fill(bytes, (byte) 1);
+      complexGroup.addGroup("StringTypes")
+          .append("_UTF8", "UTF8 string" + rowKey)
+          .append("_Enum", MIN_VALUE.toString())
+          .append("_UUID", Binary.fromConstantByteArray(bytes, 0, 16));
       Group numeric = complexGroup.addGroup("NumericTypes");
       numeric.addGroup("Int32")
           .append("_INT32_RAW", 0x80000000)
@@ -354,8 +361,12 @@ public class ParquetSimpleTestFileGenerator {
       byte[] bytes12 = {'1', '2', '3', '4', '5', '6', '7', '8', '9', '0', 'a', 'b' };
       Group simpleGroup = sgf.newGroup();
       simpleGroup.append("rowKey", ++rowKey);
-      simpleGroup.append("_UTF8", "UTF8 string" + rowKey).append("_Enum", RANDOM_VALUE.toString())
-          //        .append("_UUID", "00112233445566778899aabbccddeeff");
+      byte[] bytes = new byte[30];
+      Arrays.fill(bytes, (byte) 1);
+      simpleGroup
+          .append("_UTF8", "UTF8 string" + rowKey)
+          .append("_Enum", RANDOM_VALUE.toString())
+          .append("_UUID", Binary.fromConstantByteArray(bytes, 0, 16))
           .append("_INT32_RAW", 1234567)
           .append("_INT_8", 123)
           .append("_INT_16", 12345)
@@ -383,9 +394,10 @@ public class ParquetSimpleTestFileGenerator {
       byte[] bytes = new byte[30];
       Arrays.fill(bytes, (byte) 1);
       simpleGroup.append("rowKey", ++rowKey);
-      simpleGroup.append("_UTF8", "UTF8 string" + rowKey)
+      simpleGroup
+          .append("_UTF8", "UTF8 string" + rowKey)
           .append("_Enum", MAX_VALUE.toString())
-          //        .append("_UUID", "00112233445566778899aabbccddeeff");
+          .append("_UUID", Binary.fromConstantByteArray(bytes, 0, 16))
           .append("_INT32_RAW", 0x7FFFFFFF)
           .append("_INT_8", 0x7F)
           .append("_INT_16", 0x7FFF)
@@ -411,8 +423,12 @@ public class ParquetSimpleTestFileGenerator {
     {
       Group simpleGroup = sgf.newGroup();
       simpleGroup.append("rowKey", ++rowKey);
-      simpleGroup.append("_UTF8", "UTF8 string" + rowKey).append("_Enum", MIN_VALUE.toString())
-          //        .append("_UUID", "00112233445566778899aabbccddeeff");
+      byte[] bytes = new byte[30];
+      Arrays.fill(bytes, (byte) 1);
+      simpleGroup
+          .append("_UTF8", "UTF8 string" + rowKey)
+          .append("_Enum", MIN_VALUE.toString())
+          .append("_UUID", Binary.fromConstantByteArray(bytes, 0, 16))
           .append("_INT32_RAW", 0x80000000)
           .append("_INT_8", 0xFFFFFF80)
           .append("_INT_16", 0xFFFF8000)

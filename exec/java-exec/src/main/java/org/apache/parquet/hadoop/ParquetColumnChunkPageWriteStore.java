@@ -267,7 +267,7 @@ public class ParquetColumnChunkPageWriteStore implements PageWriteStore, Closeab
     public void writeToFileWriter(ParquetFileWriter writer) throws IOException {
       writer.writeColumnChunk(path, totalValueCount, compressor.getCodecName(),
           dictionaryPage, BytesInput.from(buf), uncompressedLength, compressedLength, totalStatistics,
-          columnIndexBuilder, offsetIndexBuilder, rlEncodings, dlEncodings, dataEncodings);
+          columnIndexBuilder, offsetIndexBuilder, null, rlEncodings, dlEncodings, dataEncodings);
       if (logger.isDebugEnabled()) {
         logger.debug(
             String.format(

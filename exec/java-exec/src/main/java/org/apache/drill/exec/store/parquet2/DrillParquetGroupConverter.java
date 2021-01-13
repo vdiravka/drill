@@ -71,6 +71,7 @@ import org.apache.parquet.io.api.Converter;
 import org.apache.parquet.io.api.GroupConverter;
 import org.apache.parquet.io.api.PrimitiveConverter;
 import org.apache.parquet.schema.GroupType;
+import org.apache.parquet.schema.OriginalType;
 import org.apache.parquet.schema.PrimitiveType;
 import org.apache.parquet.schema.Type;
 import org.apache.parquet.schema.Type.Repetition;
@@ -328,24 +329,26 @@ public class DrillParquetGroupConverter extends GroupConverter {
         }
       }
       case FIXED_LEN_BYTE_ARRAY:
-        switch (type.getOriginalType()) {
-          case DECIMAL: {
-            ParquetReaderUtility.checkDecimalTypeEnabled(options);
-            return getVarDecimalConverter(name, type);
-          }
-          case INTERVAL: {
-            IntervalWriter writer = type.isRepetition(Repetition.REPEATED)
-                ? getWriter(name, (m, f) -> m.list(f).interval(), l -> l.list().interval())
-                : getWriter(name, (m, f) -> m.interval(f), l -> l.interval());
-            return new DrillFixedLengthByteArrayToInterval(writer);
-          }
-          default: {
-            VarBinaryWriter writer = type.isRepetition(Repetition.REPEATED)
-                ? getWriter(name, (m, f) -> m.list(f).varBinary(), l -> l.list().varBinary())
-                : getWriter(name, (m, f) -> m.varBinary(f), l -> l.varBinary());
-            return new DrillFixedBinaryToVarbinaryConverter(writer, type.getTypeLength(), mutator.getManagedBuffer());
+        // TODO: to follow the latest parquet code, rewrite it by using LogicalTypeAnnotation instead of OriginalType
+        OriginalType originalType = type.getOriginalType();
+        if( originalType != null) {
+          switch (type.getOriginalType()) {
+            case DECIMAL: {
+              ParquetReaderUtility.checkDecimalTypeEnabled(options);
+              return getVarDecimalConverter(name, type);
+            }
+            case INTERVAL: {
+              IntervalWriter writer = type.isRepetition(Repetition.REPEATED)
+                      ? getWriter(name, (m, f) -> m.list(f).interval(), l -> l.list().interval())
+                      : getWriter(name, (m, f) -> m.interval(f), l -> l.interval());
+              return new DrillFixedLengthByteArrayToInterval(writer);
+            }
           }
         }
+        VarBinaryWriter writer = type.isRepetition(Repetition.REPEATED)
+                ? getWriter(name, (m, f) -> m.list(f).varBinary(), l -> l.list().varBinary())
+                : getWriter(name, (m, f) -> m.varBinary(f), l -> l.varBinary());
+        return new DrillFixedBinaryToVarbinaryConverter(writer, type.getTypeLength(), mutator.getManagedBuffer());
       default:
         throw new UnsupportedOperationException("Unsupported type: " + type.getPrimitiveTypeName());
     }
